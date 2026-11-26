@@ -63,6 +63,10 @@ body { background: var(--paper); color: var(--ink); }
 .staff-header-nav > a { color: #5e7182; font-size: 11px; font-weight: 700; }
 .staff-header-nav > a:hover { color: var(--gold); }
 .staff-header .brand > img { width: 38px; height: 38px; }
+.staff-header .brand.staff-brand { gap: 10px; min-width: 0; letter-spacing: 0; }
+.staff-header .brand.staff-brand > .staff-brand-full { display: block; width: clamp(180px, 24vw, 220px); height: auto; flex: 0 1 auto; }
+.staff-brand-compact { display: none; align-items: center; gap: 8px; font-size: 18px; font-weight: 900; letter-spacing: 2px; }
+.staff-brand .admin-tag { flex: 0 0 auto; }
 .admin-tag { color: #765b2e; background: #f3ead8; border-radius: 3px; }
 .dashboard { max-width: 1240px; }
 .admin-intro { border-bottom: 1px solid var(--line); margin-bottom: 22px; }
@@ -80,6 +84,22 @@ body { background: var(--paper); color: var(--ink); }
 .system-loading { border: 0; box-shadow: none; background: transparent; }
 @keyframes gin-spin { to { transform: rotate(360deg); } }
 
+.text-arrow, .button-quiet, .page-breadcrumb a { color: #173c59; }
+.button-light { color: #173c59; }
+.button-light:hover { color: #102b42; }
+.intro-band, .final-cta, .page-cta { background: #142d43; }
+.final-cta .eyebrow, .page-cta .eyebrow { color: #e4c783; }
+.final-cta p, .page-cta p { color: #c5d0d8; }
+.community-monogram { color: #173c59; }
+.community-monogram span { color: #c6a15b; }
+.pillar-top, .topic-item svg, .journey-grid article > svg { color: #a8874d; }
+.pillar-card > a, .mobile-menu nav a:last-child { color: #173c59; }
+.info-check { color: #c6a15b; }
+
+@media (max-width: 580px) {
+  .reference-brand { max-width: min(78vw, 300px); }
+}
+
 @media (max-width: 850px) {
   .page-hero { grid-template-columns: 1fr; padding: 28px; gap: 25px; }
   .page-hero-visual { min-height: 240px; }
@@ -93,6 +113,9 @@ body { background: var(--paper); color: var(--ink); }
   .staff-header-nav { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); }
   .staff-header-nav form { grid-column: 1 / -1; }
   .staff-header-nav .logout-button { width: 100%; justify-content: center; }
+  .staff-header .brand.staff-brand > .staff-brand-full { display: none; }
+  .staff-brand-compact { display: inline-flex; }
+  .staff-brand .admin-tag { font-size: 8px; padding: 4px 5px; }
   .system-card { padding: 28px 20px; }
   .system-actions { flex-direction: column; }
 }
