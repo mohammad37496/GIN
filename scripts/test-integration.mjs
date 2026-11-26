@@ -141,7 +141,14 @@ try {
   assert(result.response.status === 200 && result.data.sections[0].lessons[0].isPreview, "Public course page exposes preview lesson metadata");
 
   result = await api(`/api/lessons/${lessonId}/progress`, { method: "POST", cookie: memberCookie, body: { status: "completed", watchedSeconds: 120, lastPositionSeconds: 120 } });
-  assert(result.response.status === 200 && !result.data.courseCompleted, `Lesson completion alone does not bypass a required assessment (HTTP ${result.response.status}: ${JSON.stringify(result.data)})`);
+  assert(result.response.status === 409, "A client cannot complete a lesson before a server-recorded start exists");
+  result = await api(`/api/lessons/${lessonId}/progress`, { method: "POST", cookie: memberCookie, body: { status: "in_progress", watchedSeconds: 0, lastPositionSeconds: 0 } });
+  assert(result.response.status === 200 && result.data.startedAt, "The server records the lesson start timestamp");
+  result = await api(`/api/lessons/${lessonId}/progress`, { method: "POST", cookie: memberCookie, body: { status: "completed", watchedSeconds: 120, lastPositionSeconds: 120 } });
+  assert(result.response.status === 409, "A client cannot claim the full lesson duration immediately after starting");
+  await pool.query("UPDATE lesson_progress SET started_at=NOW()-INTERVAL '120 seconds' WHERE lesson_id=$1 AND user_id=$2", [lessonId,memberId]);
+  result = await api(`/api/lessons/${lessonId}/progress`, { method: "POST", cookie: memberCookie, body: { status: "completed", watchedSeconds: 120, lastPositionSeconds: 120 } });
+  assert(result.response.status === 200 && !result.data.courseCompleted, `Lesson completion after the server-enforced minimum time does not bypass a required assessment (HTTP ${result.response.status}: ${JSON.stringify(result.data)})`);
 
   result = await api(`/api/assessments/${assessmentId}`, { cookie: memberCookie });
   assert(result.response.status === 200 && result.data.questions.length === 1 && !("answer_key" in result.data.questions[0]), "Member sees questions without answer keys");
