@@ -5,7 +5,7 @@ import { ensureSchema, pool } from "@/lib/db";
 import { englishContent } from "@/lib/bilingual-content";
 
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "GIN Events Calendar", description: "Explore published events and member experiences from the Global Information Network.", alternates: { canonical: "/en/events", languages: { en: "/en/events", fa: "/fa/events" } } };
+export const metadata: Metadata = { title: "GIN Events Calendar", description: "Explore published events and member experiences from the Global Information Network.", alternates: { canonical: "/en/events", languages: { en: "/en/events", fa: "/fa/events" } }, openGraph: { title: "GIN Events Calendar", description: "Explore published events and member experiences from the Global Information Network.", url: "/en/events", siteName: "Global Information Network", type: "website", images: ["/gin/gin-social-card.png"] }, twitter: { card: "summary_large_image", title: "GIN Events Calendar", description: "Explore published events and member experiences from the Global Information Network.", images: ["/gin/gin-social-card.png"] } };
 
 export default async function EnglishEventsPage() {
   let events: Record<string, unknown>[] = [];

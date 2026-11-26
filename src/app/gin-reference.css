@@ -46,6 +46,8 @@ body { background: #fbfaf7; color: #17283a; }
 .gin-hero-actions { display: flex; align-items: center; gap: 27px; margin-top: 30px; }
 .gin-gold-button { background: #c6a15b; color: #142b40; }
 .gin-gold-button:hover { background: #d7b978; color: #142b40; }
+.button.gin-gold-button { background: #c6a15b; color: #142b40; border-color: #c6a15b; }
+.button.gin-gold-button:hover { background: #b58f4e; color: #142b40; border-color: #b58f4e; }
 .gin-hero-link { display: inline-flex; align-items: center; gap: 8px; color: #f3eee3; font-size: 12px; font-weight: 800; }
 .gin-hero-note { display: flex; align-items: center; gap: 8px; margin-top: 45px; color: #d2dce3; font-size: 10px; }
 .gin-hero-caption { position: absolute; bottom: 28px; left: max(32px, calc((100vw - 1180px) / 2)); color: #e2d0a5; font: 9px Georgia, serif; letter-spacing: 3px; }
@@ -172,4 +174,58 @@ body { background: #fbfaf7; color: #17283a; }
   .gin-centered-heading h2 { font-size: 25px; }
   .gin-membership-cta { padding-block: 50px; }
   .gin-membership-cta h2 { font-size: 22px; }
+}
+.persian-reference-page { padding: 34px 0 78px; background: #f8faf9; }
+.persian-reference-page article { max-width: 1000px; margin: 0 auto; }
+.persian-reference-breadcrumb { display: flex; flex-wrap: wrap; gap: 9px; align-items: center; margin: 0 0 22px; color: #65746d; font-size: 11px; }
+.persian-reference-breadcrumb a { color: #236448; font-weight: 700; }
+.persian-reference-heading { max-width: 850px; margin: 0 auto 30px; text-align: center; }
+.persian-reference-heading .eyebrow { direction: ltr; }
+.persian-reference-heading h1 { margin: 12px 0; color: #173c59; font-size: clamp(26px, 4vw, 38px); font-weight: 900; }
+.persian-reference-heading > p { margin: 0; color: #53665d; font-size: 14px; line-height: 2.25; }
+.persian-reference-legal-notice { margin: 0 auto 22px; padding: 15px 18px; border-right: 4px solid #b28b45; background: #f4f0e5; color: #51462e; font-size: 12px; line-height: 2.1; }
+.persian-reference-sections { display: grid; gap: 14px; }
+.persian-reference-sections section, .persian-reference-videos { padding: 22px 24px; border: 1px solid #e0e8e3; border-radius: 10px; background: #fff; }
+.persian-reference-sections h2, .persian-reference-videos h2 { margin: 0 0 10px; color: #1b4c39; font-size: 17px; }
+.persian-reference-sections p { margin: 0; color: #35483e; font-size: 13px; line-height: 2.25; }
+.persian-reference-sections ul { margin: 10px 0 0; padding-right: 23px; color: #35483e; font-size: 13px; line-height: 2.2; }
+.persian-reference-videos { margin-top: 16px; }
+.persian-reference-video-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.persian-reference-video-frame { position: relative; width: 100%; aspect-ratio: 16 / 9; overflow: hidden; background: #111; }
+.persian-reference-video-frame iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+.persian-reference-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin-top: 28px; }
+.persian-reference-actions .button { min-height: 44px; }
+.persian-reference-actions .persian-reference-secondary { border: 1px solid #1f6b4d; background: #fff; color: #1f6b4d; }
+.persian-reference-registration-note { margin: 14px auto 0; text-align: center; color: #53665d; font-size: 11px; line-height: 2; }
+.page-faq-sections { display: grid; gap: 12px; max-width: 1000px; margin: 34px auto 42px; }
+.page-faq-item { overflow: hidden; border: 1px solid #e0e8e3; border-radius: 9px; background: #fff; }
+.page-faq-item summary { display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 18px 22px; color: #173c59; font-size: 14px; font-weight: 800; line-height: 1.9; cursor: pointer; list-style: none; }
+.page-faq-item summary::-webkit-details-marker { display: none; }
+.page-faq-item summary::after { content: "+"; flex: 0 0 auto; color: #a8874d; font: 700 22px/1 Arial, sans-serif; }
+.page-faq-item[open] summary::after { content: "−"; }
+.page-faq-item > p { margin: 0; padding: 0 22px 20px; color: #35483e; font-size: 13px; line-height: 2.25; }
+.persian-hotel-gallery { margin: 34px 0 48px; }
+.persian-hotel-gallery > h2 { margin: 0 0 10px; color: #173c59; font-size: clamp(20px, 3vw, 28px); }
+.persian-hotel-gallery > p { margin: 0 0 22px; color: #53665d; font-size: 13px; line-height: 2.2; }
+.persian-hotel-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
+.persian-hotel-grid figure { min-width: 0; margin: 0; overflow: hidden; border: 1px solid #e0e8e3; border-radius: 9px; background: #fff; }
+.persian-hotel-grid img { display: block; width: 100%; height: 210px; object-fit: cover; }
+.persian-hotel-grid figcaption { min-height: 56px; display: grid; place-items: center; padding: 10px 12px; direction: ltr; text-align: center; color: #173c59; font-size: 12px; font-weight: 700; line-height: 1.7; }
+.footer-legal-links { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px 24px; padding: 18px 0; border-top: 1px solid #294052; }
+.footer-legal-links a { color: #e1e8ed; font-size: 11px; }
+.footer-legal-links a:hover { color: #e4c783; }
+@media (max-width: 680px) {
+  .persian-reference-page { padding: 24px 0 48px; }
+  .persian-reference-sections section, .persian-reference-videos { padding: 17px 15px; }
+  .persian-reference-video-grid { grid-template-columns: 1fr; }
+  .persian-reference-actions { flex-direction: column; align-items: stretch; }
+  .persian-hotel-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  .persian-hotel-grid img { height: 150px; }
+  .persian-hotel-grid figcaption { min-height: 62px; padding-inline: 8px; font-size: 10px; }
+  .page-faq-item summary { padding: 15px; font-size: 12px; }
+  .page-faq-item > p { padding: 0 15px 16px; font-size: 12px; }
+}
+@media (max-width: 380px) {
+  .persian-hotel-grid { grid-template-columns: 1fr; }
+  .persian-hotel-grid img { height: 210px; }
 }

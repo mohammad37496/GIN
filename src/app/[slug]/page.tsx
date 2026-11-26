@@ -5,9 +5,13 @@ import { notFound } from "next/navigation";
 import { ArrowLeft, CheckCircle2 } from "lucide-react";
 import PublicHeader from "@/components/public-header";
 import PublicFooter from "@/components/public-footer";
+import PersianContactForm from "@/components/persian-contact-form";
+import PersianHotelGallery from "@/components/persian-hotel-gallery";
 import { publicPages } from "@/lib/public-pages";
-import { getSession } from "@/lib/auth";
-import SupportForm from "@/components/support-form";
+import PersianPublicReferencePage, { persianPublicPageMetadata } from "@/components/persian-public-reference-page";
+import JsonLd from "@/components/json-ld";
+import { buildBreadcrumbSchema, buildFaqSchema } from "@/lib/structured-data";
+import { persianDynamicReferenceSlugs } from "@/lib/persian-public-pages";
 
 export const dynamic = "force-dynamic";
 
@@ -26,11 +30,15 @@ const pageVisuals: Record<string, { src: string; alt: string }> = {
 };
 
 export function generateStaticParams() {
-  return Object.keys(publicPages).map((slug) => ({ slug }));
+  return [
+    ...Object.keys(publicPages).map((slug) => ({ slug })),
+    ...persianDynamicReferenceSlugs.map((slug) => ({ slug })),
+  ];
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
+  if (persianDynamicReferenceSlugs.includes(slug as (typeof persianDynamicReferenceSlugs)[number])) return persianPublicPageMetadata(slug);
   const page = publicPages[slug];
   if (!page) return {};
   const englishSlug: Record<string, string> = {
@@ -42,19 +50,22 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   };
   const canonicalSlug = slug === "why-join" ? "what-we-offer" : slug;
   return {
-    title: `${page.title} | GIN`,
+    title: /\bGIN\b/i.test(page.title) ? { absolute: page.title } : page.title,
     description: page.intro,
     alternates: { canonical: `/fa/${canonicalSlug}`, languages: { fa: `/fa/${canonicalSlug}`, en: `/en/${englishSlug[slug] ?? ""}` } },
-    openGraph: { title: page.title, description: page.intro, locale: "fa_IR", type: "article" },
+    openGraph: { title: page.title, description: page.intro, url: `/fa/${canonicalSlug}`, siteName: "Global Information Network", locale: "fa_IR", type: "article", images: [{ url: "/gin/gin-social-card.png", width: 1200, height: 630, alt: page.title }] },
+    twitter: { card: "summary_large_image", title: page.title, description: page.intro, images: ["/gin/gin-social-card.png"] },
   };
 }
 
 export default async function PublicInfoPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
+  if (persianDynamicReferenceSlugs.includes(slug as (typeof persianDynamicReferenceSlugs)[number])) return <PersianPublicReferencePage slug={slug}/>;
   const page = publicPages[slug];
   if (!page) notFound();
-  const user = slug === "contact" ? await getSession() : null;
   const visual = pageVisuals[slug] ?? pageVisuals.about;
   const isServiceDirectory = slug === "hotels" || slug === "clubhouses" || slug === "cruise";
-  return <><PublicHeader/><main className="public-page"><div className="public-container"><div className="page-breadcrumb"><Link href="/">خانه</Link><span>/</span><span>{page.eyebrow}</span></div><section className="page-hero"><div className="page-hero-copy"><span className="eyebrow">{page.eyebrow}</span><h1>{page.title}</h1><p>{page.intro}</p>{!isServiceDirectory && <Link href="/register" className="button">شروع عضویت <ArrowLeft size={17}/></Link>}</div><div className="page-hero-visual"><Image src={visual.src} alt={visual.alt} fill priority sizes="(max-width: 850px) 100vw, 42vw"/><span>GLOBAL INFORMATION NETWORK</span></div></section><section className="page-sections">{page.sections.map((section, index) => <article className="info-card" key={section.title}><span className="info-index">{String(index + 1).padStart(2,"0")}</span><div><h2>{section.title}</h2><p>{section.body}</p></div><CheckCircle2 className="info-check" size={21}/></article>)}</section>{slug === "contact" && <SupportForm authenticated={Boolean(user)}/>}<section className="page-cta"><div><span className="eyebrow">YOUR NEXT STEP</span><h2>{isServiceDirectory ? "از برنامه‌های تأییدشده GIN باخبر شوید" : "مسیر یادگیری خود را آغاز کنید"}</h2><p>{isServiceDirectory ? "برای پرسش درباره اطلاعات سفر یا مکان‌های گردهمایی، از مسیر پشتیبانی پیام بفرستید." : "حساب کاربری بسازید و پس از تأیید عضویت، وارد فضای اختصاصی GIN شوید."}</p></div><Link href={isServiceDirectory ? "/contact" : "/register"} className="button">{isServiceDirectory ? "تماس با GIN" : "درخواست عضویت"} <ArrowLeft size={17}/></Link></section></div></main><PublicFooter/></>;
+  const breadcrumbSchema = buildBreadcrumbSchema([{ name: "خانه", path: "/fa" }, { name: page.title, path: `/fa/${slug}` }]);
+  const faqSchema = slug === "faq" ? buildFaqSchema(page.sections.map((section) => ({ question: section.title, answer: section.body }))) : null;
+  return <><PublicHeader/><JsonLd data={[breadcrumbSchema, faqSchema]}/><main className="public-page"><div className="public-container"><div className="page-breadcrumb"><Link href="/fa">خانه</Link><span>/</span><span>{page.eyebrow}</span></div><section className="page-hero"><div className="page-hero-copy"><span className="eyebrow">{page.eyebrow}</span><h1>{page.title}</h1><p>{page.intro}</p>{!isServiceDirectory && <Link href="/fa/register" className="button">ایجاد حساب پورتال <ArrowLeft size={17}/></Link>}</div><div className="page-hero-visual"><Image src={visual.src} alt={visual.alt} fill priority sizes="(max-width: 850px) 100vw, 42vw"/><span>GLOBAL INFORMATION NETWORK</span></div></section>{slug === "faq" ? <section className="page-faq-sections" aria-label="پرسش‌های متداول">{page.sections.map((section) => <details className="page-faq-item" key={section.title}><summary>{section.title}</summary><p>{section.body}</p></details>)}</section> : <section className="page-sections">{page.sections.map((section, index) => <article className="info-card" key={section.title}><span className="info-index">{String(index + 1).padStart(2,"0")}</span><div><h2>{section.title}</h2><p>{section.body}</p></div><CheckCircle2 className="info-check" size={21}/></article>)}</section>}{slug === "hotels" && <PersianHotelGallery/>}{slug === "contact" && <PersianContactForm/>}<section className="page-cta"><div><span className="eyebrow">گام بعدی شما</span><h2>{isServiceDirectory ? "از برنامه‌های تأییدشده GIN باخبر شوید" : "مسیر یادگیری خود را آغاز کنید"}</h2><p>{isServiceDirectory ? "برای پرسش درباره اطلاعات سفر یا مکان‌های گردهمایی، از مسیر پشتیبانی پیام بفرستید." : "حساب کاربری بسازید و پس از تأیید عضویت، وارد فضای اختصاصی GIN شوید."}</p></div><Link href={isServiceDirectory ? "/fa/contact" : "/fa/register"} className="button">{isServiceDirectory ? "تماس با GIN" : "ایجاد حساب پورتال"} <ArrowLeft size={17}/></Link></section></div></main><PublicFooter/></>;
 }

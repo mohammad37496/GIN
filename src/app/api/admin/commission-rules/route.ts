@@ -8,7 +8,7 @@ const schema=z.object({name:z.string().trim().min(2).max(120),itemType:z.enum(["
 
 export async function GET(){
   const admin=await getSession();if(!admin||!(await canManageAffiliates(admin)))return errorResponse("دسترسی مدیریت همکاری در فروش ندارید.",403);
-  try{await ensureSchema();const result=await pool.query("SELECT * FROM commission_rules ORDER BY created_at DESC NULLS LAST,id DESC");return jsonResponse({rules:result.rows});}
+  try{await ensureSchema();const result=await pool.query("SELECT * FROM commission_rules ORDER BY starts_at DESC NULLS LAST,id DESC");return jsonResponse({rules:result.rows});}
   catch{return errorResponse("دریافت قوانین کمیسیون انجام نشد.",503);}
 }
 

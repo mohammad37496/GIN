@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import StaffLocalized, { type StaffLocale, staffDate } from "@/components/staff-localization";
 import { getContactCountryLabel } from "@/lib/contact-countries";
 
 type ContactSubmission = {
@@ -13,9 +14,10 @@ type ContactSubmission = {
 };
 
 const statuses = [["new", "جدید"], ["in_progress", "در حال بررسی"], ["resolved", "پاسخ داده شد"], ["closed", "بسته شده"]] as const;
-const contactMethodLabels: Record<string, string> = { Email: "ایمیل", "Telephone Call": "تماس تلفنی", Telegram: "تلگرام", WhatsApp: "واتساپ" };
+const contactMethodLabelsFa: Record<string, string> = { Email: "ایمیل", "Telephone Call": "تماس تلفنی", Telegram: "تلگرام", WhatsApp: "واتساپ" };
+const contactMethodLabelsEn: Record<string, string> = { Email: "Email", "Telephone Call": "Phone call", Telegram: "Telegram", WhatsApp: "WhatsApp" };
 
-export default function AdminContactSubmissions() {
+export default function AdminContactSubmissions({locale="fa"}:{locale?:StaffLocale}) {
   const [items, setItems] = useState<ContactSubmission[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -53,14 +55,14 @@ export default function AdminContactSubmissions() {
     }
   }
 
-  return <section className="admin-section" id="contact-submissions">
+  return <StaffLocalized locale={locale}><section className="admin-section" id="contact-submissions">
     <div className="section-heading"><div><span className="eyebrow">PUBLIC CONTACT FORM</span><h2>درخواست‌های تماس عمومی</h2><p>اطلاعات تماس، پیام و رضایت‌های ثبت‌شده از فرم انگلیسی سایت.</p></div><button className="button button-ghost" onClick={() => void load()} disabled={loading}>بروزرسانی</button></div>
     {error && <p className="form-error" role="alert">{error}</p>}
     {loading ? <p>در حال دریافت درخواست‌ها…</p> : items.length ? <div className="admin-contact-list">{items.map((item) => <article className="admin-contact-card" key={item.id}>
-      <div className="admin-contact-head"><div><strong>#{item.id} · {item.first_name} {item.last_name}</strong><p>{item.subject}</p></div><select aria-label={`وضعیت درخواست ${item.id}`} value={item.status} disabled={busyId === item.id} onChange={(event) => void updateStatus(item.id, event.target.value as ContactSubmission["status"])}>{statuses.map(([value, label]) => <option value={value} key={value}>{label}</option>)}</select></div>
+      <div className="admin-contact-head"><div><strong>#{item.id} · {item.first_name} {item.last_name}</strong><p>{item.subject}</p></div><select aria-label={locale==="en"?`Submission status ${item.id}`:`وضعیت درخواست ${item.id}`} value={item.status} disabled={busyId === item.id} onChange={(event) => void updateStatus(item.id, event.target.value as ContactSubmission["status"])}>{statuses.map(([value, label]) => <option value={value} key={value}>{label}</option>)}</select></div>
       <p>{item.message}</p>
-      <div className="admin-contact-meta"><a href={`mailto:${encodeURIComponent(item.email)}?subject=${encodeURIComponent(`Re: ${item.subject}`)}`}>{item.email}</a><a href={`tel:${encodeURIComponent(item.phone)}`}>{item.phone}</a><span>{(item.preferred_contact_methods ?? []).map((method) => contactMethodLabels[method] ?? method).join("، ") || "—"}</span><span>{item.preferred_language}{item.secondary_language ? ` / ${item.secondary_language}` : ""}</span><span>{new Date(item.created_at).toLocaleString("fa-IR")}</span></div>
-      <details><summary>اطلاعات تکمیلی و رضایت‌ها</summary><p>{[item.address_line1,item.address_line2,item.city,item.state_region,item.postal_code,getContactCountryLabel(item.country)].filter(Boolean).join("، ")}</p><p>Telegram: {item.telegram_handle || "—"} · WhatsApp: {item.whatsapp_number || "—"}</p><p>پیامک: {item.sms_consent ? "رضایت ثبت شده" : "خیر"} · پذیرش حریم خصوصی و شرایط: {item.legal_consent ? "بله" : "خیر"}</p></details>
+      <div className="admin-contact-meta"><a href={`mailto:${encodeURIComponent(item.email)}?subject=${encodeURIComponent(`Re: ${item.subject}`)}`}>{item.email}</a><a href={`tel:${encodeURIComponent(item.phone)}`}>{item.phone}</a><span>{(item.preferred_contact_methods ?? []).map((method) => (locale==="en"?contactMethodLabelsEn:contactMethodLabelsFa)[method] ?? method).join(locale==="en"?", ":"، ") || "—"}</span><span>{item.preferred_language}{item.secondary_language ? ` / ${item.secondary_language}` : ""}</span><span>{staffDate(item.created_at,locale,{dateStyle:"medium",timeStyle:"short"})}</span></div>
+      <details><summary>اطلاعات تکمیلی و رضایت‌ها</summary><p>{[item.address_line1,item.address_line2,item.city,item.state_region,item.postal_code,getContactCountryLabel(item.country)].filter(Boolean).join(locale==="en"?", ":"، ")}</p><p>Telegram: {item.telegram_handle || "—"} · WhatsApp: {item.whatsapp_number || "—"}</p><p>پیامک: {item.sms_consent ? "رضایت ثبت شده" : "خیر"} · پذیرش حریم خصوصی و شرایط: {item.legal_consent ? "بله" : "خیر"}</p></details>
     </article>)}</div> : <div className="empty-state"><p>هنوز درخواست تماسی ثبت نشده است.</p></div>}
-  </section>;
+  </section></StaffLocalized>;
 }

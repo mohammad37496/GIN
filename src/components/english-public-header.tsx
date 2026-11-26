@@ -1,6 +1,8 @@
 import Image from "next/image";
 import Link from "next/link";
 import LocaleSwitcher from "@/components/locale-switcher";
+import JsonLd from "@/components/json-ld";
+import { buildOrganizationSchema, buildWebsiteSchema } from "@/lib/structured-data";
 
 const primaryLinks = [
   ["Home", "/en"],
@@ -21,7 +23,6 @@ const secondaryLinks = [
   ["GIN Cruise Ship", "/en/the-gin-cruise-ship"],
   ["Membership Levels", "/en/membership-levels"],
   ["Frequently Asked Questions", "/en/faq"],
-  ["Portal Login", "/en/login"],
   ["Become a Member", "https://signup.globalinformationnetwork.com/"],
 ];
 
@@ -40,6 +41,8 @@ function NavigationLinks({ mobile = false }: { mobile?: boolean }) {
 
 export default function EnglishPublicHeader() {
   return (
+    <>
+    <JsonLd data={[buildOrganizationSchema(), buildWebsiteSchema()]} />
     <header className="gin-en-header">
       <Link href="/en" className="gin-en-masthead" aria-label="Global Information Network home">
         <Image src="/gin/reference-header-banner.jpg" alt="The Global Information Network — Sovereignty, Wealth, Freedom" fill priority sizes="100vw" />
@@ -58,5 +61,6 @@ export default function EnglishPublicHeader() {
         </div>
       </div>
     </header>
+    </>
   );
 }

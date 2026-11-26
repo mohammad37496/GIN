@@ -43,9 +43,9 @@
 .gin-en-mobile-menu { display: none; }
 .gin-en-mobile-tools { display: none; }
 .gin-en-shell { width: 100%; max-width: 1400px; min-width: 0; min-height: 640px; margin: 0 auto; display: grid; grid-template-columns: 274px minmax(0, 1fr); align-items: stretch; background: #fff; }
-.gin-en-sidebar { background: #808080; padding: 8px 5px 30px; }
+.gin-en-sidebar { background: #757575; padding: 8px 5px 30px; }
 .gin-en-sidebar nav { position: sticky; top: 8px; display: grid; }
-.gin-en-sidebar a { display: block; color: #fff; font-size: 15px; font-weight: 700; padding: 12px 20px; border-bottom: 1px solid rgba(255,255,255,.8); min-height: 40px; }
+.gin-en-sidebar a { display: block; color: #ffffff; font-size: 15px; font-weight: 700; padding: 12px 20px; border-bottom: 1px solid rgba(255,255,255,.8); min-height: 40px; }
 .gin-en-sidebar a:hover, .gin-en-sidebar a:focus-visible { color: #fff; background: #666; text-decoration: none; outline-offset: -3px; }
 .gin-en-main { width: 100%; max-width: 100%; min-width: 0; padding: 30px clamp(18px, 2.1vw, 30px) 54px; background: #fff; }
 .gin-en-home, .gin-en-page { width: 100%; max-width: 1080px; min-width: 0; margin: 0 auto; }
@@ -258,6 +258,16 @@
   .gin-en-page .gin-en-page-intro { font-size: 18px; }
   .gin-en-section { padding: 16px; }
   .gin-en-footer-links { gap: 10px 16px; }
+}
+
+@media (max-width: 580px) {
+  .gin-en-main { padding: 12px 10px 38px; }
+  .gin-en-hero-image { height: auto; aspect-ratio: 2.1 / 1; max-height: none; margin-bottom: 20px; }
+  .gin-en-intro { margin-bottom: 16px; }
+  .gin-en-intro h2 { margin: 18px 0 10px; }
+  .gin-en-intro > p { line-height: 1.35; }
+  .gin-en-emphasis-list { margin-top: 8px; }
+  .gin-en-home-video { margin: 20px auto; }
 }
 
 @media (max-width: 380px) {

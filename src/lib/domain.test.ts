@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
 import { canEnrollWithoutPayment, canOpenLesson, calculateCommission, getWorkspacePath, gradeChoiceAnswer, isAllowedPaymentTransition, isValidCompletionPosition, safeInternalPath } from "./domain";
 
 test("staff accounts are sent to their role workspace after login", () => {
@@ -10,6 +11,12 @@ test("staff accounts are sent to their role workspace after login", () => {
   assert.equal(getWorkspacePath("user", ["event_manager"]), "/events-manager");
   assert.equal(getWorkspacePath("user", ["instructor"]), "/instructor");
   assert.equal(getWorkspacePath("user", []), "/dashboard");
+});
+
+test("Persian dashboard uses the same staff workspace routing as English", async () => {
+  const source = await readFile(new URL("../app/dashboard/page.tsx", import.meta.url), "utf8");
+  assert.match(source, /getWorkspacePath\(user\.role,\[\.\.\.roles\]\)/);
+  assert.match(source, /redirect\(`\/fa\$\{workspacePath\}`\)/);
 });
 
 test("lesson preview grants only preview access without enrollment", () => {

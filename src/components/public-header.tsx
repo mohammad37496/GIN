@@ -3,6 +3,8 @@ import { headers } from "next/headers";
 import { ArrowLeft, ChevronDown } from "lucide-react";
 import { GinLogo } from "@/components/gin-brand";
 import LocaleSwitcher from "@/components/locale-switcher";
+import JsonLd from "@/components/json-ld";
+import { buildOrganizationSchema, buildWebsiteSchema } from "@/lib/structured-data";
 
 const links = [
   ["خانه", "/"],
@@ -24,6 +26,7 @@ const links = [
 export default async function PublicHeader() {
   const locale = (await headers()).get("x-website-locale") === "en" ? "en" : "fa";
   return <>
+    <JsonLd data={[buildOrganizationSchema(), buildWebsiteSchema()]} />
     <header className="public-header"><div className="public-container header-inner">
       <Link href="/" className="public-brand reference-brand" aria-label="GIN صفحه اصلی"><GinLogo width={300} height={68} /></Link>
     </div></header>
@@ -37,8 +40,8 @@ export default async function PublicHeader() {
         <details className="desktop-nav-dropdown"><summary>اطلاعات اعضا <ChevronDown size={13}/></summary><div>{links.slice(8, 13).map(([label, href]) => <Link href={href} key={href}>{label}</Link>)}</div></details>
         <Link href="/contact">تماس</Link>
       </nav>
-      <div className="header-actions"><LocaleSwitcher initialLocale={locale}/><Link href="/login" className="header-login">ورود اعضا</Link><Link href="/register" className="button button-small">درخواست عضویت <ArrowLeft size={15}/></Link></div>
-      <details className="mobile-menu"><summary aria-label="باز کردن منو"><span/><span/><span/></summary><nav><LocaleSwitcher initialLocale={locale}/>{links.map(([label, href]) => <Link href={href} key={href}>{label}</Link>)}<Link href="/login">ورود اعضا</Link><Link href="/register">درخواست عضویت</Link></nav></details>
+      <div className="header-actions"><LocaleSwitcher initialLocale={locale}/><Link href="/login" className="header-login">ورود اعضا</Link><Link href="/register" className="button button-small">ایجاد حساب پورتال <ArrowLeft size={15}/></Link></div>
+      <details className="mobile-menu"><summary aria-label="باز کردن منو"><span/><span/><span/></summary><nav><LocaleSwitcher initialLocale={locale}/>{links.map(([label, href]) => <Link href={href} key={href}>{label}</Link>)}<Link href="/login">ورود اعضا</Link><Link href="/register">ایجاد حساب پورتال</Link></nav></details>
       </div>
     </div>
   </>;

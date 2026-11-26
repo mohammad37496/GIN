@@ -14,7 +14,10 @@ export function middleware(request: NextRequest) {
   const eventMatch = pathname.match(/^\/events\/([^/]+)$/);
   const certificateMatch = pathname.match(/^\/certificates\/[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i);
   const hasEnglishRoute = Boolean(persianToEnglishRoutes[pathname] || courseMatch || eventMatch || certificateMatch);
-  const locale = explicitEnglish || (!explicitPersian && hasEnglishRoute && request.cookies.get("gin_locale")?.value === "en") ? "en" : "fa";
+  const inheritedLocale = request.headers.get("x-website-path") ? request.headers.get("x-website-locale") : null;
+  const locale = explicitEnglish ? "en" : explicitPersian ? "fa" : inheritedLocale === "en" || inheritedLocale === "fa"
+    ? inheritedLocale
+    : hasEnglishRoute && request.cookies.get("gin_locale")?.value === "en" ? "en" : "fa";
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set("x-website-locale", locale);
   requestHeaders.set("x-website-path", pathname);

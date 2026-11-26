@@ -11,6 +11,8 @@ import EnglishContactForm from "@/components/english-contact-form";
 import EnglishHotelGallery from "@/components/english-hotel-gallery";
 import EnglishMembershipLevelsTable from "@/components/english-membership-levels-table";
 import { EnglishAboutUsContent, EnglishWhoWeAreContent, EnglishWhatWeOfferContent, EnglishMemberBenefitsContent, EnglishAssociateBenefitsContent, EnglishOurTrainingContent, EnglishEventsContent, EnglishPersonalMasteryContent, EnglishClubhousesContent } from "@/components/english-reference-pages";
+import JsonLd from "@/components/json-ld";
+import { buildBreadcrumbSchema, buildFaqSchema } from "@/lib/structured-data";
 
 export const dynamic = "force-dynamic";
 
@@ -27,14 +29,15 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const page = englishPublicPages[slug];
   if (!page) return {};
   const faPath = persianPathForEnglishPath(`/en/${slug}`);
-  const hasPersianCounterpart = !["privacy-policy", "terms-of-use", "member-agreement", "our-events", "become-a-member", "member-benefits-associate", "our-training", "personal-mastery"].includes(slug);
+  const hasPersianCounterpart = faPath !== "/fa";
   const description = page.description ?? page.intro;
   return {
-    title: page.title,
+    title: /\bGIN\b/i.test(page.title) ? { absolute: page.title } : page.title,
     description,
     alternates: { canonical: `/en/${slug}`, languages: hasPersianCounterpart ? { en: `/en/${slug}`, fa: faPath } : { en: `/en/${slug}` } },
     ...(slug === "support" ? { robots: { index: false, follow: false } } : {}),
-    openGraph: { title: page.title, description, locale: "en_US", type: "article" },
+    openGraph: { title: page.title, description, url: `/en/${slug}`, siteName: "Global Information Network", locale: "en_US", type: "article", images: [{ url: "/gin/gin-social-card.png", width: 1200, height: 630, alt: page.title }] },
+    twitter: { card: "summary_large_image", title: page.title, description, images: ["/gin/gin-social-card.png"] },
   };
 }
 
@@ -44,8 +47,11 @@ export default async function EnglishPublicInfoPage({ params }: { params: Promis
   if (!page) notFound();
 
   const user = slug === "support" ? await getSession() : null;
+  const breadcrumbSchema = buildBreadcrumbSchema([{ name: "Home", path: "/en" }, { name: page.title, path: `/en/${slug}` }]);
+  const faqSchema = slug === "faq" ? buildFaqSchema(page.sections.map((section) => ({ question: section.title, answer: section.body }))) : null;
   return (
     <article className="gin-en-page">
+      <JsonLd data={[breadcrumbSchema, faqSchema]} />
       {! ["about-us", "who-we-are", "what-we-offer", "our-training", "member-benefits", "member-benefits-associate", "our-events", "gin-hotels", "clubhouses-and-lodges", "the-gin-cruise-ship", "personal-mastery", "faq", "membership-levels", "the-gin-success-system", "contact-us"].includes(slug) && <div className="gin-en-breadcrumb"><Link href="/en">Home</Link> / {page.eyebrow}</div>}
       <h1>{page.title}</h1>
       {page.intro && <p className="gin-en-page-intro">{slug === "faq" ? <>We are thrilled you have questions about joining as a GIN. Below are a list of questions we regularly hear from those who have just learned about our Club. Are you a Member with a question? We would be glad to hear from you on our <Link href="/en/support">Support page</Link>.</> : page.intro}</p>}
@@ -78,8 +84,8 @@ export default async function EnglishPublicInfoPage({ params }: { params: Promis
         <div className="gin-en-video-frame"><iframe src="https://iframe.mediadelivery.net/embed/34091/3d3338c0-56f8-4db2-b400-e6492cecf320" title="GIN Events presentation two" loading="lazy" allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture" allowFullScreen referrerPolicy="strict-origin-when-cross-origin" /></div>
         <div className="gin-en-video-frame"><iframe src="https://iframe.mediadelivery.net/embed/34091/79e130ef-1ef9-40b4-b19f-5850aebfeced" title="GIN Events presentation three" loading="lazy" allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture" allowFullScreen referrerPolicy="strict-origin-when-cross-origin" /></div>
       </div></section>}
-      {slug === "become-a-member" ? <EnglishRegistrationForm /> : null}
-      {page.officialUrl && !["about-us", "who-we-are", "what-we-offer", "our-training", "member-benefits", "member-benefits-associate", "our-events", "gin-hotels", "clubhouses-and-lodges", "the-gin-cruise-ship", "personal-mastery", "membership-levels", "faq", "the-gin-success-system", "contact-us"].includes(slug) && <div className="gin-en-official-link"><a className="gin-en-button gin-en-button-alt" href={page.officialUrl} target="_blank" rel="noreferrer">View the official GIN information</a></div>}
+      {slug === "become-a-member" ? <EnglishRegistrationForm headingLevel="h2" /> : null}
+      {page.officialUrl && !["about-us", "who-we-are", "what-we-offer", "our-training", "member-benefits", "member-benefits-associate", "our-events", "gin-hotels", "clubhouses-and-lodges", "the-gin-cruise-ship", "personal-mastery", "membership-levels", "faq", "the-gin-success-system", "contact-us"].includes(slug) && <div className="gin-en-official-link"><a className="gin-en-button gin-en-button-alt" href={page.officialUrl} target="_blank" rel="noreferrer">{slug === "cookie-policy" ? "Read the official Privacy Policy (includes cookie information)" : "View the official GIN information"}</a></div>}
       {!["about-us", "who-we-are", "what-we-offer", "our-training", "member-benefits", "member-benefits-associate", "our-events", "gin-hotels", "clubhouses-and-lodges", "the-gin-cruise-ship", "personal-mastery", "membership-levels", "faq", "the-gin-success-system", "contact-us"].includes(slug) && <section className="gin-en-band"><h2>Explore the GIN Community</h2><p>Review the official membership information and application requirements before deciding whether to apply.</p><div className="gin-en-cta"><a className="gin-en-button" href="https://signup.globalinformationnetwork.com/" target="_blank" rel="noreferrer">Official Membership Application</a><Link className="gin-en-button gin-en-button-alt" href="/en/faq">Frequently Asked Questions</Link></div></section>}
     </article>
   );

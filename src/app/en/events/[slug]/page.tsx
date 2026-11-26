@@ -5,12 +5,20 @@ import { getSession } from "@/lib/auth";
 import { ensureSchema, pool } from "@/lib/db";
 import EnglishEventRegistrationButton from "@/components/english-event-registration-button";
 import { englishContent } from "@/lib/bilingual-content";
+import JsonLd from "@/components/json-ld";
+import { buildBreadcrumbSchema, buildEventSchema } from "@/lib/structured-data";
 
 export const dynamic = "force-dynamic";
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  await ensureSchema();
   const { slug } = await params;
-  return { title: `${slug.replaceAll("-", " ")} | GIN Events`, alternates: { canonical: `/en/events/${slug}`, languages: { en: `/en/events/${slug}`, fa: `/fa/events/${slug}` } } };
+  const result = await pool.query("SELECT title_en,summary_en FROM events WHERE slug=$1 AND status='published'", [slug]);
+  const event = result.rows[0];
+  const title = englishContent(event?.title_en) === "Translation pending" ? `${slug.replaceAll("-", " ")} | GIN Events` : englishContent(event?.title_en);
+  const description = englishContent(event?.summary_en) === "Translation pending" ? "Explore this event from the Global Information Network." : englishContent(event?.summary_en);
+  const url = `/en/events/${slug}`;
+  return { title, description, alternates: { canonical: url, languages: { en: url, fa: `/fa/events/${slug}` } }, openGraph: { title, description, url, siteName: "Global Information Network", type: "article", images: [{ url: "/gin/gin-social-card.png", width: 1200, height: 630, alt: title }] }, twitter: { card: "summary_large_image", title, description, images: ["/gin/gin-social-card.png"] } };
 }
 
 export default async function EnglishEventPage({ params }: { params: Promise<{ slug: string }> }) {
@@ -25,8 +33,15 @@ export default async function EnglishEventPage({ params }: { params: Promise<{ s
     WHERE e.slug=$1 AND e.status='published' GROUP BY e.id`, [slug, user?.id ?? null]);
   const event = result.rows[0];
   if (!event) notFound();
+  const title = String(englishContent(event.title_en));
+  const summary = String(englishContent(event.summary_en));
+  const location = String(englishContent(event.location_en) ?? "").trim();
+  const eventSchema = buildEventSchema({ title, summary, path: `/en/events/${slug}`, startsAt: event.starts_at, endsAt: event.ends_at, location });
+  const breadcrumbSchema = buildBreadcrumbSchema([
+    { name: "Home", path: "/en" }, { name: "GIN Events", path: "/en/events" }, { name: title, path: `/en/events/${slug}` },
+  ]);
 
-  return <article className="gin-en-page">
+  return <><JsonLd data={[eventSchema, breadcrumbSchema]} /><article className="gin-en-page">
     <div className="gin-en-breadcrumb"><Link href="/en">Home</Link> / <Link href="/en/events">GIN Events</Link> / {englishContent(event.title_en)}</div>
     <h1 dir="ltr">{englishContent(event.title_en)}</h1>
     <p dir="ltr" className="gin-en-page-intro">{englishContent(event.summary_en)}</p>
@@ -37,5 +52,5 @@ export default async function EnglishEventPage({ params }: { params: Promise<{ s
       {event.meeting_url && <p><a href={event.meeting_url} target="_blank" rel="noreferrer">Join the online event</a></p>}
       <EnglishEventRegistrationButton slug={slug} authenticated={Boolean(user)} status={event.my_status} accessType={event.access_type} />
     </section>
-  </article>;
+  </article></>;
 }

@@ -4,7 +4,7 @@ import { ensureSchema, inTransaction } from "@/lib/db";
 import { errorResponse, jsonResponse } from "@/lib/http";
 import { rejectCrossOriginMutation } from "@/lib/request-security";
 
-const schema=z.object({status:z.enum(["draft","published","archived"])});
+const schema=z.object({status:z.enum(["draft","published","archived"]).optional(),titleEn:z.string().trim().max(180).optional(),descriptionEn:z.string().trim().max(4000).optional()}).refine((value)=>Object.keys(value).length>0);
 
 export async function PATCH(request:Request,{params}:{params:Promise<{assessmentId:string}>}){
   const originError=rejectCrossOriginMutation(request);if(originError)return originError;
@@ -17,8 +17,13 @@ export async function PATCH(request:Request,{params}:{params:Promise<{assessment
       const questions=await client.query("SELECT COUNT(*)::int AS count FROM assessment_questions WHERE assessment_id=$1",[id]);
       if(!questions.rows[0].count)return {invalid:true as const};
     }
-    const updated=await client.query("UPDATE assessments SET status=$1::varchar,updated_at=NOW() WHERE id=$2 RETURNING id,status",[parsed.data.status,id]);
-    await client.query("INSERT INTO audit_logs(actor_id,action,entity_type,entity_id,metadata) VALUES($1,$2,'assessment',$3,$4::jsonb)",[admin.id,`assessment_${parsed.data.status}`,id,JSON.stringify({previousStatus:assessment.rows[0].status,nextStatus:parsed.data.status})]);
+    const updated=await client.query(`UPDATE assessments SET
+      status=CASE WHEN $2::varchar IS NULL THEN status ELSE $2::varchar END,
+      title_en=CASE WHEN $3::boolean THEN NULLIF($4,'') ELSE title_en END,
+      description_en=CASE WHEN $5::boolean THEN NULLIF($6,'') ELSE description_en END,
+      updated_at=NOW() WHERE id=$1 RETURNING id,status,title_en,description_en`,
+    [id,parsed.data.status??null,Object.hasOwn(parsed.data,"titleEn"),parsed.data.titleEn??"",Object.hasOwn(parsed.data,"descriptionEn"),parsed.data.descriptionEn??""]);
+    if(parsed.data.status) await client.query("INSERT INTO audit_logs(actor_id,action,entity_type,entity_id,metadata) VALUES($1,$2,'assessment',$3,$4::jsonb)",[admin.id,`assessment_${parsed.data.status}`,id,JSON.stringify({previousStatus:assessment.rows[0].status,nextStatus:parsed.data.status})]);
     return updated.rows[0];
   });if(!result)return errorResponse("آزمون پیدا نشد.",404);if("forbidden" in result)return errorResponse("دسترسی مدیریت دوره ندارید.",403);if("invalid" in result)return errorResponse("برای انتشار آزمون دست‌کم یک سؤال لازم است.",409);return jsonResponse({assessment:result,message:"وضعیت آزمون به‌روزرسانی شد."});
   }catch{return errorResponse("تغییر وضعیت آزمون انجام نشد.",503);}

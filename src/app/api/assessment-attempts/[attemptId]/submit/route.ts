@@ -24,7 +24,11 @@ export async function POST(request: Request, { params }: { params: Promise<{ att
         JOIN assessments a ON a.id=at.assessment_id WHERE at.id=$1 AND at.user_id=$2 FOR UPDATE OF at`, [attemptId,user.id]);
       if (!attempt.rowCount || attempt.rows[0].status !== "in_progress") return { unavailable: true as const };
       const current = attempt.rows[0];
-      if (current.due_at && new Date(current.due_at).getTime() < Date.now()) {
+      const enrollment = await client.query(`SELECT id FROM course_enrollments
+        WHERE course_id=$1 AND user_id=$2 AND status IN ('active','completed')
+          AND (expires_at IS NULL OR expires_at>clock_timestamp()) FOR UPDATE`, [current.course_id,user.id]);
+      if (!enrollment.rowCount) return { enrollmentUnavailable: true as const };
+      if (current.due_at && new Date(current.due_at).getTime() <= Date.now()) {
         await client.query("UPDATE assessment_attempts SET status='expired',submitted_at=NOW() WHERE id=$1", [attemptId]);
         return { expired: true as const };
       }
@@ -41,7 +45,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ att
         let correct: boolean | null = null;
         let score = 0;
         if (question.question_type === "short_text") {
-          if (typeof submitted.answer !== "string" || submitted.answer.length > 2000) return { invalid: true as const };
+          if (typeof submitted.answer !== "string" || !submitted.answer.trim() || submitted.answer.length > 2000) return { invalid: true as const };
           requiresManualGrade = true;
         } else {
           if (question.question_type === "true_false") {
@@ -49,15 +53,18 @@ export async function POST(request: Request, { params }: { params: Promise<{ att
           } else {
             const options = Array.isArray(question.options) ? question.options : [];
             const allowed = new Set(options.map((option: { id?: unknown }) => String(option?.id ?? "")));
-            const values = Array.isArray(submitted.answer) ? submitted.answer : [submitted.answer];
-            if (values.some((value) => !allowed.has(String(value)))) return { invalid: true as const };
+            if (question.question_type === "single_choice" && (typeof submitted.answer !== "string" || !allowed.has(submitted.answer))) return { invalid: true as const };
+            if (question.question_type === "multiple_choice" && (!Array.isArray(submitted.answer) || submitted.answer.length === 0 ||
+              new Set(submitted.answer).size !== submitted.answer.length || submitted.answer.some((value) => typeof value !== "string" || !allowed.has(value)))) return { invalid: true as const };
           }
           correct = gradeChoiceAnswer(question.question_type, question.answer_key, submitted.answer);
           score = correct ? points : 0;
         }
         awarded += score;
         await client.query(`INSERT INTO assessment_answers(attempt_id,question_id,answer,is_correct,points_awarded)
-          VALUES($1,$2,$3::jsonb,$4,$5)`, [attemptId,submitted.questionId,JSON.stringify(submitted.answer),correct,score]);
+          VALUES($1,$2,$3::jsonb,$4,$5) ON CONFLICT(attempt_id,question_id) DO UPDATE SET
+          answer=EXCLUDED.answer,is_correct=EXCLUDED.is_correct,points_awarded=EXCLUDED.points_awarded,answered_at=NOW()`,
+        [attemptId,submitted.questionId,JSON.stringify(submitted.answer),correct,score]);
       }
       const percent = possible > 0 ? Math.round((awarded/possible)*10000)/100 : 0;
       const passed = requiresManualGrade ? null : percent >= Number(current.pass_percent);
@@ -81,6 +88,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ att
       return { status: requiresManualGrade ? "submitted" : "graded", scorePercent: percent, passed, requiresManualGrade, courseCompleted };
     });
     if ("unavailable" in result) return errorResponse("این تلاش آزمون دیگر قابل ارسال نیست.", 409);
+    if ("enrollmentUnavailable" in result) return errorResponse("دسترسی فعال شما به این دوره پایان یافته است.", 403);
     if ("expired" in result) return errorResponse("زمان آزمون به پایان رسیده است.", 409);
     if ("mismatch" in result) return errorResponse("باید برای تمام سؤال‌های آزمون دقیقاً یک پاسخ ارسال شود.", 400);
     if ("invalid" in result) return errorResponse("یکی از پاسخ‌ها معتبر نیست.", 400);

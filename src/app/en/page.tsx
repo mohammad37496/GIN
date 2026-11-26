@@ -6,7 +6,8 @@ export const metadata: Metadata = {
   title: "The Global Information Network",
   description: "Discover the Global Information Network: a private membership community focused on learning, connection and personal development.",
   alternates: { canonical: "/en", languages: { en: "/en", fa: "/fa" } },
-  openGraph: { title: "The Global Information Network", description: "Learn, connect and grow with the Global Information Network.", locale: "en_US", type: "website" },
+  openGraph: { title: "The Global Information Network", description: "Learn, connect and grow with the Global Information Network.", url: "/en", siteName: "Global Information Network", locale: "en_US", type: "website", images: [{ url: "/gin/gin-social-card.png", width: 1200, height: 630, alt: "Global Information Network" }] },
+  twitter: { card: "summary_large_image", title: "The Global Information Network", description: "Learn, connect and grow with the Global Information Network.", images: ["/gin/gin-social-card.png"] },
 };
 
 export default function EnglishHomePage() {

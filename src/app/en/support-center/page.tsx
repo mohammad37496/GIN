@@ -1,16 +1,18 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
-import EnglishStaffLanding from "@/components/english-staff-landing";
+import { MessageSquare } from "lucide-react";
+import StaffHeader from "@/components/staff-header";
+import AdminSupport from "@/components/admin-support";
+import AdminContactSubmissions from "@/components/admin-contact-submissions";
 import { getSession, hasRole } from "@/lib/auth";
-
 export const metadata: Metadata = { title: "Support Team Workspace", robots: { index: false, follow: false } };
-
+export const dynamic = "force-dynamic";
 export default async function EnglishSupportWorkspace() {
   const user = await getSession();
   if (!user) redirect("/en/login?next=%2Fen%2Fsupport-center");
   if (!(await hasRole(user, "support"))) redirect("/en/dashboard");
-  return <EnglishStaffLanding title="Support Team Workspace" description="Review member support conversations and public contact requests." openLabel="Open Support Tools" openHref="/support-center" modules={[
-    { title: "Member Support", description: "Review and respond to member support conversations.", href: "/support-center" },
-    { title: "Public Contact Requests", description: "Review contact requests submitted from the public English site.", href: "/support-center#contact-submissions" },
-  ]} />;
+  return <main className="dashboard" lang="en" dir="ltr"><StaffHeader area="SUPPORT" locale="en" />
+    <section className="admin-intro"><div className="auth-icon"><MessageSquare /></div><div><span className="eyebrow">SUPPORT TEAM</span><h1>Support center</h1><p>Review member conversations and public contact requests assigned to the support team.</p></div></section>
+    <AdminSupport locale="en" /><AdminContactSubmissions locale="en" />
+  </main>;
 }

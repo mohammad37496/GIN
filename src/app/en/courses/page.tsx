@@ -5,7 +5,7 @@ import { ensureSchema, pool } from "@/lib/db";
 import { englishContent } from "@/lib/bilingual-content";
 
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "Learning Library", description: "Browse published GIN learning courses and follow your course progress.", alternates: { canonical: "/en/courses", languages: { en: "/en/courses", fa: "/fa/courses" } } };
+export const metadata: Metadata = { title: "Learning Library", description: "Browse published GIN learning courses and follow your course progress.", alternates: { canonical: "/en/courses", languages: { en: "/en/courses", fa: "/fa/courses" } }, openGraph: { title: "Learning Library | GIN", description: "Browse published GIN learning courses and follow your course progress.", url: "/en/courses", siteName: "Global Information Network", type: "website", images: ["/gin/gin-social-card.png"] }, twitter: { card: "summary_large_image", title: "Learning Library | GIN", description: "Browse published GIN learning courses and follow your course progress.", images: ["/gin/gin-social-card.png"] } };
 
 export default async function EnglishCoursesPage({ searchParams }: { searchParams: Promise<{ q?: string; category?: string }> }) {
   const filters = await searchParams;

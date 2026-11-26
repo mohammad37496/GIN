@@ -4,6 +4,13 @@ const footerLinks = [
   ["Who We Are", "/en/who-we-are"],
   ["What We Offer", "/en/what-we-offer"],
   ["Member Benefits", "/en/member-benefits"],
+  ["Wealth Creation", "/en/wealth-creation"],
+  ["Financial Independence", "/en/financial-independence"],
+  ["Dynamic Health", "/en/dynamic-health"],
+  ["Happiness and Well-Being", "/en/happiness"],
+  ["Global Networking", "/en/global-networking"],
+  ["Mentorship", "/en/mentorship"],
+  ["Membership Opportunities", "/en/membership-opportunities"],
   ["GIN Success System", "/en/the-gin-success-system"],
   ["GIN Events", "/en/our-events"],
   ["GIN Hotel Collection", "/en/gin-hotels"],
@@ -18,6 +25,7 @@ export default function EnglishPublicFooter() {
     <footer className="gin-en-footer">
       <nav className="gin-en-footer-legal" aria-label="Legal information">
         <Link href="/en/privacy-policy">Privacy Policy</Link>
+        <Link href="/en/cookie-policy">Cookie Policy</Link>
         <Link href="/en/terms-of-use">Terms of Service</Link>
         <Link href="/en/member-agreement">Member Agreement</Link>
       </nav>

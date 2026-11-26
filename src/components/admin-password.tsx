@@ -2,8 +2,9 @@
 
 import { useState, type FormEvent } from "react";
 import { KeyRound, ShieldCheck } from "lucide-react";
+import StaffLocalized, { type StaffLocale } from "@/components/staff-localization";
 
-export default function AdminPassword() {
+export default function AdminPassword({ locale = "fa" }: { locale?: StaffLocale }) {
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -37,7 +38,7 @@ export default function AdminPassword() {
   }
 
   return (
-    <section className="password-panel">
+    <StaffLocalized locale={locale}><section className="password-panel">
       <div className="panel-heading">
         <div><h2>امنیت حساب مدیر</h2><p>برای تغییر رمز، ابتدا رمز فعلی را تأیید کنید.</p></div>
         <div className="password-icon"><KeyRound size={19} /></div>
@@ -49,6 +50,6 @@ export default function AdminPassword() {
         {message && <div className={success ? "password-success" : "form-alert"} role="status">{success && <ShieldCheck size={16} />} {message}</div>}
         <button className="button button-small" type="submit" disabled={loading}>{loading ? "در حال ذخیره..." : "تغییر رمز عبور"}</button>
       </form>
-    </section>
+    </section></StaffLocalized>
   );
 }

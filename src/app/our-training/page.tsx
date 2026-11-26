@@ -1,3 +1,3 @@
-import { redirect } from "next/navigation";
-export const dynamic = "force-dynamic";
-export default function Page(): never { redirect("/courses"); }
+import PersianPublicReferencePage, { persianPublicPageMetadata } from "@/components/persian-public-reference-page";
+export const metadata = persianPublicPageMetadata("our-training");
+export default function OurTrainingPage() { return <PersianPublicReferencePage slug="our-training" />; }

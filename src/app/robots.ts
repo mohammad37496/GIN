@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
+import { getSiteUrl } from "@/lib/structured-data";
 
-const siteUrl = process.env.APP_URL?.trim() || "https://globalinformationnetwork.liara.run";
+const siteUrl = getSiteUrl();
 
 export default function robots(): MetadataRoute.Robots {
   return {

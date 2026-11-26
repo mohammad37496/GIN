@@ -51,7 +51,7 @@ export function EnglishWhatWeOfferContent() {
     <p><strong>Core member training for total success</strong></p>
     <ul><li>Success Mastery Course: Levels 1–12 in audio and video formats</li><li>Science of Personal Mastery: 100 written lessons</li></ul>
     <p><strong>Subject-specific training</strong></p>
-    <ol><li><Link href="/en/wealth-creation">Wealth creation, income ideas and financial abundance</Link></li><li><Link href="/en/dynamic-health">Dynamic health, natural health and longevity</Link></li><li><Link href="/en/happiness">Happiness, emotional well-being and inner peace</Link></li><li><Link href="/en/personal-mastery">Self-realization, consciousness and spiritual freedom</Link></li><li>Historical and philosophical topics about private societies</li><li>Motivation and inspiration</li><li>Relationships and communication</li><li>Life skills, etiquette and public speaking</li><li>Business skills, marketing and raising capital</li><li>International living and global financial information</li><li>Specialty training and youth development</li><li>Fitness and self-defense</li></ol>
+    <ol><li><Link href="/en/wealth-creation">Wealth creation, income ideas and financial abundance</Link></li><li><Link href="/en/financial-independence">Financial independence, asset information and international real estate</Link></li><li><Link href="/en/dynamic-health">Dynamic health, natural health and longevity</Link></li><li><Link href="/en/happiness">Happiness, emotional well-being and inner peace</Link></li><li><Link href="/en/personal-mastery">Self-realization, consciousness and spiritual freedom</Link></li><li>Historical and philosophical topics about private societies</li><li>Motivation and inspiration</li><li>Relationships and communication</li><li>Life skills, etiquette and public speaking</li><li>Business skills, marketing and raising capital</li><li>International living and global financial information</li><li>Specialty training and youth development</li><li>Fitness and self-defense</li></ol>
     <p><strong>Events and meetings</strong></p>
     <ul><li>Four Major Weekend events each year, live and virtual</li><li>Seminars and rallies in both formats</li><li>Local chapter meetings around the world</li><li>Conferences, symposiums, lectures, workshops, awards events, banquets and expos</li><li>GIN Adventures and retreats</li></ul>
     <p><strong>Other benefits</strong></p>
@@ -62,7 +62,7 @@ export function EnglishWhatWeOfferContent() {
     <p><strong>Loans and credit information</strong></p>
     <p>GIN lists information about credit, loans and financing structures as a member topic. This site does not arrange or guarantee financing; members should assess providers, terms and risks independently.</p>
     <p id="worldwide-contacts"><strong>Worldwide contacts</strong></p>
-    <p>The page describes a global network where members exchange ideas, perspectives and firsthand information and build professional and personal relationships.</p>
+    <p>The page describes a <Link href="/en/global-networking">global network</Link> where members exchange ideas, perspectives and firsthand information and build professional and personal relationships.</p>
     <p><strong>Global health information</strong></p>
     <p>GIN says its library covers medical discoveries, treatment approaches, natural health topics, anti-aging and longevity. These descriptions are not medical guidance or verified treatment claims.</p>
     <p><strong>Attraction and mindset</strong></p>
@@ -72,13 +72,14 @@ export function EnglishWhatWeOfferContent() {
     <p><strong>Path to self-realization</strong></p>
     <p>GIN describes lessons on happiness, awareness, consciousness, inner peace and spiritual development.</p>
     <p id="mentoring"><strong>Mentoring</strong></p>
-    <p>The page says members may seek or provide mentoring and that the organization offers mentor training. Availability depends on membership status and program arrangements.</p>
+    <p>The page says members may seek or provide <Link href="/en/mentorship">mentoring</Link> and that the organization offers mentor training. Availability depends on membership status and program arrangements.</p>
     <p id="roundtables"><strong>Member roundtables</strong></p>
     <p>GIN describes roundtables as discussions where members can bring a personal or business challenge to a group of experienced members for questions, ideas and encouragement. This is peer support, not a substitute for qualified professional advice.</p>
     <p><strong>How information is shared</strong></p>
     <ul><li>Private member website areas</li><li>Audio and video training</li><li>Books, manuscripts and written reports</li><li>Live and archived online webinars</li><li>Private email and telephone communications</li><li>In-person workshops and seminars</li><li>One-to-one mentoring</li></ul>
     <p><strong>Who presents the material?</strong></p>
     <p>GIN says its training is delivered by communicators and faculty members who present information to members. Statements about presenter backgrounds and affiliations are those of the organization.</p>
+    <p>Review the current <Link href="/en/membership-opportunities">membership opportunities</Link>, eligibility requirements and official application terms before deciding whether to apply.</p>
     <MembershipCta />
   </div>;
 }

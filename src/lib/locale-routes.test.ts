@@ -20,6 +20,11 @@ test("course and lesson language switching preserves the selected resource", () 
   assert.equal(persianPathForEnglishPath("/en/courses/financial-literacy/lessons/42"), "/fa/courses/financial-literacy/lessons/42");
 });
 
+test("course assessment language switching preserves the selected assessment", () => {
+  assert.equal(englishPathForPersianPath("/fa/courses/financial-literacy/assessments/27"), "/en/courses/financial-literacy/assessments/27");
+  assert.equal(persianPathForEnglishPath("/en/courses/financial-literacy/assessments/27"), "/fa/courses/financial-literacy/assessments/27");
+});
+
 test("event language switching preserves the selected event", () => {
   assert.equal(englishPathForPersianPath("/fa/events/global-summit"), "/en/events/global-summit");
   assert.equal(persianPathForEnglishPath("/en/events/global-summit"), "/fa/events/global-summit");
@@ -35,7 +40,29 @@ test("language switcher falls back to the correct homepage when no translation e
   assert.equal(englishPathForPersianPath("/unknown-legacy-route"), "/en");
   assert.equal(englishPathForPersianPath("/why-join"), "/en/what-we-offer");
   assert.equal(persianPathForEnglishPath("/en/what-we-offer"), "/fa/what-we-offer");
-  assert.equal(persianPathForEnglishPath("/en/member-agreement"), "/fa");
+  assert.equal(persianPathForEnglishPath("/en/unknown-legal-page"), "/fa");
+});
+
+test("all nine completed public pages have reciprocal Persian and English routes", () => {
+  const slugs = ["our-events", "our-training", "personal-mastery", "become-a-member", "member-benefits-associate", "privacy-policy", "cookie-policy", "terms-of-use", "member-agreement"];
+  for (const slug of slugs) {
+    assert.equal(persianPathForEnglishPath(`/en/${slug}`), `/fa/${slug}`);
+    assert.equal(englishPathForPersianPath(`/fa/${slug}`), `/en/${slug}`);
+    assert.equal(englishPathForPersianPath(`/${slug}`), `/en/${slug}`);
+  }
+});
+
+test("wealth, health, networking, mentoring and membership subtopics preserve route equivalents", () => {
+  const slugs = ["wealth-creation", "financial-independence", "dynamic-health", "happiness", "global-networking", "mentorship", "membership-opportunities"];
+  for (const slug of slugs) {
+    assert.equal(persianPathForEnglishPath(`/en/${slug}`), `/fa/${slug}`);
+    assert.equal(englishPathForPersianPath(`/fa/${slug}`), `/en/${slug}`);
+    assert.equal(englishPathForPersianPath(`/${slug}`), `/en/${slug}`);
+  }
+  for (const alias of ["success-training", "training-courses"]) {
+    assert.equal(persianPathForEnglishPath(`/en/${alias}`), "/fa/our-training");
+    assert.equal(englishPathForPersianPath(`/fa/${alias}`), "/en/our-training");
+  }
 });
 
 test("staff workspace language switching preserves the selected workspace", () => {

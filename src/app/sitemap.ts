@@ -1,7 +1,8 @@
 import type { MetadataRoute } from "next";
 import { ensureSchema, pool } from "@/lib/db";
+import { getSiteUrl } from "@/lib/structured-data";
 
-const siteUrl = process.env.APP_URL?.trim() || "https://globalinformationnetwork.liara.run";
+const siteUrl = getSiteUrl();
 
 const translatedPages: [string, string, number][] = [
   ["/en", "/fa", 1],
@@ -17,6 +18,22 @@ const translatedPages: [string, string, number][] = [
   ["/en/membership-levels", "/fa/membership-levels", 0.8],
   ["/en/faq", "/fa/faq", 0.7],
   ["/en/contact-us", "/fa/contact", 0.7],
+  ["/en/our-events", "/fa/our-events", 0.3],
+  ["/en/our-training", "/fa/our-training", 0.3],
+  ["/en/personal-mastery", "/fa/personal-mastery", 0.3],
+  ["/en/become-a-member", "/fa/become-a-member", 0.3],
+  ["/en/member-benefits-associate", "/fa/member-benefits-associate", 0.3],
+  ["/en/privacy-policy", "/fa/privacy-policy", 0.3],
+  ["/en/cookie-policy", "/fa/cookie-policy", 0.3],
+  ["/en/terms-of-use", "/fa/terms-of-use", 0.3],
+  ["/en/member-agreement", "/fa/member-agreement", 0.3],
+  ["/en/wealth-creation", "/fa/wealth-creation", 0.3],
+  ["/en/financial-independence", "/fa/financial-independence", 0.3],
+  ["/en/dynamic-health", "/fa/dynamic-health", 0.3],
+  ["/en/happiness", "/fa/happiness", 0.3],
+  ["/en/global-networking", "/fa/global-networking", 0.3],
+  ["/en/mentorship", "/fa/mentorship", 0.3],
+  ["/en/membership-opportunities", "/fa/membership-opportunities", 0.3],
   ["/en/courses", "/fa/courses", 0.8],
 ];
 
@@ -26,10 +43,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${siteUrl}${english}`, lastModified: now, changeFrequency: "weekly", priority, alternates: { languages: { en: `${siteUrl}${english}`, fa: `${siteUrl}${persian}` } } },
     { url: `${siteUrl}${persian}`, lastModified: now, changeFrequency: "weekly", priority, alternates: { languages: { en: `${siteUrl}${english}`, fa: `${siteUrl}${persian}` } } },
   ]);
-
-  entries.push(...[
-    "/en/our-events", "/en/our-training", "/en/personal-mastery", "/en/become-a-member", "/en/member-benefits-associate", "/en/privacy-policy", "/en/terms-of-use", "/en/member-agreement",
-  ].map((path) => ({ url: `${siteUrl}${path}`, lastModified: now, changeFrequency: "yearly" as const, priority: 0.3 })));
 
   try {
     await ensureSchema();
