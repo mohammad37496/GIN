@@ -9,24 +9,28 @@
 }
 
 body { background: #fbfaf7; color: #17283a; }
-.utility-bar { background: #10273c; color: #d5dce2; }
-.public-header { border-bottom-color: #e5e8e9; }
+.public-header { border-bottom: 0; background: #fff; }
+.public-header .header-inner { height: auto; display: block; padding-block: 0; }
 .brand-emblem { background: #173c59; }
 .public-brand strong { color: #173c59; }
-.reference-brand { width: 350px; max-width: 30vw; }
+.reference-brand { display: block; width: 100%; max-width: 1180px; margin-inline: auto; }
 .reference-brand img { display: block; width: 100%; height: auto; object-fit: contain; }
-.desktop-nav { gap: clamp(13px, 1.8vw, 25px); }
-.desktop-nav a, .desktop-nav-dropdown summary, .header-login { color: #425568; }
+.reference-navigation { position: relative; z-index: 6; background: #142d43; border-bottom: 1px solid #e5e8e9; }
+.reference-navigation-inner { min-height: 58px; display: flex; align-items: center; justify-content: center; gap: 22px; }
+.desktop-nav { gap: clamp(10px, 1.4vw, 20px); }
+.desktop-nav a, .desktop-nav-dropdown summary, .header-login { color: #e8edf1; }
 .desktop-nav-dropdown { position: relative; }
 .desktop-nav-dropdown summary { display: flex; align-items: center; gap: 5px; list-style: none; cursor: pointer; font-size: 11px; font-weight: 700; white-space: nowrap; }
 .desktop-nav-dropdown summary::-webkit-details-marker { display: none; }
-.desktop-nav-dropdown[open] summary { color: #173c59; }
+.desktop-nav-dropdown[open] summary { color: #e4c783; }
 .desktop-nav-dropdown > div { position: absolute; top: calc(100% + 18px); right: -16px; z-index: 20; display: grid; min-width: 215px; padding: 9px; background: #fff; border: 1px solid #e4e8eb; box-shadow: 0 18px 40px #10273c1c; }
 .desktop-nav-dropdown > div a { padding: 11px 12px; border-bottom: 1px solid #f0f2f3; }
 .desktop-nav-dropdown > div a:last-child { border-bottom: 0; }
 .desktop-nav-dropdown > div a:hover { background: #f4f6f7; }
 .button { background: #173c59; border-radius: 3px; }
 .button:hover { background: #102b42; }
+.header-actions .button { background: #c6a15b; color: #142b40; }
+.header-actions .button:hover { background: #d7b978; color: #142b40; }
 .eyebrow { color: #8a6c32; }
 
 .gin-hero { position: relative; isolation: isolate; display: flex; align-items: center; min-height: 650px; overflow: hidden; background: #142b40; color: #fff; }
@@ -132,7 +136,12 @@ body { background: #fbfaf7; color: #17283a; }
   .gin-offer-layout, .gin-video-layout, .gin-learning-layout, .gin-events-layout, .gin-cruise-layout, .gin-community-layout { gap: 45px; }
 }
 @media (max-width: 850px) {
-  .reference-brand { width: 300px; max-width: min(68vw, 300px); }
+  .reference-navigation-inner { min-height: 54px; justify-content: flex-start; }
+  .desktop-nav, .header-actions { display: none; }
+  .mobile-menu { display: block; }
+  .mobile-menu summary { border-color: #53697b; }
+  .mobile-menu summary span { background: #f1f3f5; }
+  .mobile-menu nav { right: 0; left: auto; top: 48px; }
   .desktop-nav-dropdown > div { position: static; box-shadow: none; border: 0; padding-inline: 18px; }
   .gin-hero { min-height: 590px; }
   .gin-hero-content { padding-block: 85px 100px; }
