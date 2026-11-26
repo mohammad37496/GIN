@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" fill="none">
+  <defs><linearGradient id="field" x1="14" y1="10" x2="114" y2="118" gradientUnits="userSpaceOnUse"><stop stop-color="#244F70"/><stop offset="1" stop-color="#10283E"/></linearGradient><linearGradient id="gold" x1="35" y1="27" x2="93" y2="99" gradientUnits="userSpaceOnUse"><stop stop-color="#E2C27D"/><stop offset="1" stop-color="#B78B43"/></linearGradient></defs>
+  <rect x="3" y="3" width="122" height="122" rx="27" fill="url(#field)"/>
+  <circle cx="64" cy="64" r="43" stroke="#A9C1D0" stroke-opacity=".55" stroke-width="1.5"/><ellipse cx="64" cy="64" rx="19" ry="43" stroke="#A9C1D0" stroke-opacity=".48" stroke-width="1.5"/>
+  <path d="M23 64h82M31 43h66M31 85h66" stroke="#A9C1D0" stroke-opacity=".38" stroke-width="1.5"/><path d="M41 91 58 72l17 8 16-25" stroke="url(#gold)" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="41" cy="91" r="4.5" fill="#E2C27D"/><circle cx="58" cy="72" r="4.5" fill="#E2C27D"/><circle cx="75" cy="80" r="4.5" fill="#E2C27D"/><circle cx="91" cy="55" r="4.5" fill="#E2C27D"/><circle cx="64" cy="21" r="3.5" fill="#E2C27D"/><circle cx="107" cy="64" r="3.5" fill="#E2C27D"/>
+</svg>

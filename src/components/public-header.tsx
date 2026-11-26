@@ -1,6 +1,6 @@
 import Link from "next/link";
-import Image from "next/image";
 import { ArrowLeft, ChevronDown } from "lucide-react";
+import { GinLogo } from "@/components/gin-brand";
 
 const links = [
   ["خانه", "/"],
@@ -22,7 +22,7 @@ const links = [
 export default function PublicHeader() {
   return <>
     <header className="public-header"><div className="public-container header-inner">
-      <Link href="/" className="public-brand reference-brand" aria-label="GIN صفحه اصلی"><Image src="/gin/gin-header-banner.jpg" alt="Global Information Network" width={1400} height={200} priority /></Link>
+      <Link href="/" className="public-brand reference-brand" aria-label="GIN صفحه اصلی"><GinLogo width={300} height={68} /></Link>
     </div></header>
     <div className="reference-navigation">
       <div className="public-container reference-navigation-inner">
