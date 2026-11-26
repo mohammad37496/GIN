@@ -227,8 +227,9 @@
 }
 
 @media (max-width: 768px) {
-  .gin-en-masthead { height: 80px; background-image: url("/gin/reference-header-banner.jpg"); background-size: auto 80px; background-position: -104px center; background-repeat: no-repeat; }
-  .gin-en-masthead::after { content: ""; position: absolute; z-index: 1; inset: 0 0 0 82px; background: var(--gin-en-navy); pointer-events: none; }
+  .gin-en-masthead { height: 80px; background: var(--gin-en-navy); }
+  .gin-en-masthead::before { content: ""; position: absolute; z-index: 1; top: 6px; left: 0; width: 70px; height: 68px; background-image: url("/gin/reference-header-banner.jpg"); background-size: auto 68px; background-position: -89px center; background-repeat: no-repeat; }
+  .gin-en-masthead::after { display: none; }
   .gin-en-masthead > img { display: none; }
   .gin-en-primary-bar { display: none; }
   .gin-en-mobile-tools { position: absolute; z-index: 12; top: 22px; right: 12px; display: flex; align-items: center; gap: 18px; }

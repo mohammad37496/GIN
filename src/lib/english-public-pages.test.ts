@@ -137,6 +137,16 @@ test("English public sidebar link contrast meets WCAG AA for normal text", () =>
   assert.ok(ratio >= 4.5, `sidebar contrast ${ratio.toFixed(2)}:1 is below 4.5:1`);
 });
 
+test("English mobile masthead crops the reference seal without showing the desktop wordmark", () => {
+  const css = readFileSync(new URL("../app/english-site.css", import.meta.url), "utf8");
+  const mobile = [...css.matchAll(/@media \(max-width: 768px\) \{([\s\S]*?)\n\}/g)]
+    .map((match) => match[1])
+    .find((block) => block.includes(".gin-en-masthead::before")) ?? "";
+  assert.match(mobile, /\.gin-en-masthead::before\s*\{[^}]*width:\s*70px[^}]*background-image:\s*url\("\/gin\/reference-header-banner\.jpg"\)/);
+  assert.match(mobile, /\.gin-en-masthead > img\s*\{\s*display:\s*none;\s*\}/);
+  assert.match(mobile, /\.gin-en-masthead::after\s*\{\s*display:\s*none;\s*\}/);
+});
+
 test("Persian GIN gold CTA keeps its gold background and readable navy text", () => {
   const css = readFileSync(new URL("../app/gin-reference.css", import.meta.url), "utf8");
   assert.match(css, /\.button\.gin-gold-button\s*\{[^}]*background:\s*#c6a15b[^}]*color:\s*#142b40/i);
