@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { ArrowLeft, CheckCircle2 } from "lucide-react";
 import PublicHeader from "@/components/public-header";
 import PublicFooter from "@/components/public-footer";
@@ -9,6 +9,16 @@ import { getSession } from "@/lib/auth";
 import SupportForm from "@/components/support-form";
 
 export const dynamic = "force-dynamic";
+
+const legacyRedirects: Record<string, string> = {
+  "our-events": "/events",
+  "membership-levels": "/membership",
+  "contact-us": "/contact",
+  "become-a-member": "/register",
+  "gin-hotels": "/hotels",
+  "gin-clubhouses": "/clubhouses",
+  "gin-cruise-ship": "/cruise",
+};
 
 export function generateStaticParams() { return Object.keys(publicPages).map((slug) => ({ slug })); }
 
@@ -20,6 +30,8 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 
 export default async function PublicInfoPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
+  const destination = legacyRedirects[slug];
+  if (destination) redirect(destination);
   const page = publicPages[slug];
   if (!page) notFound();
   const user = slug === "contact" ? await getSession() : null;
