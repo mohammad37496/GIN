@@ -26,12 +26,23 @@ export async function runMigrations(pool: Pool): Promise<void> {
     }));
     const applied = await client.query("SELECT version,checksum FROM schema_migrations");
     const appliedChecksums = new Map(applied.rows.map((row) => [row.version, row.checksum]));
+    const baseline = migrations[0];
+    const appliedLater = migrations.slice(1).filter(({ file }) => appliedChecksums.has(file));
+    if (!appliedChecksums.has(baseline.file) && appliedLater.length) {
+      throw new Error(`Baseline migration ${baseline.file} is missing from schema_migrations while later migrations are recorded (${appliedLater.map(({ file }) => file).join(", ")}); refusing to reapply the baseline.`);
+    }
     const mismatches = migrations.filter(({ file, checksum }) => appliedChecksums.has(file) && appliedChecksums.get(file) !== checksum);
 
     if (mismatches.length) {
       const baselineMismatch = mismatches.length === 1 && mismatches[0].file === "0001_core.sql";
-      if (!baselineMismatch) {
-        throw new Error(`Applied migration ${mismatches[0].file} was modified; create a new migration instead.`);
+      const laterMismatches = migrations.slice(1).filter(({ file, checksum }) => appliedChecksums.has(file) && appliedChecksums.get(file) !== checksum).map(({ file }) => file);
+      const laterMissing = migrations.slice(1).filter(({ file }) => !appliedChecksums.has(file)).map(({ file }) => file);
+      if (!baselineMismatch || laterMismatches.length > 0) {
+        const reasons = [
+          laterMismatches.length ? `later checksum mismatch: ${laterMismatches.join(", ")}` : "",
+          laterMissing.length ? `later migrations not recorded: ${laterMissing.join(", ")}` : "",
+        ].filter(Boolean).join("; ");
+        throw new Error(`Applied migration ${mismatches[0].file} was modified; create a new migration instead.${reasons ? ` ${reasons}.` : ""}`);
       }
 
       // The original baseline has changed across deployed generations. Reconcile its

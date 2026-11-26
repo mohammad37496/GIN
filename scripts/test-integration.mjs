@@ -64,10 +64,18 @@ try {
   const lastMigration = "0014_payment_refund_reconciliation.sql";
   const lastMigrationSql = await readFile(`${root}/migrations/${lastMigration}`, "utf8");
   const lastMigrationChecksum = createHash("sha256").update(lastMigrationSql).digest("hex");
+  const baselineMigration = "0001_core.sql";
+  const baselineSql = await readFile(`${root}/migrations/${baselineMigration}`, "utf8");
+  const baselineChecksum = createHash("sha256").update(baselineSql).digest("hex");
+
+  await pool.query("UPDATE schema_migrations SET checksum=$1 WHERE version=$2", ["legacy-baseline-checksum", baselineMigration]);
+  await pool.query("UPDATE schema_migrations SET checksum=$1 WHERE version=$2", ["legacy-last-checksum", lastMigration]);
+  await strictAssert.rejects(runMigrations(pool), new RegExp(`Applied migration ${baselineMigration} was modified.*later checksum mismatch: ${lastMigration}`));
+  await pool.query("UPDATE schema_migrations SET checksum=$1 WHERE version=$2", [lastMigrationChecksum, lastMigration]);
+
   await pool.query("DELETE FROM schema_migrations WHERE version=$1", [lastMigration]);
-  await pool.query("UPDATE schema_migrations SET checksum=$1 WHERE version='0001_core.sql'", ["legacy-baseline-checksum"]);
   await runMigrations(pool);
-  const reconciledBaseline = await pool.query("SELECT checksum FROM schema_migrations WHERE version='0001_core.sql'");
+  const reconciledBaseline = await pool.query("SELECT checksum FROM schema_migrations WHERE version=$1", [baselineMigration]);
   assert(reconciledBaseline.rows[0]?.checksum !== "legacy-baseline-checksum", "Baseline checksum is reconciled when later recorded migrations match");
   const restoredLastMigration = await pool.query("SELECT checksum FROM schema_migrations WHERE version=$1", [lastMigration]);
   assert(restoredLastMigration.rows[0]?.checksum === lastMigrationChecksum, "A missing later migration is applied after baseline reconciliation");
@@ -75,6 +83,9 @@ try {
   await pool.query("UPDATE schema_migrations SET checksum=$1 WHERE version=$2", ["legacy-last-checksum", lastMigration]);
   await strictAssert.rejects(runMigrations(pool), /Applied migration 0014_payment_refund_reconciliation\.sql was modified/);
   await pool.query("UPDATE schema_migrations SET checksum=$1 WHERE version=$2", [lastMigrationChecksum, lastMigration]);
+  await pool.query("DELETE FROM schema_migrations WHERE version=$1", [baselineMigration]);
+  await strictAssert.rejects(runMigrations(pool), new RegExp(`Baseline migration ${baselineMigration} is missing from schema_migrations while later migrations are recorded`));
+  await pool.query("INSERT INTO schema_migrations(version,checksum) VALUES($1,$2)", [baselineMigration,baselineChecksum]);
   await runMigrations(pool);
 
   const legacyRoutes = [
