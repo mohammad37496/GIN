@@ -36,24 +36,26 @@ export async function POST(request: Request) {
     const user = current.rows[0];
     if (!user) return errorResponse("حساب مدیر فعال نیست.", 403);
 
-    const attempts = await pool.query(
-      "SELECT attempts, window_started_at FROM admin_password_change_attempts WHERE admin_id = $1",
+    const attempt = await pool.query(
+      `INSERT INTO admin_password_change_attempts(admin_id, attempts, window_started_at)
+       VALUES($1, 1, clock_timestamp())
+       ON CONFLICT(admin_id) DO UPDATE SET
+         attempts = CASE
+           WHEN admin_password_change_attempts.window_started_at <= clock_timestamp() - INTERVAL '15 minutes' THEN 1
+           ELSE admin_password_change_attempts.attempts + 1
+         END,
+         window_started_at = CASE
+           WHEN admin_password_change_attempts.window_started_at <= clock_timestamp() - INTERVAL '15 minutes' THEN clock_timestamp()
+           ELSE admin_password_change_attempts.window_started_at
+         END
+       RETURNING attempts`,
       [admin.id],
     );
-    const attempt = attempts.rows[0];
-    if (attempt && Number(attempt.attempts) >= 5 && Date.now() - new Date(attempt.window_started_at).getTime() < 15 * 60 * 1000) {
+    if (Number(attempt.rows[0]?.attempts ?? 0) > 5) {
       return errorResponse("تعداد تلاش‌های ناموفق زیاد است. ۱۵ دقیقه دیگر دوباره تلاش کنید.", 429);
     }
 
     if (!(await bcrypt.compare(parsed.data.currentPassword, user.password_hash))) {
-      await pool.query(
-        `INSERT INTO admin_password_change_attempts(admin_id, attempts, window_started_at)
-         VALUES($1, 1, NOW())
-         ON CONFLICT(admin_id) DO UPDATE SET
-           attempts = CASE WHEN admin_password_change_attempts.window_started_at < NOW() - INTERVAL '15 minutes' THEN 1 ELSE admin_password_change_attempts.attempts + 1 END,
-           window_started_at = CASE WHEN admin_password_change_attempts.window_started_at < NOW() - INTERVAL '15 minutes' THEN NOW() ELSE admin_password_change_attempts.window_started_at END`,
-        [admin.id],
-      );
       return errorResponse("رمز عبور فعلی صحیح نیست.", 400);
     }
 

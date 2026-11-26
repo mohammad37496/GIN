@@ -339,6 +339,36 @@ try {
   let result = await api("/api/auth/login", { method: "POST", body: { username: "integration-admin", password: "IntegrationAdmin!Password2026" } });
   assert(result.response.status === 200 && result.cookie, `Admin login should create an HttpOnly session cookie (HTTP ${result.response.status}: ${JSON.stringify(result.data)})`);
   const adminCookie = result.cookie;
+  const adminId = Number((await pool.query("SELECT id FROM users WHERE username_normalized='integration-admin'")).rows[0].id);
+  await pool.query("DELETE FROM admin_password_change_attempts WHERE admin_id=$1", [adminId]);
+  const passwordAttemptLock = await pool.connect();
+  await passwordAttemptLock.query("BEGIN");
+  await passwordAttemptLock.query(
+    `INSERT INTO admin_password_change_attempts(admin_id,attempts,window_started_at)
+     VALUES($1,0,clock_timestamp()) ON CONFLICT(admin_id) DO UPDATE SET attempts=0,window_started_at=clock_timestamp()`,
+    [adminId],
+  );
+  await passwordAttemptLock.query("SELECT admin_id FROM admin_password_change_attempts WHERE admin_id=$1 FOR UPDATE", [adminId]);
+  const concurrentPasswordAttempts = Array.from({ length: 10 }, () => api("/api/auth/change-password", {
+    method: "POST",
+    cookie: adminCookie,
+    body: { currentPassword: "incorrect-current-password", newPassword: "NewSecurePassphrase!2026", confirmPassword: "NewSecurePassphrase!2026" },
+  }));
+  const passwordAttemptWaited = await Promise.race([
+    Promise.all(concurrentPasswordAttempts).then(() => false),
+    new Promise((resolve) => setTimeout(() => resolve(true), 300)),
+  ]);
+  await passwordAttemptLock.query("COMMIT");
+  passwordAttemptLock.release();
+  const passwordAttemptResults = await Promise.all(concurrentPasswordAttempts);
+  const passwordAttemptStatuses = passwordAttemptResults.map((item) => item.response.status);
+  const passwordAttemptCounts = await pool.query("SELECT attempts FROM admin_password_change_attempts WHERE admin_id=$1", [adminId]);
+  assert(passwordAttemptWaited === true && passwordAttemptStatuses.filter((status) => status === 400).length === 5 && passwordAttemptStatuses.filter((status) => status === 429).length === 5 && Number(passwordAttemptCounts.rows[0].attempts) === 10,
+    "Concurrent admin password-change attempts are atomically limited to five per 15-minute window");
+  await pool.query("UPDATE admin_password_change_attempts SET attempts=5,window_started_at=clock_timestamp()-INTERVAL '16 minutes' WHERE admin_id=$1", [adminId]);
+  result = await api("/api/auth/change-password", { method: "POST", cookie: adminCookie, body: { currentPassword: "incorrect-current-password", newPassword: "NewSecurePassphrase!2026", confirmPassword: "NewSecurePassphrase!2026" } });
+  const resetPasswordAttemptCount = await pool.query("SELECT attempts FROM admin_password_change_attempts WHERE admin_id=$1", [adminId]);
+  assert(result.response.status === 400 && Number(resetPasswordAttemptCount.rows[0].attempts) === 1, "Admin password-change rate limit resets after its 15-minute window");
   result = await api("/api/admin/commission-rules", { cookie: adminCookie });
   assert(result.response.status === 200 && Array.isArray(result.data.rules), "Admin can load commission rules without ordering by a nonexistent created_at column");
   for (const [path, locale, direction] of [["/fa/admin", "fa", "rtl"], ["/en/admin", "en", "ltr"]]) {
@@ -1039,7 +1069,7 @@ try {
   assert(counts.rows[0].support_replies === 1, "Support reply persisted");
   assert(counts.rows[0].contact_submissions === 1, "Valid contact request persisted while the honeypot was not");
 
-  console.log(JSON.stringify({ status: "passed", database: "PGlite PostgreSQL-compatible integration server", migrations: counts.rows[0].migrations, flows: ["legacy reference route redirects", "admin bootstrap/login", "authenticated bilingual staff/member HTML routes with opposing locale cookies", "course/section/lesson management", "course publication", "immutable staging-to-final S3 uploads and replay resistance", "conditional copy rejects ETag races", "course-wide assessments with answer-key privacy, autosave/resume, deterministic shuffle, manual grading, enrollment revocation/expiry guards, lock-wait deadline enforcement and concurrent start/save/submit idempotency", "public catalog", "member registration and admin approval", "member login", "free enrollment", "lesson progress", "course completion", "certificate issuance and public verification", "membership plan entitlements", "membership request and admin approval", "scheduled membership activation and expiry reconciliation", "membership upgrade and cancellation", "event publication and registration", "capacity waitlist and automatic promotion", "support inbox and staff reply", "contact submission, consent persistence, support review and honeypot", "instructor RBAC and course isolation", "finance versus affiliate-manager role separation", "affiliate payout reservation and maker-checker settlement", "affiliate application and referral attribution", "self-referral database guard", "affiliate click tracking and wallet balance guard", "full refund reconciliation and idempotent commission reversal", "checkout disabled without provider", "notification delivery", "profile updates", "CSRF rejection"] }, null, 2));
+  console.log(JSON.stringify({ status: "passed", database: "PGlite PostgreSQL-compatible integration server", migrations: counts.rows[0].migrations, flows: ["legacy reference route redirects", "admin bootstrap/login", "atomic admin password-change rate limiting", "authenticated bilingual staff/member HTML routes with opposing locale cookies", "course/section/lesson management", "course publication", "immutable staging-to-final S3 uploads and replay resistance", "conditional copy rejects ETag races", "course-wide assessments with answer-key privacy, autosave/resume, deterministic shuffle, manual grading, enrollment revocation/expiry guards, lock-wait deadline enforcement and concurrent start/save/submit idempotency", "public catalog", "member registration and admin approval", "member login", "free enrollment", "lesson progress", "course completion", "certificate issuance and public verification", "membership plan entitlements", "membership request and admin approval", "scheduled membership activation and expiry reconciliation", "membership upgrade and cancellation", "event publication and registration", "capacity waitlist and automatic promotion", "support inbox and staff reply", "contact submission, consent persistence, support review and honeypot", "instructor RBAC and course isolation", "finance versus affiliate-manager role separation", "affiliate payout reservation and maker-checker settlement", "affiliate application and referral attribution", "self-referral database guard", "affiliate click tracking and wallet balance guard", "full refund reconciliation and idempotent commission reversal", "checkout disabled without provider", "notification delivery", "profile updates", "CSRF rejection"] }, null, 2));
   if (process.env.KEEP_INTEGRATION_SERVER === "1") {
     console.log(`Integration server retained for browser QA at ${baseUrl}; press Ctrl+C when finished.`);
     await new Promise((resolve) => process.once("SIGINT", resolve));
