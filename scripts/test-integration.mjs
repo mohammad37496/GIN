@@ -1,9 +1,13 @@
+import { createHash } from "node:crypto";
+import strictAssert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
 import { spawn, spawnSync } from "node:child_process";
 import { setTimeout as delay } from "node:timers/promises";
 import { PGlite } from "@electric-sql/pglite";
 import { PGLiteSocketServer } from "@electric-sql/pglite-socket";
 import pg from "pg";
 import { applyFullRefundEffects } from "../src/lib/payments/refunds.ts";
+import { runMigrations } from "../src/lib/migrations.ts";
 
 const { Pool } = pg;
 const root = process.cwd();
@@ -56,6 +60,17 @@ try {
     stdio: "inherit",
   });
   await waitForApp();
+
+  const lastMigration = "0014_payment_refund_reconciliation.sql";
+  const lastMigrationSql = await readFile(`${root}/migrations/${lastMigration}`, "utf8");
+  const lastMigrationChecksum = createHash("sha256").update(lastMigrationSql).digest("hex");
+  await pool.query("UPDATE schema_migrations SET checksum=$1 WHERE version='0001_core.sql'", ["legacy-baseline-checksum"]);
+  await pool.query("UPDATE schema_migrations SET checksum=$1 WHERE version=$2", ["legacy-last-checksum", lastMigration]);
+  await strictAssert.rejects(runMigrations(pool), /Applied migration 0001_core\.sql was modified/);
+  await pool.query("UPDATE schema_migrations SET checksum=$1 WHERE version=$2", [lastMigrationChecksum, lastMigration]);
+  await runMigrations(pool);
+  const reconciledBaseline = await pool.query("SELECT checksum FROM schema_migrations WHERE version='0001_core.sql'");
+  assert(reconciledBaseline.rows[0]?.checksum !== "legacy-baseline-checksum", "Baseline checksum is reconciled only after all later migrations match");
 
   const legacyRoutes = [
     ["/about-us", "/about"],

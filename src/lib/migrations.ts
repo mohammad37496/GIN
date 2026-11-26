@@ -20,14 +20,29 @@ export async function runMigrations(pool: Pool): Promise<void> {
     const files = (await readdir(directory)).filter((file) => /^\d{4}_[a-z0-9_-]+\.sql$/i.test(file)).sort();
     if (!files.length) throw new Error("No database migrations were found.");
 
-    for (const file of files) {
+    const migrations = await Promise.all(files.map(async (file) => {
       const sql = await readFile(path.join(directory, file), "utf8");
-      const checksum = createHash("sha256").update(sql).digest("hex");
-      const existing = await client.query("SELECT checksum FROM schema_migrations WHERE version=$1", [file]);
-      if (existing.rowCount) {
-        if (existing.rows[0].checksum !== checksum) throw new Error(`Applied migration ${file} was modified; create a new migration instead.`);
-        continue;
+      return { file, sql, checksum: createHash("sha256").update(sql).digest("hex") };
+    }));
+    const applied = await client.query("SELECT version,checksum FROM schema_migrations");
+    const appliedChecksums = new Map(applied.rows.map((row) => [row.version, row.checksum]));
+    const mismatches = migrations.filter(({ file, checksum }) => appliedChecksums.has(file) && appliedChecksums.get(file) !== checksum);
+
+    if (mismatches.length) {
+      const baselineMismatch = mismatches.length === 1 && mismatches[0].file === "0001_core.sql";
+      const allLaterMigrationsMatch = migrations.slice(1).every(({ file, checksum }) => appliedChecksums.get(file) === checksum);
+      if (!baselineMismatch || !allLaterMigrationsMatch) {
+        throw new Error(`Applied migration ${mismatches[0].file} was modified; create a new migration instead.`);
       }
+
+      // The original baseline has changed across deployed generations. Reconcile its
+      // checksum only after every later migration is confirmed applied byte-for-byte.
+      await client.query("UPDATE schema_migrations SET checksum=$1 WHERE version=$2", [mismatches[0].checksum, mismatches[0].file]);
+      appliedChecksums.set(mismatches[0].file, mismatches[0].checksum);
+    }
+
+    for (const { file, sql, checksum } of migrations) {
+      if (appliedChecksums.has(file)) continue;
       await client.query(sql);
       await client.query("INSERT INTO schema_migrations(version,checksum) VALUES($1,$2)", [file, checksum]);
     }
