@@ -146,7 +146,8 @@ try {
 
   const migrationFiles = (await readdir(`${root}/migrations`)).filter((name) => /^\d{4}_[a-z0-9_-]+\.sql$/i.test(name)).sort();
   const lastMigration = migrationFiles.at(-1);
-  assert(lastMigration === "0015_immutable_asset_uploads.sql", "The immutable asset migration is the latest ordered migration");
+  assert(migrationFiles.includes("0015_immutable_asset_uploads.sql"), "The immutable asset migration is present");
+  assert(lastMigration === "0018_bilingual_dynamic_content.sql", "The additive bilingual dynamic content migration is the latest ordered migration");
   const lastMigrationSql = (await readFile(`${root}/migrations/${lastMigration}`, "utf8")).replace(/\r\n?/g, "\n");
   const lastMigrationChecksum = createHash("sha256").update(lastMigrationSql).digest("hex");
   const baselineMigration = "0001_core.sql";
@@ -194,7 +195,6 @@ try {
     ["/our-training", "/courses"],
     ["/member-benefits-associate", "/member-benefits"],
     ["/our-events", "/events"],
-    ["/membership-levels", "/membership"],
     ["/contact-us", "/contact"],
     ["/become-a-member", "/register"],
     ["/gin-hotels", "/hotels"],
@@ -205,22 +205,30 @@ try {
     const response = await fetch(`${baseUrl}${path}`, { redirect: "manual" });
     assert(response.status === 307 && response.headers.get("location") === destination, `Legacy route ${path} redirects to ${destination} (HTTP ${response.status})`);
   }
+  const publicMembershipLevels = await fetch(`${baseUrl}/membership-levels`, { redirect: "manual" });
+  assert(publicMembershipLevels.status === 200, `Public membership levels page remains independently accessible (HTTP ${publicMembershipLevels.status})`);
 
   let result = await api("/api/auth/login", { method: "POST", body: { username: "integration-admin", password: "IntegrationAdmin!Password2026" } });
   assert(result.response.status === 200 && result.cookie, `Admin login should create an HttpOnly session cookie (HTTP ${result.response.status}: ${JSON.stringify(result.data)})`);
   const adminCookie = result.cookie;
 
-  result = await api("/api/admin/courses", { method: "POST", cookie: adminCookie, body: { title: "Integration Course", slug: "integration-course", summary: "Integration summary", description: "Integration description", accessType: "free", estimatedMinutes: 10 } });
+  result = await api("/api/admin/courses", { method: "POST", cookie: adminCookie, body: { title: "Integration Course فارسی", titleEn: "Integration Course English", slug: "integration-course", summary: "Integration summary فارسی", summaryEn: "Integration summary English", description: "Integration description فارسی", descriptionEn: "Integration description English", accessType: "free", estimatedMinutes: 10 } });
   assert(result.response.status === 201, `Admin can create course (${result.response.status})`);
   const courseId = Number(result.data.course.id);
 
-  result = await api(`/api/admin/courses/${courseId}/sections`, { method: "POST", cookie: adminCookie, body: { title: "First section" } });
+  result = await api(`/api/admin/courses/${courseId}/sections`, { method: "POST", cookie: adminCookie, body: { title: "First section فارسی", titleEn: "First section English", descriptionEn: "First section description English" } });
   assert(result.response.status === 201, `Admin can add a course section (HTTP ${result.response.status}: ${JSON.stringify(result.data)})`);
   const sectionId = Number(result.data.section.id);
 
-  result = await api(`/api/admin/sections/${sectionId}/lessons`, { method: "POST", cookie: adminCookie, body: { title: "Preview lesson", summary: "Lesson summary", content: "Lesson content", durationSeconds: 120, isPreview: true, status: "published" } });
+  result = await api(`/api/admin/sections/${sectionId}/lessons`, { method: "POST", cookie: adminCookie, body: { title: "Preview lesson فارسی", titleEn: "Preview lesson English", summary: "Lesson summary فارسی", summaryEn: "Lesson summary English", content: "Lesson content فارسی", contentEn: "Lesson content English", durationSeconds: 120, isPreview: true, status: "published" } });
   assert(result.response.status === 201, "Admin can publish a lesson");
   const lessonId = Number(result.data.lesson.id);
+  result = await api(`/api/admin/courses/${courseId}`, { method: "PATCH", cookie: adminCookie, body: { titleEn: "Updated course title English", summaryEn: "Updated course summary English", descriptionEn: "Updated course description English" } });
+  assert(result.response.status === 200 && result.data.course.title_en === "Updated course title English", "Admin can edit course English fields without changing Persian fields");
+  result = await api(`/api/admin/sections/${sectionId}`, { method: "PATCH", cookie: adminCookie, body: { titleEn: "Updated section title English", descriptionEn: "Updated section description English" } });
+  assert(result.response.status === 200 && result.data.section.title_en === "Updated section title English", "Admin can edit section English fields");
+  result = await api(`/api/admin/lessons/${lessonId}`, { method: "PATCH", cookie: adminCookie, body: { titleEn: "Updated lesson title English", summaryEn: "Updated lesson summary English", contentEn: "Updated lesson content English" } });
+  assert(result.response.status === 200 && result.data.lesson.content_en === "Updated lesson content English", "Admin can edit lesson English fields");
 
   result = await api(`/api/admin/courses/${courseId}/assessments`, { method: "POST", cookie: adminCookie, body: { title: "Course knowledge check", timeLimitSeconds: 600, maxAttempts: 2, passPercent: 70 } });
   assert(result.response.status === 201, `Admin can create an assessment (HTTP ${result.response.status}: ${JSON.stringify(result.data)})`);
@@ -232,6 +240,13 @@ try {
 
   result = await api(`/api/admin/courses/${courseId}`, { method: "PATCH", cookie: adminCookie, body: { status: "published" } });
   assert(result.response.status === 200, `Course publishes only after a published lesson exists (HTTP ${result.response.status}: ${JSON.stringify(result.data)})`);
+  const englishCoursePage = await fetch(`${baseUrl}/en/courses/integration-course`);
+  const englishCourseHtml = await englishCoursePage.text();
+  assert(englishCoursePage.status === 200 && englishCourseHtml.includes("Updated course title English") && englishCourseHtml.includes("Updated section title English") && englishCourseHtml.includes("Updated lesson title English"), "English course page uses translated course, section and lesson fields");
+  assert(!englishCourseHtml.includes("Integration Course فارسی") && !englishCourseHtml.includes("First section فارسی") && !englishCourseHtml.includes("Preview lesson فارسی"), "English course page never falls back to Persian dynamic content");
+  const englishLessonPage = await fetch(`${baseUrl}/en/courses/integration-course/lessons/${lessonId}`);
+  const englishLessonHtml = await englishLessonPage.text();
+  assert(englishLessonPage.status === 200 && englishLessonHtml.includes("Updated lesson content English") && !englishLessonHtml.includes("Lesson content فارسی"), "English lesson page uses only translated lesson content");
   const uploadBytes = Buffer.from("%PDF-1.4\nGIN immutable upload regression\n%%EOF");
   const upload = await api("/api/storage/presign", { method: "POST", cookie: adminCookie, body: { filename: "lesson.pdf", contentType: "application/pdf", size: uploadBytes.length } });
   assert(upload.response.status === 200 && upload.data.uploadUrl, `Instructor can obtain a staging upload URL (HTTP ${upload.response.status}: ${JSON.stringify(upload.data)})`);
@@ -332,6 +347,10 @@ try {
   assert(result.response.status === 201, "Admin can add a lesson to members-only course");
   result = await api(`/api/admin/courses/${membersCourseId}`, { method: "PATCH", cookie: adminCookie, body: { status: "published" } });
   assert(result.response.status === 200, "Members-only course can be published");
+  const untranslatedEnglishCoursePage = await fetch(`${baseUrl}/en/courses/members-course`);
+  const untranslatedEnglishCourseHtml = await untranslatedEnglishCoursePage.text();
+  assert(untranslatedEnglishCoursePage.status === 200 && untranslatedEnglishCourseHtml.includes("Translation pending"), "Missing course, section and lesson translations are explicitly marked pending");
+  assert(!untranslatedEnglishCourseHtml.includes("Members Course") && !untranslatedEnglishCourseHtml.includes("Member section") && !untranslatedEnglishCourseHtml.includes("Members lesson") && !untranslatedEnglishCourseHtml.includes("Members only"), "English course detail never falls back to untranslated source content");
 
   result = await api("/api/admin/membership-plans", { method: "POST", cookie: adminCookie, body: { code: "integration-member", name: "Integration Member", level: 1, priceMinor: 0, billingInterval: "none", benefits: ["Members-only course access"] } });
   assert(result.response.status === 201, `Admin can create a free membership plan (HTTP ${result.response.status}: ${JSON.stringify(result.data)})`);
@@ -369,11 +388,29 @@ try {
   const scheduledEvents = await pool.query("SELECT id FROM course_enrollment_events WHERE enrollment_id=(SELECT id FROM course_enrollments WHERE course_id=$1 AND user_id=$2) AND event_type='revoked'", [scheduledCourseId,memberId]);
   assert(scheduledEnrollment.rows[0]?.status === "revoked" && scheduledEvents.rowCount === 1, "Membership expiry revokes its entitlement and records one enrollment event");
 
-  result = await api("/api/admin/events", { method: "POST", cookie: adminCookie, body: { slug: "integration-event", title: "Integration Community Event", summary: "Capacity and waitlist test", description: "Integration event", location: "Online", startsAt: new Date(Date.now()+86400000).toISOString(), endsAt: new Date(Date.now()+90000000).toISOString(), capacity: 1, accessType: "public", priceMinor: 0 } });
+  result = await api("/api/admin/events", { method: "POST", cookie: adminCookie, body: { slug: "integration-event", title: "Integration Community Event فارسی", titleEn: "Integration Community Event English", summary: "Capacity and waitlist test فارسی", summaryEn: "Capacity and waitlist test English", description: "Integration event فارسی", descriptionEn: "Integration event English", location: "تهران", locationEn: "Online English", startsAt: new Date(Date.now()+86400000).toISOString(), endsAt: new Date(Date.now()+90000000).toISOString(), capacity: 1, accessType: "public", priceMinor: 0 } });
   assert(result.response.status === 201, `Admin can create an event (HTTP ${result.response.status}: ${JSON.stringify(result.data)})`);
   const eventId = Number(result.data.event.id);
+  result = await api(`/api/admin/events/${eventId}`, { method: "PATCH", cookie: adminCookie, body: { titleEn: "Updated community event English", summaryEn: "Updated event summary English", descriptionEn: "Updated event description English", locationEn: "Virtual venue English" } });
+  assert(result.response.status === 200 && result.data.event.title_en === "Updated community event English", "Admin can edit English event fields");
   result = await api(`/api/admin/events/${eventId}`, { method: "PATCH", cookie: adminCookie, body: { status: "published" } });
   assert(result.response.status === 200, "Admin can publish an event");
+  const englishEventsPage = await fetch(`${baseUrl}/en/events`);
+  const englishEventsHtml = await englishEventsPage.text();
+  assert(englishEventsPage.status === 200 && englishEventsHtml.includes("Updated community event English") && englishEventsHtml.includes("Updated event summary English"), "English events catalog uses translated event fields");
+  const englishEventPage = await fetch(`${baseUrl}/en/events/integration-event`);
+  const englishEventHtml = await englishEventPage.text();
+  assert(englishEventPage.status === 200 && englishEventHtml.includes("Updated event description English") && englishEventHtml.includes("Virtual venue English"), "English event detail uses translated description and location");
+  assert(!englishEventHtml.includes("Integration Community Event فارسی") && !englishEventHtml.includes("تهران"), "English event detail never falls back to Persian content");
+  result = await api("/api/admin/events", { method: "POST", cookie: adminCookie, body: { slug: "integration-event-untranslated", title: "رویداد بدون ترجمه", summary: "خلاصه فارسی", description: "توضیح فارسی", location: "تهران", startsAt: new Date(Date.now()+172800000).toISOString(), endsAt: new Date(Date.now()+176400000).toISOString(), capacity: null, accessType: "public", priceMinor: 0 } });
+  assert(result.response.status === 201, "Admin can create an event before its English translation is ready");
+  const untranslatedEventId = Number(result.data.event.id);
+  result = await api(`/api/admin/events/${untranslatedEventId}`, { method: "PATCH", cookie: adminCookie, body: { status: "published" } });
+  assert(result.response.status === 200, "Untranslated event can still be published in the source locale");
+  const untranslatedEnglishEventPage = await fetch(`${baseUrl}/en/events/integration-event-untranslated`);
+  const untranslatedEnglishEventHtml = await untranslatedEnglishEventPage.text();
+  assert(untranslatedEnglishEventPage.status === 200 && untranslatedEnglishEventHtml.includes("Translation pending"), "Missing English event translations are explicitly marked pending");
+  assert(!untranslatedEnglishEventHtml.includes("رویداد بدون ترجمه") && !untranslatedEnglishEventHtml.includes("خلاصه فارسی") && !untranslatedEnglishEventHtml.includes("تهران"), "English event detail never falls back to Persian source content");
   result = await api("/api/events/integration-event/register", { method: "POST", cookie: memberCookie });
   assert(result.response.status === 201 && result.data.registration.status === "registered", "First member receives the final event seat");
   result = await api("/api/auth/register", { method: "POST", body: { username: "integration-member-two", password: "IntegrationMemberTwo!Password2026" } });
@@ -392,9 +429,16 @@ try {
   const promoted = await pool.query("SELECT status FROM event_registrations WHERE event_id=$1 AND user_id=$2", [eventId,memberTwoId]);
   assert(promoted.rows[0].status === "registered", "Waitlisted member promotion is persisted");
 
-  result = await api("/api/admin/membership-plans", { method: "POST", cookie: adminCookie, body: { code: "integration-member-plus", name: "Integration Member Plus", level: 2, priceMinor: 0, billingInterval: "none", benefits: ["Expanded member access"] } });
+  result = await api("/api/admin/membership-plans", { method: "POST", cookie: adminCookie, body: { code: "integration-member-plus", name: "Integration Member Plus فارسی", nameEn: "Integration Member Plus English", description: "Plan description فارسی", descriptionEn: "Plan description English", level: 2, priceMinor: 0, billingInterval: "none", benefits: ["Expanded member access فارسی"], benefitsEn: ["Expanded member access English"] } });
   assert(result.response.status === 201, "Admin can create a second membership tier");
   const higherPlanId = Number(result.data.plan.id);
+  result = await api(`/api/admin/membership-plans/${higherPlanId}`, { method: "PATCH", cookie: adminCookie, body: { nameEn: "Updated membership plan English", descriptionEn: "Updated membership description English", benefitsEn: ["Updated English benefit"] } });
+  assert(result.response.status === 200 && result.data.plan.name_en === "Updated membership plan English", "Admin can edit membership plan English fields");
+  const englishPortalMembershipPage = await fetch(`${baseUrl}/en/portal-membership`);
+  const englishPortalMembershipHtml = await englishPortalMembershipPage.text();
+  assert(englishPortalMembershipPage.status === 200 && englishPortalMembershipHtml.includes("Updated membership plan English") && englishPortalMembershipHtml.includes("Updated membership description English") && englishPortalMembershipHtml.includes("Updated English benefit"), "English portal membership page uses translated plan fields");
+  assert(englishPortalMembershipHtml.includes("Translation pending"), "Portal membership plans without English fields are marked pending");
+  assert(!englishPortalMembershipHtml.includes("Integration Member Plus فارسی") && !englishPortalMembershipHtml.includes("Plan description فارسی") && !englishPortalMembershipHtml.includes("Expanded member access فارسی"), "English portal membership never falls back to Persian plan content");
   result = await api(`/api/admin/membership-plans/${higherPlanId}/courses`, { method: "PUT", cookie: adminCookie, body: { courseIds: [membersCourseId] } });
   assert(result.response.status === 200, "Second membership tier can receive course entitlements");
   result = await api("/api/membership/change", { method: "POST", cookie: memberCookie, body: { planId: higherPlanId } });
@@ -419,6 +463,32 @@ try {
   assert(result.response.status === 201, "Admin can grant the support role");
   result = await api("/api/admin/support/messages", { cookie: memberTwoCookie });
   assert(result.response.status === 200 && result.data.messages.some((item) => Number(item.id) === Number(supportMessage.rows[0].id)), "Support role can view support inbox");
+  result = await api("/api/contact", { method: "POST", cookie: memberCookie, body: {
+    firstName: "Alex", lastName: "Morgan", email: "ALEX@example.com", confirmEmail: "alex@example.com",
+    phone: "+1 708 669 9544", addressLine1: "100 Main Street", addressLine2: "", city: "Chicago",
+    stateRegion: "Illinois", postalCode: "60601", country: "US", preferredLanguage: "English",
+    secondaryLanguage: "", preferredContactMethods: ["Email", "Telegram", "WhatsApp"],
+    telegramHandle: "@alex", whatsappNumber: "+1 555 0100", subject: "Integration contact request",
+    message: "Please send information about the official membership process.", smsConsent: true, legalConsent: true,
+    item_6__fluent_sf: "",
+  } });
+  assert(result.response.status === 201 && result.data.submissionId, "Contact form stores a valid request and consent choices");
+  const contactRow = await pool.query("SELECT id,email,country,preferred_language,preferred_contact_methods,telegram_handle,whatsapp_number,sms_consent,legal_consent FROM contact_submissions WHERE id=$1", [result.data.submissionId]);
+  assert(contactRow.rows[0].email === "alex@example.com" && contactRow.rows[0].country === "US" && contactRow.rows[0].preferred_language === "English" && contactRow.rows[0].preferred_contact_methods.join(",") === "Email,Telegram,WhatsApp", "Contact request normalizes email and stores exact country, language and independent contact channels");
+  assert(contactRow.rows[0].sms_consent === true && contactRow.rows[0].legal_consent === true, "Contact request persists SMS and legal consent independently");
+  result = await api("/api/admin/contact-submissions", { cookie: memberTwoCookie });
+  assert(result.response.status === 200 && result.data.submissions.some((item) => Number(item.id) === Number(contactRow.rows[0].id) && item.preferred_contact_methods.includes("WhatsApp")), "Support role can review contact requests and their selected channels");
+  const contactCountBeforeHoneypot = await pool.query("SELECT COUNT(*)::int AS count FROM contact_submissions");
+  result = await api("/api/contact", { method: "POST", body: {
+    firstName: "Bot", lastName: "Submission", email: "bot@example.com", confirmEmail: "bot@example.com",
+    phone: "+1 555 0100", addressLine1: "100 Main Street", city: "Chicago", stateRegion: "Illinois",
+    postalCode: "60601", country: "US", preferredLanguage: "English", preferredContactMethods: [],
+    subject: "Spam test", message: "This is a honeypot integration test message.", legalConsent: true,
+    item_6__fluent_sf: "https://spam.example",
+  } });
+  assert(result.response.status === 202, "Filled contact honeypot is silently acknowledged without exposing bot detection");
+  const contactCountAfterHoneypot = await pool.query("SELECT COUNT(*)::int AS count FROM contact_submissions");
+  assert(contactCountBeforeHoneypot.rows[0].count === contactCountAfterHoneypot.rows[0].count, "Honeypot submission is not persisted");
   result = await api(`/api/admin/support/messages/${Number(supportMessage.rows[0].id)}/replies`, { method: "POST", cookie: memberTwoCookie, body: { body: "Support team reply from integration test." } });
   assert(result.response.status === 201, "Support staff can reply to a member");
   result = await api("/api/support/messages", { cookie: memberCookie });
@@ -561,15 +631,17 @@ try {
     (SELECT COUNT(*)::int FROM memberships WHERE user_id=$1 AND status='canceled') AS canceled_memberships,
     (SELECT COUNT(*)::int FROM referral_attributions WHERE affiliate_id=$2) AS referral_attributions,
     (SELECT COUNT(*)::int FROM affiliate_clicks WHERE affiliate_id=$2) AS affiliate_clicks,
-    (SELECT COUNT(*)::int FROM support_replies sr JOIN support_messages sm ON sm.id=sr.message_id WHERE sm.user_id=$1 AND sr.is_staff=TRUE) AS support_replies`, [memberId,affiliateId]);
-  assert(counts.rows[0].migrations >= migrationFiles.length, "All versioned SQL migrations are recorded");
+    (SELECT COUNT(*)::int FROM support_replies sr JOIN support_messages sm ON sm.id=sr.message_id WHERE sm.user_id=$1 AND sr.is_staff=TRUE) AS support_replies,
+    (SELECT COUNT(*)::int FROM contact_submissions) AS contact_submissions` , [memberId,affiliateId]);
+  assert(counts.rows[0].migrations === migrationFiles.length, "Exactly all versioned SQL migrations are recorded once");
   assert(counts.rows[0].completed_enrollments === 1 && counts.rows[0].completed_lessons === 1, "Enrollment and progress persisted in PostgreSQL-compatible database");
   assert(counts.rows[0].certificates === 1 && counts.rows[0].passed_assessments === 1, "Assessment and certificate records persisted");
   assert(counts.rows[0].active_memberships === 0 && counts.rows[0].canceled_memberships === 2, "Membership upgrade and cancellation history persisted");
   assert(counts.rows[0].referral_attributions === 1 && counts.rows[0].affiliate_clicks === 1, "Affiliate attribution and click tracking persisted");
   assert(counts.rows[0].support_replies === 1, "Support reply persisted");
+  assert(counts.rows[0].contact_submissions === 1, "Valid contact request persisted while the honeypot was not");
 
-  console.log(JSON.stringify({ status: "passed", database: "PGlite PostgreSQL-compatible integration server", migrations: counts.rows[0].migrations, flows: ["legacy reference route redirects", "admin bootstrap/login", "course/section/lesson management", "course publication", "immutable staging-to-final S3 uploads and replay resistance", "conditional copy rejects ETag races", "assessment/question management", "public catalog", "member registration and admin approval", "member login", "free enrollment", "lesson progress", "timed assessment attempt and grading", "course completion", "certificate issuance and public verification", "membership plan entitlements", "membership request and admin approval", "scheduled membership activation and expiry reconciliation", "membership upgrade and cancellation", "event publication and registration", "capacity waitlist and automatic promotion", "support inbox and staff reply", "instructor RBAC and course isolation", "finance versus affiliate-manager role separation", "affiliate payout reservation and maker-checker settlement", "affiliate application and referral attribution", "self-referral database guard", "affiliate click tracking and wallet balance guard", "full refund reconciliation and idempotent commission reversal", "checkout disabled without provider", "notification delivery", "profile updates", "CSRF rejection"] }, null, 2));
+  console.log(JSON.stringify({ status: "passed", database: "PGlite PostgreSQL-compatible integration server", migrations: counts.rows[0].migrations, flows: ["legacy reference route redirects", "admin bootstrap/login", "course/section/lesson management", "course publication", "immutable staging-to-final S3 uploads and replay resistance", "conditional copy rejects ETag races", "assessment/question management", "public catalog", "member registration and admin approval", "member login", "free enrollment", "lesson progress", "timed assessment attempt and grading", "course completion", "certificate issuance and public verification", "membership plan entitlements", "membership request and admin approval", "scheduled membership activation and expiry reconciliation", "membership upgrade and cancellation", "event publication and registration", "capacity waitlist and automatic promotion", "support inbox and staff reply", "contact submission, consent persistence, support review and honeypot", "instructor RBAC and course isolation", "finance versus affiliate-manager role separation", "affiliate payout reservation and maker-checker settlement", "affiliate application and referral attribution", "self-referral database guard", "affiliate click tracking and wallet balance guard", "full refund reconciliation and idempotent commission reversal", "checkout disabled without provider", "notification delivery", "profile updates", "CSRF rejection"] }, null, 2));
 } catch (error) {
   console.error(error);
   process.exitCode = 1;

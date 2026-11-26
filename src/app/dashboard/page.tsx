@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { Award,BookOpen,CalendarDays,ChevronLeft,Crown,LogOut,UserRound,Receipt } from "lucide-react";
 import { getSession } from "@/lib/auth";
@@ -9,6 +10,7 @@ import MemberNotifications from "@/components/member-notifications";
 import { syncMembershipState } from "@/lib/membership";
 
 export const dynamic="force-dynamic";
+export const metadata: Metadata = { title: "داشبورد اعضا", robots: { index: false, follow: false }, alternates: { canonical: "/fa/dashboard", languages: { fa: "/fa/dashboard", en: "/en/dashboard" } } };
 
 export default async function Dashboard(){
   const user=await getSession();if(!user)redirect("/login");if(user.role==="admin")redirect("/admin");await ensureSchema();await syncMembershipState(user.id);

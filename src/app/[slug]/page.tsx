@@ -32,7 +32,21 @@ export function generateStaticParams() {
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
   const page = publicPages[slug];
-  return page ? { title: `${page.title} | GIN`, description: page.intro } : {};
+  if (!page) return {};
+  const englishSlug: Record<string, string> = {
+    about: "about-us", "who-we-are": "who-we-are", "why-join": "what-we-offer",
+    "what-we-offer": "what-we-offer", "member-benefits": "member-benefits",
+    "success-system": "the-gin-success-system", hotels: "gin-hotels",
+    clubhouses: "clubhouses-and-lodges", cruise: "the-gin-cruise-ship",
+    faq: "faq", contact: "contact-us",
+  };
+  const canonicalSlug = slug === "why-join" ? "what-we-offer" : slug;
+  return {
+    title: `${page.title} | GIN`,
+    description: page.intro,
+    alternates: { canonical: `/fa/${canonicalSlug}`, languages: { fa: `/fa/${canonicalSlug}`, en: `/en/${englishSlug[slug] ?? ""}` } },
+    openGraph: { title: page.title, description: page.intro, locale: "fa_IR", type: "article" },
+  };
 }
 
 export default async function PublicInfoPage({ params }: { params: Promise<{ slug: string }> }) {

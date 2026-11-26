@@ -1,8 +1,16 @@
 import Image from "next/image";
+import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowLeft, ArrowUpLeft, BookOpen, CalendarDays, Compass, GraduationCap, HeartPulse, ShieldCheck, Sparkles, Users, Wallet } from "lucide-react";
 import PublicHeader from "@/components/public-header";
 import PublicFooter from "@/components/public-footer";
+
+export const metadata: Metadata = {
+  title: "شبکه جهانی اطلاعات GIN",
+  description: "شبکه جهانی اطلاعات؛ جامعه‌ای بین‌المللی برای یادگیری، ارتباط و رشد در حوزه‌های سلامت، ثروت و شادی.",
+  alternates: { canonical: "/fa", languages: { fa: "/fa", en: "/en" } },
+  openGraph: { title: "شبکه جهانی اطلاعات GIN", description: "یادگیری، ارتباط و رشد در جامعه جهانی GIN.", locale: "fa_IR", type: "website" },
+};
 
 const pillars = [
   { icon: Wallet, title: "ثروت و استقلال مالی", text: "آموزش سواد مالی، کارآفرینی و شناخت بهتر فرصت‌ها برای تصمیم‌گیری آگاهانه." },

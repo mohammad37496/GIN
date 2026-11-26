@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { headers } from "next/headers";
 import "./globals.css";
 import "./public-site.css";
 import "./courses.css";
@@ -13,6 +14,7 @@ import "./membership-controls.css";
 import "./catalog-filters.css";
 import "./gin-reference.css";
 import "./brand.css";
+import "./english-site.css";
 
 const siteUrl = process.env.APP_URL?.trim() || "https://globalinformationnetwork.liara.run";
 
@@ -43,6 +45,7 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = { themeColor: "#173c59" };
 
-export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  return <html lang="fa" dir="rtl"><body>{children}</body></html>;
+export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+  const locale = (await headers()).get("x-website-locale") === "en" ? "en" : "fa";
+  return <html lang={locale} dir={locale === "fa" ? "rtl" : "ltr"}><body className={`locale-${locale}`}>{children}</body></html>;
 }
