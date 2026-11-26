@@ -147,10 +147,10 @@ try {
   const migrationFiles = (await readdir(`${root}/migrations`)).filter((name) => /^\d{4}_[a-z0-9_-]+\.sql$/i.test(name)).sort();
   const lastMigration = migrationFiles.at(-1);
   assert(lastMigration === "0015_immutable_asset_uploads.sql", "The immutable asset migration is the latest ordered migration");
-  const lastMigrationSql = await readFile(`${root}/migrations/${lastMigration}`, "utf8");
+  const lastMigrationSql = (await readFile(`${root}/migrations/${lastMigration}`, "utf8")).replace(/\r\n?/g, "\n");
   const lastMigrationChecksum = createHash("sha256").update(lastMigrationSql).digest("hex");
   const baselineMigration = "0001_core.sql";
-  const baselineSql = await readFile(`${root}/migrations/${baselineMigration}`, "utf8");
+  const baselineSql = (await readFile(`${root}/migrations/${baselineMigration}`, "utf8")).replace(/\r\n?/g, "\n");
   const baselineChecksum = createHash("sha256").update(baselineSql).digest("hex");
 
   await pool.query("UPDATE schema_migrations SET checksum=$1 WHERE version=$2", ["legacy-baseline-checksum", baselineMigration]);
