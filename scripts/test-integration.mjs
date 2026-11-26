@@ -153,6 +153,19 @@ try {
   const baselineSql = (await readFile(`${root}/migrations/${baselineMigration}`, "utf8")).replace(/\r\n?/g, "\n");
   const baselineChecksum = createHash("sha256").update(baselineSql).digest("hex");
 
+  for (const file of migrationFiles) {
+    const sql = (await readFile(`${root}/migrations/${file}`, "utf8")).replace(/\r\n?/g, "\n");
+    const crlfChecksum = createHash("sha256").update(sql.replace(/\n/g, "\r\n")).digest("hex");
+    await pool.query("UPDATE schema_migrations SET checksum=$1 WHERE version=$2", [crlfChecksum, file]);
+  }
+  await runMigrations(pool);
+  for (const file of migrationFiles) {
+    const sql = (await readFile(`${root}/migrations/${file}`, "utf8")).replace(/\r\n?/g, "\n");
+    const expectedChecksum = createHash("sha256").update(sql).digest("hex");
+    const stored = await pool.query("SELECT checksum FROM schema_migrations WHERE version=$1", [file]);
+    assert(stored.rows[0]?.checksum === expectedChecksum, `CRLF checksum for ${file} is reconciled to canonical LF`);
+  }
+
   await pool.query("UPDATE schema_migrations SET checksum=$1 WHERE version=$2", ["legacy-baseline-checksum", baselineMigration]);
   await pool.query("UPDATE schema_migrations SET checksum=$1 WHERE version=$2", ["legacy-last-checksum", lastMigration]);
   await strictAssert.rejects(runMigrations(pool), new RegExp(`Applied migration ${baselineMigration} was modified.*later checksum mismatch: ${lastMigration}`));

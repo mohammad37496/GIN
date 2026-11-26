@@ -24,7 +24,9 @@ export async function runMigrations(pool: Pool): Promise<void> {
       // Git may check SQL files out with CRLF on Windows and LF on Linux. Normalize
       // before hashing and execution so the same migration has one stable checksum.
       const sql = (await readFile(path.join(directory, file), "utf8")).replace(/\r\n?/g, "\n");
-      return { file, sql, checksum: createHash("sha256").update(sql).digest("hex") };
+      const checksum = createHash("sha256").update(sql).digest("hex");
+      const crlfChecksum = createHash("sha256").update(sql.replace(/\n/g, "\r\n")).digest("hex");
+      return { file, sql, checksum, crlfChecksum };
     }));
     const applied = await client.query("SELECT version,checksum FROM schema_migrations");
     const appliedChecksums = new Map(applied.rows.map((row) => [row.version, row.checksum]));
@@ -33,6 +35,17 @@ export async function runMigrations(pool: Pool): Promise<void> {
     if (!appliedChecksums.has(baseline.file) && appliedLater.length) {
       throw new Error(`Baseline migration ${baseline.file} is missing from schema_migrations while later migrations are recorded (${appliedLater.map(({ file }) => file).join(", ")}); refusing to reapply the baseline.`);
     }
+
+    // Earlier deployments hashed the Windows CRLF representation. Accept that
+    // exact alternate representation, then rewrite its ledger entry to canonical LF.
+    const lineEndingMismatches = migrations.filter(({ file, checksum, crlfChecksum }) =>
+      checksum !== crlfChecksum && appliedChecksums.get(file) === crlfChecksum
+    );
+    for (const { file, checksum } of lineEndingMismatches) {
+      await client.query("UPDATE schema_migrations SET checksum=$1 WHERE version=$2", [checksum, file]);
+      appliedChecksums.set(file, checksum);
+    }
+
     const mismatches = migrations.filter(({ file, checksum }) => appliedChecksums.has(file) && appliedChecksums.get(file) !== checksum);
 
     if (mismatches.length) {
