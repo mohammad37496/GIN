@@ -8,6 +8,7 @@ import { PGlite } from "@electric-sql/pglite";
 import { PGLiteSocketServer } from "@electric-sql/pglite-socket";
 import pg from "pg";
 import { applyFullRefundEffects } from "../src/lib/payments/refunds.ts";
+import { processVerifiedPaymentWebhook } from "../src/lib/payments/webhooks.ts";
 import { runMigrations } from "../src/lib/migrations.ts";
 
 const { Pool } = pg;
@@ -192,6 +193,21 @@ async function runAuthenticatedBrowserQa(routes) {
   }
 }
 
+async function runVerifiedWebhook(event) {
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const result = await processVerifiedPaymentWebhook(client, "integration-test", event);
+    await client.query("COMMIT");
+    return result;
+  } catch (error) {
+    await client.query("ROLLBACK").catch(() => undefined);
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
 try {
   await server.start();
   await new Promise((resolve, reject) => { s3Server.once("error", reject); s3Server.listen(0, "127.0.0.1", resolve); });
@@ -222,7 +238,7 @@ try {
   const migrationFiles = (await readdir(`${root}/migrations`)).filter((name) => /^\d{4}_[a-z0-9_-]+\.sql$/i.test(name)).sort();
   const lastMigration = migrationFiles.at(-1);
   assert(migrationFiles.includes("0015_immutable_asset_uploads.sql"), "The immutable asset migration is present");
-  assert(lastMigration === "0019_bilingual_assessments.sql", "The additive bilingual assessment migration is the latest ordered migration");
+  assert(lastMigration === "0020_payment_webhook_retryable.sql", "The payment webhook retry migration follows the existing bilingual assessment migrations");
   const lastMigrationSql = (await readFile(`${root}/migrations/${lastMigration}`, "utf8")).replace(/\r\n?/g, "\n");
   const lastMigrationChecksum = createHash("sha256").update(lastMigrationSql).digest("hex");
   const baselineMigration = "0001_core.sql";
@@ -265,6 +281,9 @@ try {
   const storageColumns = await pool.query(`SELECT column_name FROM information_schema.columns
     WHERE table_name='stored_assets' AND column_name=ANY($1::text[])`, [["upload_key","upload_etag","finalizing_at"]]);
   assert(storageColumns.rows.length === 3, "Stored assets include independent upload keys and resumable finalization state");
+  const webhookStatusConstraint = await pool.query(`SELECT pg_get_constraintdef(oid) AS definition FROM pg_constraint
+    WHERE conrelid='payment_webhook_events'::regclass AND conname='payment_webhook_events_status_check'`);
+  assert(webhookStatusConstraint.rows[0]?.definition.includes("retryable"), "Payment webhook events support a retryable state");
 
   const legacyRoutes = [
     ["/about-us", "/about"],
@@ -424,7 +443,9 @@ try {
   const uploadBytes = Buffer.from("%PDF-1.4\nGIN immutable upload regression\n%%EOF");
   const upload = await api("/api/storage/presign", { method: "POST", cookie: adminCookie, body: { filename: "lesson.pdf", contentType: "application/pdf", size: uploadBytes.length } });
   assert(upload.response.status === 200 && upload.data.uploadUrl, `Instructor can obtain a staging upload URL (HTTP ${upload.response.status}: ${JSON.stringify(upload.data)})`);
-  const uploadKey = decodeURIComponent(new URL(upload.data.uploadUrl).pathname.split("/").slice(2).join("/"));
+  const signedUploadUrl = new URL(upload.data.uploadUrl);
+  assert(signedUploadUrl.port === String(s3Port), `Presigned upload URL targets the running S3 test server (${signedUploadUrl.host}, expected port ${s3Port})`);
+  const uploadKey = decodeURIComponent(signedUploadUrl.pathname.split("/").slice(2).join("/"));
   const putResponse = await fetch(upload.data.uploadUrl, { method: "PUT", headers: { "Content-Type": "application/pdf" }, body: uploadBytes });
   assert(putResponse.status === 200, `Staging object accepts the initial upload (HTTP ${putResponse.status})`);
   const completions = await Promise.all([
@@ -1031,6 +1052,56 @@ try {
   assert(refundState.rows[0].purchase_enrollment_status === "revoked", "Refund revokes the purchased course entitlement");
   assert(refundState.rows[0].membership_status === "canceled" && refundState.rows[0].subscription_enrollment_status === "revoked", "Refund cancels the purchased membership and reconciles mapped course access");
 
+  const webhookOrder = await pool.query(`INSERT INTO orders(user_id,status,currency,subtotal_minor,discount_minor,total_minor,idempotency_key,description)
+    VALUES($1,'pending','EUR',1200,0,1200,'integration-webhook-retry-order-001','Webhook retry integration order') RETURNING id`, [memberId]);
+  const webhookOrderId = Number(webhookOrder.rows[0].id);
+  const webhookTransaction = await pool.query(`INSERT INTO payment_transactions(order_id,provider,provider_reference,idempotency_key,status,amount_minor,currency)
+    VALUES($1,'integration-test',NULL,'integration-webhook-retry-tx-001','pending',1200,'EUR') RETURNING id`, [webhookOrderId]);
+  const webhookTransactionId = Number(webhookTransaction.rows[0].id);
+  const retryableEvent = { eventId: "integration-webhook-event-retry-001", eventType: "payment.succeeded", transactionReference: "integration-webhook-reference-001", outcome: "succeeded", amountMinor: 1200, currency: "EUR" };
+  const firstWebhookAttempt = await runVerifiedWebhook(retryableEvent);
+  assert(firstWebhookAttempt.retryable, "A verified webhook arriving before provider_reference is persisted remains retryable");
+  const pendingWebhookEvent = await pool.query("SELECT status,processed_at FROM payment_webhook_events WHERE provider='integration-test' AND provider_event_id=$1", [retryableEvent.eventId]);
+  assert(pendingWebhookEvent.rows[0].status === "retryable" && pendingWebhookEvent.rows[0].processed_at === null, "An unmatched webhook is stored without being terminally acknowledged");
+  const preRetryPaymentState = await pool.query(`SELECT o.status AS order_status,pt.status AS transaction_status,
+    (SELECT COUNT(*)::int FROM invoices WHERE order_id=o.id) AS invoice_count
+    FROM orders o JOIN payment_transactions pt ON pt.order_id=o.id WHERE o.id=$1`, [webhookOrderId]);
+  assert(preRetryPaymentState.rows[0].order_status === "pending" && preRetryPaymentState.rows[0].transaction_status === "pending" && preRetryPaymentState.rows[0].invoice_count === 0, "A webhook without a matching provider reference cannot partially fulfill an order");
+  await pool.query("UPDATE payment_transactions SET provider_reference=$1 WHERE id=$2", [retryableEvent.transactionReference,webhookTransactionId]);
+  const retriedWebhook = await runVerifiedWebhook(retryableEvent);
+  assert(retriedWebhook.processed && retriedWebhook.status === "succeeded", "Replaying the same event after provider_reference appears completes payment processing");
+  const duplicateWebhook = await runVerifiedWebhook(retryableEvent);
+  assert(duplicateWebhook.duplicate, "A processed webhook event remains idempotent on subsequent delivery");
+  const webhookOrderState = await pool.query(`SELECT o.status AS order_status,pt.status AS transaction_status,pwe.status AS event_status,
+    (SELECT COUNT(*)::int FROM invoices WHERE order_id=o.id) AS invoice_count
+    FROM orders o JOIN payment_transactions pt ON pt.order_id=o.id
+    JOIN payment_webhook_events pwe ON pwe.provider_event_id=$2 AND pwe.provider='integration-test'
+    WHERE o.id=$1`, [webhookOrderId,retryableEvent.eventId]);
+  assert(webhookOrderState.rows[0].order_status === "paid" && webhookOrderState.rows[0].transaction_status === "succeeded" && webhookOrderState.rows[0].event_status === "processed" && webhookOrderState.rows[0].invoice_count === 1, "Webhook retry fulfills the order exactly once");
+
+  const payloadOrder = await pool.query(`INSERT INTO orders(user_id,status,currency,subtotal_minor,discount_minor,total_minor,idempotency_key,description)
+    VALUES($1,'pending','EUR',1300,0,1300,'integration-webhook-payload-order-001','Webhook payload lock order') RETURNING id`, [memberId]);
+  const payloadTransaction = await pool.query(`INSERT INTO payment_transactions(order_id,provider,provider_reference,idempotency_key,status,amount_minor,currency)
+    VALUES($1,'integration-test',NULL,'integration-webhook-payload-tx-001','pending',1300,'EUR') RETURNING id`, [payloadOrder.rows[0].id]);
+  const payloadEvent = { eventId: "integration-webhook-event-payload-001", eventType: "payment.succeeded", transactionReference: "integration-webhook-reference-payload-001", outcome: "succeeded", amountMinor: 1300, currency: "EUR" };
+  const payloadFirst = await runVerifiedWebhook(payloadEvent);
+  assert(payloadFirst.retryable, "The payload-lock fixture begins in retryable state");
+  const alteredPayload = await runVerifiedWebhook({ ...payloadEvent, amountMinor: 1301 });
+  assert(alteredPayload.conflict, "A repeated event ID cannot replace its original verified amount");
+  await pool.query("UPDATE payment_transactions SET provider_reference=$1 WHERE id=$2", [payloadEvent.transactionReference,payloadTransaction.rows[0].id]);
+  const payloadRetry = await runVerifiedWebhook(payloadEvent);
+  assert(payloadRetry.processed, "The original immutable payload remains eligible for retry");
+
+  const mismatchOrder = await pool.query(`INSERT INTO orders(user_id,status,currency,subtotal_minor,discount_minor,total_minor,idempotency_key,description)
+    VALUES($1,'pending','EUR',1400,0,1400,'integration-webhook-mismatch-order-001','Webhook mismatch order') RETURNING id`, [memberId]);
+  await pool.query(`INSERT INTO payment_transactions(order_id,provider,provider_reference,idempotency_key,status,amount_minor,currency)
+    VALUES($1,'integration-test','integration-webhook-reference-mismatch-001','integration-webhook-mismatch-tx-001','pending',1400,'EUR')`, [mismatchOrder.rows[0].id]);
+  const mismatchEvent = { eventId: "integration-webhook-event-mismatch-001", eventType: "payment.succeeded", transactionReference: "integration-webhook-reference-mismatch-001", outcome: "succeeded", amountMinor: 1401, currency: "EUR" };
+  const mismatchResult = await runVerifiedWebhook(mismatchEvent);
+  assert(mismatchResult.mismatch, "A verified webhook with an amount mismatch is rejected terminally");
+  const mismatchReplay = await runVerifiedWebhook(mismatchEvent);
+  assert(mismatchReplay.duplicate, "A terminally rejected amount-mismatch event cannot be applied by replay");
+
   const orderCountBeforeCheckout = await pool.query("SELECT COUNT(*)::int AS count FROM orders");
   result = await api("/api/checkout", { method: "POST", cookie: memberCookie, body: { itemType: "course", itemId: membersCourseId, idempotencyKey: "integration-checkout-key-0001" } });
   assert(result.response.status === 503 && result.data.code === "PAYMENT_PROVIDER_NOT_CONFIGURED", "Checkout stays disabled without a selected payment provider");
@@ -1097,7 +1168,7 @@ try {
     assert(result.response.status === 401, "A copied session token cannot be replayed after logout");
   }
 
-  console.log(JSON.stringify({ status: "passed", database: "PGlite PostgreSQL-compatible integration server", migrations: counts.rows[0].migrations, flows: ["legacy reference route redirects", "admin bootstrap/login", "atomic admin password-change rate limiting", "authenticated bilingual staff/member HTML routes with opposing locale cookies", "course/section/lesson management", "course publication", "immutable staging-to-final S3 uploads and replay resistance", "conditional copy rejects ETag races", "course-wide assessments with answer-key privacy, autosave/resume, deterministic shuffle, manual grading, enrollment revocation/expiry guards, lock-wait deadline enforcement and concurrent start/save/submit idempotency", "public catalog", "member registration and admin approval", "member login", "free enrollment", "lesson progress", "course completion", "certificate issuance and public verification", "membership plan entitlements", "membership request and admin approval", "scheduled membership activation and expiry reconciliation", "membership upgrade and cancellation", "event publication and registration", "capacity waitlist and automatic promotion", "support inbox and staff reply", "contact submission, consent persistence, support review and honeypot", "instructor RBAC and course isolation", "finance versus affiliate-manager role separation", "affiliate payout reservation and maker-checker settlement", "affiliate application and referral attribution", "self-referral database guard", "affiliate click tracking and wallet balance guard", "full refund reconciliation and idempotent commission reversal", "checkout disabled without provider", "notification delivery", "profile updates", "authenticated CSRF rejection", "cross-origin logout rejection", "concurrent server-side logout revocation and locale-preserving redirect"] }, null, 2));
+  console.log(JSON.stringify({ status: "passed", database: "PGlite PostgreSQL-compatible integration server", migrations: counts.rows[0].migrations, flows: ["legacy reference route redirects", "admin bootstrap/login", "atomic admin password-change rate limiting", "authenticated bilingual staff/member HTML routes with opposing locale cookies", "course/section/lesson management", "course publication", "immutable staging-to-final S3 uploads and replay resistance", "conditional copy rejects ETag races", "course-wide assessments with answer-key privacy, autosave/resume, deterministic shuffle, manual grading, enrollment revocation/expiry guards, lock-wait deadline enforcement and concurrent start/save/submit idempotency", "public catalog", "member registration and admin approval", "member login", "free enrollment", "lesson progress", "course completion", "certificate issuance and public verification", "membership plan entitlements", "membership request and admin approval", "scheduled membership activation and expiry reconciliation", "membership upgrade and cancellation", "event publication and registration", "capacity waitlist and automatic promotion", "support inbox and staff reply", "contact submission, consent persistence, support review and honeypot", "instructor RBAC and course isolation", "finance versus affiliate-manager role separation", "affiliate payout reservation and maker-checker settlement", "affiliate application and referral attribution", "self-referral database guard", "affiliate click tracking and wallet balance guard", "full refund reconciliation and idempotent commission reversal", "payment webhook retry after provider reference persistence", "webhook event payload immutability and terminal amount-mismatch handling", "checkout disabled without provider", "notification delivery", "profile updates", "authenticated CSRF rejection", "cross-origin logout rejection", "concurrent server-side logout revocation and locale-preserving redirect"] }, null, 2));
   if (process.env.KEEP_INTEGRATION_SERVER === "1") {
     console.log(`Integration server retained for browser QA at ${baseUrl}; press Ctrl+C when finished.`);
     await new Promise((resolve) => process.once("SIGINT", resolve));
