@@ -11,6 +11,9 @@ import SupportForm from "@/components/support-form";
 export const dynamic = "force-dynamic";
 
 const legacyRedirects: Record<string, string> = {
+  "about-us": "/about",
+  "our-training": "/courses",
+  "member-benefits-associate": "/member-benefits",
   "our-events": "/events",
   "membership-levels": "/membership",
   "contact-us": "/contact",

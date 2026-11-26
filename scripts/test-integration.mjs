@@ -57,6 +57,23 @@ try {
   });
   await waitForApp();
 
+  const legacyRoutes = [
+    ["/about-us", "/about"],
+    ["/our-training", "/courses"],
+    ["/member-benefits-associate", "/member-benefits"],
+    ["/our-events", "/events"],
+    ["/membership-levels", "/membership"],
+    ["/contact-us", "/contact"],
+    ["/become-a-member", "/register"],
+    ["/gin-hotels", "/hotels"],
+    ["/gin-clubhouses", "/clubhouses"],
+    ["/gin-cruise-ship", "/cruise"],
+  ];
+  for (const [path, destination] of legacyRoutes) {
+    const response = await fetch(`${baseUrl}${path}`, { redirect: "manual" });
+    assert(response.status === 307 && response.headers.get("location") === destination, `Legacy route ${path} redirects to ${destination} (HTTP ${response.status})`);
+  }
+
   let result = await api("/api/auth/login", { method: "POST", body: { username: "integration-admin", password: "IntegrationAdmin!Password2026" } });
   assert(result.response.status === 200 && result.cookie, `Admin login should create an HttpOnly session cookie (HTTP ${result.response.status}: ${JSON.stringify(result.data)})`);
   const adminCookie = result.cookie;
@@ -373,7 +390,7 @@ try {
   assert(counts.rows[0].referral_attributions === 1 && counts.rows[0].affiliate_clicks === 1, "Affiliate attribution and click tracking persisted");
   assert(counts.rows[0].support_replies === 1, "Support reply persisted");
 
-  console.log(JSON.stringify({ status: "passed", database: "PGlite PostgreSQL-compatible integration server", migrations: counts.rows[0].migrations, flows: ["admin bootstrap/login", "course/section/lesson management", "course publication", "assessment/question management", "public catalog", "member registration and admin approval", "member login", "free enrollment", "lesson progress", "timed assessment attempt and grading", "course completion", "certificate issuance and public verification", "membership plan entitlements", "membership request and admin approval", "scheduled membership activation and expiry reconciliation", "membership upgrade and cancellation", "event publication and registration", "capacity waitlist and automatic promotion", "support inbox and staff reply", "instructor RBAC and course isolation", "finance versus affiliate-manager role separation", "affiliate payout reservation and maker-checker settlement", "affiliate application and referral attribution", "self-referral database guard", "affiliate click tracking and wallet balance guard", "full refund reconciliation and idempotent commission reversal", "checkout disabled without provider", "notification delivery", "profile updates", "CSRF rejection"] }, null, 2));
+  console.log(JSON.stringify({ status: "passed", database: "PGlite PostgreSQL-compatible integration server", migrations: counts.rows[0].migrations, flows: ["legacy reference route redirects", "admin bootstrap/login", "course/section/lesson management", "course publication", "assessment/question management", "public catalog", "member registration and admin approval", "member login", "free enrollment", "lesson progress", "timed assessment attempt and grading", "course completion", "certificate issuance and public verification", "membership plan entitlements", "membership request and admin approval", "scheduled membership activation and expiry reconciliation", "membership upgrade and cancellation", "event publication and registration", "capacity waitlist and automatic promotion", "support inbox and staff reply", "instructor RBAC and course isolation", "finance versus affiliate-manager role separation", "affiliate payout reservation and maker-checker settlement", "affiliate application and referral attribution", "self-referral database guard", "affiliate click tracking and wallet balance guard", "full refund reconciliation and idempotent commission reversal", "checkout disabled without provider", "notification delivery", "profile updates", "CSRF rejection"] }, null, 2));
 } catch (error) {
   console.error(error);
   process.exitCode = 1;
