@@ -37,8 +37,7 @@ export async function runMigrations(pool: Pool): Promise<void> {
       const baselineMismatch = mismatches.length === 1 && mismatches[0].file === "0001_core.sql";
       const laterMismatches = migrations.slice(1).filter(({ file, checksum }) => appliedChecksums.has(file) && appliedChecksums.get(file) !== checksum).map(({ file }) => file);
       const laterMissing = migrations.slice(1).filter(({ file }) => !appliedChecksums.has(file)).map(({ file }) => file);
-      const allLaterMigrationsMatch = laterMismatches.length === 0 && laterMissing.length === 0;
-      if (!baselineMismatch || !allLaterMigrationsMatch) {
+      if (!baselineMismatch || laterMismatches.length > 0) {
         const reasons = [
           laterMismatches.length ? `later checksum mismatch: ${laterMismatches.join(", ")}` : "",
           laterMissing.length ? `later migrations not recorded: ${laterMissing.join(", ")}` : "",
@@ -47,7 +46,8 @@ export async function runMigrations(pool: Pool): Promise<void> {
       }
 
       // The original baseline has changed across deployed generations. Reconcile its
-      // checksum only after every later migration is confirmed applied byte-for-byte.
+      // checksum only when every later migration already in the ledger matches. Later
+      // migrations absent from the ledger are applied normally by the loop below.
       await client.query("UPDATE schema_migrations SET checksum=$1 WHERE version=$2", [mismatches[0].checksum, mismatches[0].file]);
       appliedChecksums.set(mismatches[0].file, mismatches[0].checksum);
     }
