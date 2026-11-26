@@ -339,6 +339,36 @@ try {
   let result = await api("/api/auth/login", { method: "POST", body: { username: "integration-admin", password: "IntegrationAdmin!Password2026" } });
   assert(result.response.status === 200 && result.cookie, `Admin login should create an HttpOnly session cookie (HTTP ${result.response.status}: ${JSON.stringify(result.data)})`);
   const adminCookie = result.cookie;
+  const adminId = Number((await pool.query("SELECT id FROM users WHERE username_normalized='integration-admin'")).rows[0].id);
+  await pool.query("DELETE FROM admin_password_change_attempts WHERE admin_id=$1", [adminId]);
+  const passwordAttemptLock = await pool.connect();
+  await passwordAttemptLock.query("BEGIN");
+  await passwordAttemptLock.query(
+    `INSERT INTO admin_password_change_attempts(admin_id,attempts,window_started_at)
+     VALUES($1,0,clock_timestamp()) ON CONFLICT(admin_id) DO UPDATE SET attempts=0,window_started_at=clock_timestamp()`,
+    [adminId],
+  );
+  await passwordAttemptLock.query("SELECT admin_id FROM admin_password_change_attempts WHERE admin_id=$1 FOR UPDATE", [adminId]);
+  const concurrentPasswordAttempts = Array.from({ length: 10 }, () => api("/api/auth/change-password", {
+    method: "POST",
+    cookie: adminCookie,
+    body: { currentPassword: "incorrect-current-password", newPassword: "NewSecurePassphrase!2026", confirmPassword: "NewSecurePassphrase!2026" },
+  }));
+  const passwordAttemptWaited = await Promise.race([
+    Promise.all(concurrentPasswordAttempts).then(() => false),
+    new Promise((resolve) => setTimeout(() => resolve(true), 300)),
+  ]);
+  await passwordAttemptLock.query("COMMIT");
+  passwordAttemptLock.release();
+  const passwordAttemptResults = await Promise.all(concurrentPasswordAttempts);
+  const passwordAttemptStatuses = passwordAttemptResults.map((item) => item.response.status);
+  const passwordAttemptCounts = await pool.query("SELECT attempts FROM admin_password_change_attempts WHERE admin_id=$1", [adminId]);
+  assert(passwordAttemptWaited === true && passwordAttemptStatuses.filter((status) => status === 400).length === 5 && passwordAttemptStatuses.filter((status) => status === 429).length === 5 && Number(passwordAttemptCounts.rows[0].attempts) === 10,
+    "Concurrent admin password-change attempts are atomically limited to five per 15-minute window");
+  await pool.query("UPDATE admin_password_change_attempts SET attempts=5,window_started_at=clock_timestamp()-INTERVAL '16 minutes' WHERE admin_id=$1", [adminId]);
+  result = await api("/api/auth/change-password", { method: "POST", cookie: adminCookie, body: { currentPassword: "incorrect-current-password", newPassword: "NewSecurePassphrase!2026", confirmPassword: "NewSecurePassphrase!2026" } });
+  const resetPasswordAttemptCount = await pool.query("SELECT attempts FROM admin_password_change_attempts WHERE admin_id=$1", [adminId]);
+  assert(result.response.status === 400 && Number(resetPasswordAttemptCount.rows[0].attempts) === 1, "Admin password-change rate limit resets after its 15-minute window");
   result = await api("/api/admin/commission-rules", { cookie: adminCookie });
   assert(result.response.status === 200 && Array.isArray(result.data.rules), "Admin can load commission rules without ordering by a nonexistent created_at column");
   for (const [path, locale, direction] of [["/fa/admin", "fa", "rtl"], ["/en/admin", "en", "ltr"]]) {
