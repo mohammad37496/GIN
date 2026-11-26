@@ -9,7 +9,7 @@ export default async function StaffHeader({ area, locale: requestedLocale }: { a
   const english = locale === "en";
   return (
     <header className="dash-header staff-header">
-      <Link href="/" className="brand staff-brand" aria-label={`GIN — Global Information Network — ${area}`}>
+      <Link href={english ? "/en" : "/"} className="brand staff-brand" aria-label={`GIN — Global Information Network — ${area}`}>
         <GinLogo width={220} height={50} className="staff-brand-full" />
         <span className="staff-brand-compact"><GinMark size={36} /><strong>GIN</strong></span>
         <span className="admin-tag">{area}</span>
@@ -20,7 +20,7 @@ export default async function StaffHeader({ area, locale: requestedLocale }: { a
         <Link href={english ? "/en/courses" : "/courses"}>{english ? "Learning library" : "کتابخانه آموزش"}</Link>
         <Link href={english ? "/en/events" : "/events"}>{english ? "Events" : "رویدادها"}</Link>
         <Link href={english ? "/en" : "/"}>{english ? "Website" : "وب‌سایت"}</Link>
-        <form action="/api/auth/logout" method="post">
+        <form action={`/api/auth/logout?locale=${locale}`} method="post">
           <button className="logout-button"><LogOut size={16} /> {english ? "Sign out" : "خروج"}</button>
         </form>
       </nav>
