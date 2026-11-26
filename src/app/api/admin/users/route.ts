@@ -1,16 +1,22 @@
 import { pool, ensureSchema } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth";
 import { errorResponse, jsonResponse } from "@/lib/http";
+import { rejectCrossOriginMutation } from "@/lib/request-security";
 
 export async function GET() {
   const admin = await requireAdmin();
   if (!admin) return errorResponse("دسترسی غیرمجاز است.", 403);
   await ensureSchema();
-  const result = await pool.query("SELECT id, username, role, status, created_at FROM users ORDER BY CASE status WHEN 'pending' THEN 0 ELSE 1 END, created_at DESC LIMIT 300");
+  const result = await pool.query(`SELECT u.id,u.username,u.role,u.status,u.created_at,
+    COALESCE(ARRAY_AGG(ur.role) FILTER(WHERE ur.role IS NOT NULL),'{}') AS roles
+    FROM users u LEFT JOIN user_roles ur ON ur.user_id=u.id
+    GROUP BY u.id ORDER BY CASE u.status WHEN 'pending' THEN 0 ELSE 1 END,u.created_at DESC LIMIT 300`);
   return jsonResponse({ users: result.rows });
 }
 
 export async function PATCH(request: Request) {
+  const originError = rejectCrossOriginMutation(request);
+  if (originError) return originError;
   const admin = await requireAdmin();
   if (!admin) return errorResponse("دسترسی غیرمجاز است.", 403);
   const body = await request.json().catch(() => null);

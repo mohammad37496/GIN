@@ -1,9 +1,137 @@
+import Image from "next/image";
 import Link from "next/link";
-import { ArrowLeft, BookOpen, ShieldCheck, Sparkles } from "lucide-react";
+import { ArrowLeft, ArrowUpLeft, BookOpen, CalendarDays, Compass, GraduationCap, HeartPulse, ShieldCheck, Sparkles, Users, Wallet } from "lucide-react";
+import PublicHeader from "@/components/public-header";
+import PublicFooter from "@/components/public-footer";
+
+const pillars = [
+  { icon: Wallet, title: "ثروت و استقلال مالی", text: "آموزش سواد مالی، کارآفرینی و شناخت بهتر فرصت‌ها برای تصمیم‌گیری آگاهانه." },
+  { icon: HeartPulse, title: "سلامت و تندرستی", text: "منابع آموزشی درباره سبک زندگی، تندرستی و مراقبت آگاهانه از خود." },
+  { icon: Compass, title: "شادی و رشد فردی", text: "مهارت‌های زندگی، ارتباطات، هدف‌گذاری و پرورش نگرشی سازنده." },
+];
+
+const learningAreas = [
+  "خلق ثروت، سواد مالی و کارآفرینی",
+  "سلامت، تندرستی و سبک زندگی",
+  "شادمانی، آرامش و هوش هیجانی",
+  "روابط انسانی، ارتباطات و رهبری",
+  "رشد حرفه‌ای و مهارت‌های کسب‌وکار",
+  "خودشناسی و یادگیری مادام‌العمر",
+];
+
+const introVideo = "https://player.mediadelivery.net/embed/21211/8afabd85-d7a1-43a1-824d-b467272f0951?autoplay=false&loop=false&muted=false&preload=false&responsive=true";
+const storiesVideo = "https://player.mediadelivery.net/embed/34091/f9dd38fa-5c2d-43f4-a9ad-888be6ebc0cd?autoplay=false&loop=false&muted=false&preload=false&responsive=true";
 
 export default function Home() {
-  return <main className="landing"><nav className="topbar"><Link href="/" className="brand"><span className="brand-mark">G</span> GIN</Link><div className="nav-actions"><Link href="/login" className="nav-login">ورود اعضا</Link><Link href="/register" className="button button-small">عضویت در GIN <ArrowLeft size={16}/></Link></div></nav>
-    <section className="hero"><div className="hero-copy"><span className="eyebrow"><Sparkles size={15}/> مسیر یادگیری شما از اینجا شروع می‌شود</span><h1>یادگیری عمیق،<br/><span>پیشرفت واقعی.</span></h1><p>به فضای آموزشی GIN خوش آمدید. حساب کاربری بسازید، درخواست عضویت خود را ثبت کنید و پس از تأیید مدیر وارد فضای اختصاصی آموزش شوید.</p><div className="hero-actions"><Link href="/register" className="button">ساخت حساب کاربری <ArrowLeft size={18}/></Link><Link href="/login" className="text-link">از قبل عضو هستید؟ ورود</Link></div><div className="trust-row"><span><ShieldCheck size={17}/> عضویت با تأیید مدیر</span><span><BookOpen size={17}/> فضای آموزشی اختصاصی</span></div></div><div className="hero-art"><div className="orbit orbit-one"/><div className="orbit orbit-two"/><div className="glass-card"><div className="card-top"><span className="live-dot"/> GIN LEARNING SPACE</div><div className="monogram">G<span>.</span></div><div className="card-bottom"><span>GROW IN KNOWLEDGE</span><span>EST. 2026</span></div></div><div className="floating-note note-top">01 <span>Learn with purpose</span></div><div className="floating-note note-bottom">02 <span>Grow every day</span></div></div></section>
-    <section className="steps"><div><span className="step-no">01</span><h3>حساب بسازید</h3><p>نام کاربری و رمز عبور خود را ثبت کنید.</p></div><div><span className="step-no">02</span><h3>تأیید مدیر</h3><p>درخواست شما در پنل مدیریت بررسی می‌شود.</p></div><div><span className="step-no">03</span><h3>شروع یادگیری</h3><p>پس از تأیید، به حساب اختصاصی خود وارد شوید.</p></div></section><footer><span>© 2026 GIN Learning</span><span>Built for curious minds.</span></footer>
-  </main>;
+  return <>
+    <PublicHeader />
+    <main className="gin-home">
+      <section className="gin-hero">
+        <Image src="/gin/gin-banner.webp" alt="گردهمایی اعضای شبکه جهانی GIN" fill priority sizes="100vw" className="gin-hero-image" />
+        <div className="gin-hero-shade" />
+        <div className="public-container gin-hero-content">
+          <span className="gin-kicker"><Sparkles size={15} /> THE GLOBAL INFORMATION NETWORK</span>
+          <h1>به شبکه جهانی اطلاعات <em>GIN</em> خوش آمدید</h1>
+          <p>جامعه‌ای بین‌المللی برای یادگیری، ارتباط و رشد در سه حوزه مهم زندگی: سلامت، ثروت و شادی.</p>
+          <div className="gin-hero-actions">
+            <Link href="/register" className="button gin-gold-button">درخواست عضویت <ArrowLeft size={17} /></Link>
+            <Link href="/about" className="gin-hero-link">درباره شبکه بیشتر بدانید <ArrowUpLeft size={17} /></Link>
+          </div>
+          <div className="gin-hero-note"><ShieldCheck size={16} /> درخواست‌های عضویت پس از بررسی و تأیید فعال می‌شوند.</div>
+        </div>
+        <div className="gin-hero-caption">LEARN · CONNECT · GROW</div>
+      </section>
+
+      <section className="gin-intro-section public-container">
+        <div className="gin-section-lead">
+          <span className="eyebrow">A PRIVATE LEARNING COMMUNITY</span>
+          <h2>دانش، ارتباط و تجربه؛ در کنار هم</h2>
+          <p>GIN یک شبکه یادگیری و جامعه اعضاست که محتوای آموزشی، رویدادها و فرصت تعامل را در یک فضای یکپارچه گرد هم می‌آورد. اعضا می‌توانند مسیر یادگیری خود را متناسب با هدف‌ها و علاقه‌هایشان دنبال کنند.</p>
+          <Link href="/who-we-are" className="text-arrow">با هویت و مأموریت GIN آشنا شوید <ArrowLeft size={16} /></Link>
+        </div>
+        <div className="gin-pillar-grid">
+          {pillars.map(({ icon: Icon, title, text }, index) => <article className="gin-pillar" key={title}>
+            <span className="gin-pillar-number">0{index + 1}</span>
+            <Icon size={27} strokeWidth={1.6} />
+            <h3>{title}</h3>
+            <p>{text}</p>
+          </article>)}
+        </div>
+      </section>
+
+      <section className="gin-offer-section">
+        <div className="public-container gin-offer-layout">
+          <div className="gin-offer-image">
+            <Image src="/gin/paris-intercontinental.webp" alt="گردهمایی آموزشی اعضای GIN در یک رویداد بین‌المللی" fill sizes="(max-width: 850px) 100vw, 50vw" />
+            <span>GLOBAL CONNECTIONS</span>
+          </div>
+          <div className="gin-offer-copy">
+            <span className="eyebrow">WHAT GIN OFFERS</span>
+            <h2>فراتر از یک کتابخانه آموزشی</h2>
+            <p>تجربه GIN از آموزش آنلاین و منابع چندرسانه‌ای تا رویدادها و ارتباط میان اعضا امتداد دارد. کتابخانه آموزشی پورتال، دوره‌ها و درس‌ها را با امکان ثبت‌نام و پیگیری پیشرفت در اختیار کاربران مجاز قرار می‌دهد.</p>
+            <ul className="gin-check-list">
+              <li><BookOpen size={17} /> دوره‌ها، درس‌ها و منابع آموزشی</li>
+              <li><GraduationCap size={17} /> آزمون‌ها و گواهی‌های پایان دوره</li>
+              <li><Users size={17} /> جامعه اعضا و ارتباطات آموزشی</li>
+              <li><CalendarDays size={17} /> رویدادها و گردهمایی‌ها</li>
+            </ul>
+            <Link href="/what-we-offer" className="button">مشاهده برنامه‌ها و مزایا <ArrowLeft size={16} /></Link>
+          </div>
+        </div>
+      </section>
+
+      <section className="gin-video-section">
+        <div className="public-container gin-video-layout">
+          <div className="gin-video-copy">
+            <span className="eyebrow">DISCOVER GIN</span>
+            <h2>با شبکه جهانی اطلاعات آشنا شوید</h2>
+            <p>ویدئوی معرفی را تماشا کنید و با دیدگاه کلی، حوزه‌های آموزشی و جامعه GIN آشنا شوید.</p>
+            <Link href="/faq" className="text-arrow">پاسخ پرسش‌های متداول <ArrowLeft size={16} /></Link>
+          </div>
+          <div className="gin-video-frame"><iframe src={introVideo} title="ویدئوی معرفی شبکه جهانی اطلاعات GIN" loading="lazy" allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;" allowFullScreen /></div>
+        </div>
+      </section>
+
+      <section className="gin-learning-section">
+        <div className="public-container gin-learning-layout">
+          <div>
+            <span className="eyebrow">AREAS OF LEARNING</span>
+            <h2>در مسیر رشد، موضوعات موردعلاقه خود را دنبال کنید</h2>
+            <p>محتوای آموزشی در حوزه‌های گوناگون زندگی سازمان‌دهی می‌شود. برای مشاهده دوره‌های منتشرشده و شرایط دسترسی، وارد کتابخانه آموزشی شوید.</p>
+            <Link href="/courses" className="button">ورود به کتابخانه آموزش <ArrowLeft size={16} /></Link>
+          </div>
+          <div className="gin-learning-list">{learningAreas.map((area, index) => <Link href="/courses" key={area}><span>0{index + 1}</span><strong>{area}</strong><ArrowUpLeft size={17} /></Link>)}</div>
+        </div>
+      </section>
+
+      <section className="gin-stories-section">
+        <div className="public-container">
+          <div className="gin-centered-heading"><span className="eyebrow">MEMBERS SHARE THEIR STORIES</span><h2>تجربه‌ها و روایت‌های اعضا</h2><p>با روایت‌های منتشرشده از اعضای جامعه GIN آشنا شوید.</p></div>
+          <div className="gin-stories-frame"><iframe src={storiesVideo} title="روایت‌ها و تجربه‌های اعضای GIN" loading="lazy" allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;" allowFullScreen /></div>
+        </div>
+      </section>
+
+      <section className="gin-events-section">
+        <div className="public-container gin-events-layout">
+          <div className="gin-events-copy"><span className="eyebrow">EVENTS & CONNECTIONS</span><h2>یادگیری در رویدادها و گردهمایی‌ها ادامه دارد</h2><p>رویدادهای حضوری و آنلاین فرصتی برای آشنایی، تبادل تجربه و یادگیری جمعی فراهم می‌کنند. برنامه‌های فعال، زمان‌بندی و ظرفیت آن‌ها در تقویم رویدادهای پورتال نمایش داده می‌شود.</p><Link href="/events" className="button">مشاهده رویدادها <ArrowLeft size={16} /></Link></div>
+          <div className="gin-events-image"><Image src="/gin/gin-community.webp" alt="گردهمایی بزرگ اعضای شبکه GIN" fill sizes="(max-width: 850px) 100vw, 50vw" /></div>
+        </div>
+      </section>
+
+      <section className="gin-cruise-section">
+        <div className="public-container gin-cruise-layout">
+          <div className="gin-cruise-image"><Image src="/gin/gin-cruise.webp" alt="کشتی تفریحی در برنامه سفر گروهی" fill sizes="(max-width: 850px) 100vw, 42vw" /></div>
+          <div><span className="eyebrow">GIN COMMUNITY EXPERIENCES</span><h2>اطلاعات سفرها و تجربه‌های گروهی</h2><p>اطلاعات برنامه‌های سفر و گردهمایی‌های ویژه در صفحه مربوط به آن‌ها منتشر می‌شود. جزئیات رزرو یا ثبت‌نام فقط پس از تأیید برگزارکننده فعال خواهد شد.</p><Link href="/cruise" className="text-arrow">مشاهده اطلاعات سفرها <ArrowLeft size={16} /></Link></div>
+        </div>
+      </section>
+
+      <section className="gin-membership-cta">
+        <div className="public-container gin-membership-cta-inner">
+          <div><span className="eyebrow">BECOME A MEMBER</span><h2>مسیر یادگیری و ارتباط خود را با GIN آغاز کنید</h2><p>درخواست عضویت خود را ثبت کنید. پس از بررسی و تأیید، به امکانات متناسب با سطح دسترسی حساب خود وارد می‌شوید.</p></div>
+          <div className="gin-cta-actions"><Link href="/register" className="button gin-gold-button">درخواست عضویت <ArrowLeft size={17} /></Link><Link href="/membership" className="gin-cta-secondary">مشاهده سطوح عضویت</Link></div>
+        </div>
+      </section>
+    </main>
+    <PublicFooter />
+  </>;
 }

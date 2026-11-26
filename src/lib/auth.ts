@@ -1,6 +1,7 @@
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
 import { pool, ensureSchema } from "@/lib/db";
+import type { PoolClient } from "pg";
 
 const COOKIE = "gin_session";
 function secret() {
@@ -42,4 +43,31 @@ export async function getSession(): Promise<SessionUser | null> {
 export async function requireAdmin() {
   const user = await getSession();
   return user?.role === "admin" ? user : null;
+}
+
+export async function hasRole(user: SessionUser, role: "instructor" | "support" | "event_manager" | "finance" | "affiliate_manager") {
+  if (user.role === "admin") return true;
+  await ensureSchema();
+  const result = await pool.query("SELECT 1 FROM user_roles WHERE user_id=$1 AND role=$2", [user.id, role]);
+  return Number(result.rowCount) > 0;
+}
+
+export async function canManageCourse(user: SessionUser, courseId: number, client?: PoolClient) {
+  if (user.role === "admin") return true;
+  await ensureSchema();
+  const db = client ?? pool;
+  const role = await db.query("SELECT 1 FROM user_roles WHERE user_id=$1 AND role='instructor'", [user.id]);
+  if (!role.rowCount) return false;
+  const result = await db.query("SELECT 1 FROM course_instructors WHERE course_id=$1 AND user_id=$2", [courseId,user.id]);
+  return Number(result.rowCount) > 0;
+}
+
+export async function canManageFinance(user: SessionUser) {
+  if (user.role === "admin") return true;
+  return hasRole(user,"finance");
+}
+
+export async function canManageAffiliates(user: SessionUser) {
+  if (user.role === "admin") return true;
+  return hasRole(user,"affiliate_manager");
 }
