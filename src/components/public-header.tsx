@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowLeft, ChevronDown, Globe2 } from "lucide-react";
+import { ArrowLeft, ChevronDown } from "lucide-react";
 
 const links = [
   ["خانه", "/"],
@@ -21,9 +21,11 @@ const links = [
 
 export default function PublicHeader() {
   return <>
-    <div className="utility-bar"><div className="public-container utility-inner"><span>شبکه جهانی اطلاعات | سلامت، ثروت و شادی</span><span className="language-label"><Globe2 size={14}/> فارسی</span></div></div>
     <header className="public-header"><div className="public-container header-inner">
-      <Link href="/" className="public-brand reference-brand" aria-label="GIN صفحه اصلی"><Image src="/gin/gin-header-banner.jpg" alt="Global Information Network" width={350} height={50} priority /></Link>
+      <Link href="/" className="public-brand reference-brand" aria-label="GIN صفحه اصلی"><Image src="/gin/gin-header-banner.jpg" alt="Global Information Network" width={1400} height={200} priority /></Link>
+    </div></header>
+    <div className="reference-navigation">
+      <div className="public-container reference-navigation-inner">
       <nav className="desktop-nav" aria-label="ناوبری اصلی">
         <Link href="/">خانه</Link>
         <details className="desktop-nav-dropdown"><summary>آشنایی با GIN <ChevronDown size={13}/></summary><div>{links.slice(1, 6).map(([label, href]) => <Link href={href} key={href}>{label}</Link>)}</div></details>
@@ -34,6 +36,7 @@ export default function PublicHeader() {
       </nav>
       <div className="header-actions"><Link href="/login" className="header-login">ورود اعضا</Link><Link href="/register" className="button button-small">درخواست عضویت <ArrowLeft size={15}/></Link></div>
       <details className="mobile-menu"><summary aria-label="باز کردن منو"><span/><span/><span/></summary><nav>{links.map(([label, href]) => <Link href={href} key={href}>{label}</Link>)}<Link href="/login">ورود اعضا</Link><Link href="/register">درخواست عضویت</Link></nav></details>
-    </div></header>
+      </div>
+    </div>
   </>;
 }
