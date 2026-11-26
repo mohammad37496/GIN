@@ -1,3 +1,98 @@
 .brand > img { width: 42px; height: 42px; object-fit: contain; }
 .auth-brand { width: 220px; height: 50px; }
 .auth-brand img { display: block; width: 100%; height: auto; }
+
+:root {
+  --ink: #17283a;
+  --muted: #68798a;
+  --green: #173c59;
+  --mint: #e9eff3;
+  --line: #e3e8ec;
+  --paper: #fbfaf7;
+  --gold: #c6a15b;
+}
+
+body { background: var(--paper); color: var(--ink); }
+.button { border-radius: 3px; background: var(--green); }
+.button:hover { background: #102b42; }
+.eyebrow { color: #8a6c32; }
+.brand-mark { background: var(--green); }
+.auth-page { background: radial-gradient(ellipse at 50% 0%, #e9eff3 0, transparent 55%), var(--paper); }
+.auth-card { border-radius: 4px; border-color: var(--line); box-shadow: 0 20px 70px #142b4010; }
+.auth-icon { border-radius: 4px; background: #e9eff3; color: var(--green); }
+.auth-form input { border-radius: 4px; }
+.auth-form input:focus { border-color: var(--gold); box-shadow: 0 0 0 3px #c6a15b20; }
+.auth-foot a { color: var(--green); }
+
+.public-page, .catalog-page, .course-detail-page, .lesson-page, .membership-page,
+.events-page, .event-detail-page, .profile-page, .member-dashboard { background: var(--paper); }
+.page-breadcrumb { color: #8793a0; }
+.page-breadcrumb a, .page-cta .eyebrow { color: #c6a15b; }
+.page-hero { display: grid; grid-template-columns: 1.05fr .95fr; gap: 44px; align-items: center; padding: 38px; min-height: 360px; background: #eef1f2; }
+.page-hero-copy { position: relative; z-index: 1; }
+.page-hero h1 { color: var(--ink); line-height: 1.5; }
+.page-hero > p, .page-hero-copy > p { color: #68798a; line-height: 2.3; }
+.page-hero-visual { position: relative; min-height: 285px; overflow: hidden; background: #dce2e4; }
+.page-hero-visual img { object-fit: cover; }
+.page-hero-visual > span { position: absolute; right: 14px; bottom: 14px; z-index: 1; padding: 9px 12px; background: #122a40e8; color: #e7d3a7; font: 9px Georgia,serif; letter-spacing: 1.7px; }
+.page-sections { gap: 18px; margin-top: 28px; }
+.info-card { min-height: 175px; border-color: var(--line); border-radius: 2px; box-shadow: 0 8px 24px #142b4008; }
+.info-card h2 { color: var(--ink); font-size: 16px; }
+.info-card p { color: #68798a; font-size: 12px; line-height: 2.25; }
+.info-check { color: var(--gold); }
+.page-cta { background: #142d43; border-radius: 2px; }
+.page-cta h2 { color: #fff; }
+
+.member-dashboard { padding-top: 38px; }
+.member-welcome, .dashboard-section, .membership-plan-card, .event-card, .event-detail-card, .profile-panel,
+.course-card, .curriculum, .course-sidebar, .lesson-content-card, .support-form-panel {
+  border-color: var(--line); border-radius: 3px; box-shadow: 0 8px 26px #142b4008;
+}
+.member-welcome { border-top: 3px solid var(--gold); }
+.dashboard-section-heading > a, .member-quick-links a, .member-quick-links button { color: var(--green); }
+.course-progress-track span { background: var(--gold); }
+.course-card-art { background: linear-gradient(135deg, #173c59, #244f70); }
+.course-enrolled { color: #315f80; }
+.membership-plan-icon { border-radius: 3px; background: #e9eff3; color: var(--green); }
+.membership-price { color: var(--green); }
+.membership-plan-card li svg { color: var(--gold); }
+.event-meta svg { color: var(--gold); }
+
+.staff-header { height: auto; min-height: 78px; gap: 22px; }
+.staff-header-nav { display: flex; align-items: center; justify-content: flex-end; gap: 18px; flex-wrap: wrap; }
+.staff-header-nav > a { color: #5e7182; font-size: 11px; font-weight: 700; }
+.staff-header-nav > a:hover { color: var(--gold); }
+.staff-header .brand > img { width: 38px; height: 38px; }
+.admin-tag { color: #765b2e; background: #f3ead8; border-radius: 3px; }
+.dashboard { max-width: 1240px; }
+.admin-intro { border-bottom: 1px solid var(--line); margin-bottom: 22px; }
+.admin-intro .auth-icon { background: #e9eff3; color: var(--green); }
+.users-panel, .password-panel, .admin-courses-panel, .admin-domain-panel { border-radius: 3px; border-color: var(--line); box-shadow: 0 8px 26px #142b4008; }
+.logout-button, .refresh-button { border-radius: 3px; }
+
+.system-page { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 35px; padding: 32px 18px; background: radial-gradient(ellipse at 50% 0%, #e9eff3 0, transparent 55%), var(--paper); }
+.system-card { width: min(100%, 560px); padding: 42px; border: 1px solid var(--line); background: #fff; text-align: center; box-shadow: 0 20px 70px #142b4010; }
+.system-card > svg { color: var(--gold); margin-bottom: 16px; }
+.system-card h1 { margin: 12px 0; color: var(--ink); font-size: 25px; }
+.system-card p { color: var(--muted); font-size: 12px; line-height: 2.2; }
+.system-actions { display: flex; align-items: center; justify-content: center; gap: 22px; flex-wrap: wrap; margin-top: 25px; }
+.system-spinner { width: 34px; height: 34px; display: inline-block; border: 3px solid #dce5eb; border-top-color: var(--gold); border-radius: 50%; animation: gin-spin .8s linear infinite; }
+.system-loading { border: 0; box-shadow: none; background: transparent; }
+@keyframes gin-spin { to { transform: rotate(360deg); } }
+
+@media (max-width: 850px) {
+  .page-hero { grid-template-columns: 1fr; padding: 28px; gap: 25px; }
+  .page-hero-visual { min-height: 240px; }
+  .staff-header { align-items: flex-start; flex-direction: column; padding-block: 15px; }
+  .staff-header-nav { width: 100%; justify-content: flex-start; gap: 12px 18px; }
+}
+@media (max-width: 580px) {
+  .page-hero { padding: 22px; }
+  .page-hero-visual { min-height: 205px; }
+  .info-card { padding: 18px; }
+  .staff-header-nav { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); }
+  .staff-header-nav form { grid-column: 1 / -1; }
+  .staff-header-nav .logout-button { width: 100%; justify-content: center; }
+  .system-card { padding: 28px 20px; }
+  .system-actions { flex-direction: column; }
+}
