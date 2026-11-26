@@ -59,6 +59,22 @@ export default function Home() {
         </div>
       </section>
 
+      <section className="gin-community-section">
+        <div className="public-container gin-community-layout">
+          <div className="gin-community-copy">
+            <span className="eyebrow">A PRIVATE SUCCESS COMMUNITY</span>
+            <h2>موفقیت در کنار افرادی که به رشد یکدیگر اهمیت می‌دهند</h2>
+            <p>شبکه جهانی اطلاعات، جامعه‌ای بین‌المللی برای افرادی است که می‌خواهند در مسیر اهداف شخصی و حرفه‌ای خود یاد بگیرند، ارتباط بسازند و از تجربه دیگران استفاده کنند.</p>
+            <p>اعضای GIN به آموزش‌های موضوعی، منابع چندرسانه‌ای، فرصت‌های یادگیری گروهی، رویدادهای حضوری و آنلاین و ارتباط با جامعه‌ای از افراد هم‌مسیر دسترسی دارند.</p>
+            <Link href="/about" className="text-arrow">درباره مأموریت و ارزش‌های GIN <ArrowLeft size={16} /></Link>
+          </div>
+          <div className="gin-community-image">
+            <Image src="/gin/gin-training.webp" alt="فضای آموزشی و گردهمایی اعضای شبکه جهانی اطلاعات" fill sizes="(max-width: 850px) 100vw, 50vw" />
+            <span>LEARN · CONNECT · GROW</span>
+          </div>
+        </div>
+      </section>
+
       <section className="gin-offer-section">
         <div className="public-container gin-offer-layout">
           <div className="gin-offer-image">
@@ -108,6 +124,22 @@ export default function Home() {
         <div className="public-container">
           <div className="gin-centered-heading"><span className="eyebrow">MEMBERS SHARE THEIR STORIES</span><h2>تجربه‌ها و روایت‌های اعضا</h2><p>با روایت‌های منتشرشده از اعضای جامعه GIN آشنا شوید.</p></div>
           <div className="gin-stories-frame"><iframe src={storiesVideo} title="روایت‌ها و تجربه‌های اعضای GIN" loading="lazy" allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;" allowFullScreen /></div>
+        </div>
+      </section>
+
+      <section className="gin-membership-steps-section">
+        <div className="public-container">
+          <div className="gin-centered-heading">
+            <span className="eyebrow">YOUR GIN JOURNEY</span>
+            <h2>شروع عضویت و ورود به جامعه GIN</h2>
+            <p>درخواست خود را ثبت کنید؛ پس از بررسی و تأیید، دسترسی متناسب با سطح عضویت برای شما فعال می‌شود.</p>
+          </div>
+          <div className="gin-membership-steps">
+            <article><span>01</span><ShieldCheck size={25}/><h3>ثبت درخواست</h3><p>اطلاعات حساب خود را وارد کنید و درخواست عضویت را ارسال کنید.</p></article>
+            <article><span>02</span><Users size={25}/><h3>بررسی عضویت</h3><p>درخواست توسط مدیر بررسی می‌شود و وضعیت آن در حساب شما قابل پیگیری است.</p></article>
+            <article><span>03</span><BookOpen size={25}/><h3>آغاز یادگیری</h3><p>پس از تأیید، به دوره‌ها، منابع آموزشی و امکانات فعال حساب خود دسترسی خواهید داشت.</p></article>
+          </div>
+          <div className="gin-steps-action"><Link href="/register" className="button gin-gold-button">ثبت درخواست عضویت <ArrowLeft size={17}/></Link><Link href="/membership" className="text-arrow">آشنایی با سطوح عضویت <ArrowLeft size={16}/></Link></div>
         </div>
       </section>
 
