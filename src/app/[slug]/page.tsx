@@ -23,7 +23,9 @@ const legacyRedirects: Record<string, string> = {
   "gin-cruise-ship": "/cruise",
 };
 
-export function generateStaticParams() { return Object.keys(publicPages).map((slug) => ({ slug })); }
+export function generateStaticParams() {
+  return [...Object.keys(publicPages), ...Object.keys(legacyRedirects)].map((slug) => ({ slug }));
+}
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
