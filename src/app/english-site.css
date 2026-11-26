@@ -268,6 +268,28 @@
   .gin-en-hotel-grid img { height: auto; aspect-ratio: 16 / 10; }
 }
 
+@media (max-width: 480px) {
+  .gin-en-home,
+  .gin-en-home * {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .gin-en-home-hero {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .gin-en-home :where(h1, h2, h3, p, li, a, span) {
+    white-space: normal !important;
+    overflow-wrap: anywhere;
+  }
+
+  .gin-en-home-hero p {
+    font-size: 17px;
+    line-height: 1.5;
+  }
+}
+
 @media print {
   .gin-en-header, .gin-en-footer, .gin-en-sidebar, .gin-en-certificate .gin-en-cta { display: none !important; }
   .gin-en-shell { display: block; min-height: 0; }
