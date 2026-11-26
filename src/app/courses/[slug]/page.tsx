@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowRight, BookOpen, CheckCircle2, Clock3, LockKeyhole } from "lucide-react";
@@ -7,8 +8,27 @@ import CourseEnrollButton from "@/components/course-enroll-button";
 import { canManageCourse,getSession } from "@/lib/auth";
 import { ensureSchema, pool } from "@/lib/db";
 import { syncMembershipState } from "@/lib/membership";
+import JsonLd from "@/components/json-ld";
+import { buildBreadcrumbSchema, buildCourseSchema } from "@/lib/structured-data";
 
 export const dynamic = "force-dynamic";
+
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  await ensureSchema();
+  const { slug } = await params;
+  const result = await pool.query("SELECT title,summary,description FROM courses WHERE slug=$1 AND status='published'", [slug]);
+  const course = result.rows[0];
+  const title = course?.title ?? "دوره‌های آموزشی GIN";
+  const description = course?.summary || course?.description || "معرفی دوره‌های آموزشی شبکه جهانی اطلاعات.";
+  const url = `/fa/courses/${slug}`;
+  return {
+    title,
+    description,
+    alternates: { canonical: url, languages: { fa: url, en: `/en/courses/${slug}` } },
+    openGraph: { title, description, url, siteName: "Global Information Network", type: "article", images: [{ url: "/gin/gin-social-card.png", width: 1200, height: 630, alt: title }] },
+    twitter: { card: "summary_large_image", title, description, images: ["/gin/gin-social-card.png"] },
+  };
+}
 
 export default async function CoursePage({ params }: { params: Promise<{ slug: string }> }) {
   await ensureSchema();
@@ -27,6 +47,7 @@ export default async function CoursePage({ params }: { params: Promise<{ slug: s
     FROM course_sections s LEFT JOIN lessons l ON l.section_id=s.id AND l.status='published'
     LEFT JOIN lesson_progress lp ON lp.lesson_id=l.id AND lp.user_id=$2
     WHERE s.course_id=$1 ORDER BY s.position,l.position`, [course.id, user?.id ?? null]);
+  const assessments = await pool.query("SELECT id,title,description,time_limit_seconds,max_attempts,pass_percent FROM assessments WHERE course_id=$1 AND status='published' ORDER BY created_at", [course.id]);
   const sections = new Map<number, { id:number; title:string; description:string; lessons:{id:number;title:string;summary:string;duration:number;preview:boolean;locked:boolean;completed:boolean}[] }>();
   for (const row of sectionsResult.rows) {
     const id = Number(row.id);
@@ -35,5 +56,9 @@ export default async function CoursePage({ params }: { params: Promise<{ slug: s
   }
   const lessonCount = [...sections.values()].reduce((sum, section) => sum + section.lessons.length, 0);
   const completedCount = [...sections.values()].reduce((sum, section) => sum + section.lessons.filter((lesson) => lesson.completed).length, 0);
-  return <><PublicHeader/><main className="course-detail-page"><div className="public-container"><div className="page-breadcrumb"><Link href="/">خانه</Link><span>/</span><Link href="/courses">دوره‌ها</Link><span>/</span><span>{course.title}</span></div><section className="course-detail-hero"><div><span className="eyebrow">GIN LEARNING COURSE</span><h1>{course.title}</h1><p>{course.summary}</p>{categories.rows.length>0&&<div className="course-category-tags">{categories.rows.map(item=><Link key={item.slug} href={`/courses?category=${item.slug}`}>{item.name}</Link>)}</div>}<div className="course-detail-stats"><span><BookOpen size={16}/> {lessonCount} درس</span><span><Clock3 size={16}/> {course.estimated_minutes ? `${course.estimated_minutes} دقیقه` : "زمان متغیر"}</span></div>{canManage?<Link href="/instructor" className="button button-small">مدیریت محتوای دوره</Link>:<CourseEnrollButton slug={slug} isAuthenticated={Boolean(user)} isEnrolled={isEnrolled} accessType={course.access_type}/>}</div><div className="course-detail-symbol"><span>G</span><small>LEARN · CONNECT · GROW</small></div></section><div className="course-detail-layout"><section className="curriculum"><div className="curriculum-heading"><div><span className="eyebrow">COURSE CONTENT</span><h2>محتوای دوره</h2></div>{isEnrolled && <span className="curriculum-progress"><CheckCircle2 size={15}/> {completedCount} از {lessonCount} درس تکمیل‌شده</span>}</div>{sections.size ? [...sections.values()].map((section,index)=><article className="curriculum-section" key={section.id}><div className="curriculum-section-title"><span>{String(index+1).padStart(2,"0")}</span><div><h3>{section.title}</h3>{section.description && <p>{section.description}</p>}</div></div><div className="curriculum-lessons">{section.lessons.map((lesson)=> <div className="curriculum-lesson" key={lesson.id}>{lesson.locked ? <LockKeyhole size={17}/> : lesson.completed ? <CheckCircle2 size={17} className="lesson-done"/> : <BookOpen size={17}/>}<div><strong>{lesson.title}</strong>{lesson.summary && <small>{lesson.summary}</small>}</div><span>{lesson.duration ? `${Math.ceil(lesson.duration/60)} دقیقه` : lesson.preview ? "پیش‌نمایش" : ""}</span>{lesson.locked ? <span className="lesson-lock-label">قفل</span> : <Link href={`/courses/${slug}/lessons/${lesson.id}`} aria-label={`مشاهده ${lesson.title}`}><ArrowRight size={16}/></Link>}</div>)}</div></article>) : <div className="catalog-empty">محتوای این دوره هنوز اضافه نشده است.</div>}</section><aside className="course-sidebar"><h3>درباره این دوره</h3><p>{course.description || course.summary}</p><div className="sidebar-access"><span>نوع دسترسی</span><strong>{course.access_type === "free" ? "رایگان" : course.access_type === "members" ? "ویژه اعضا" : "نیازمند خرید"}</strong></div><Link href="/faq" className="text-arrow">راهنمای استفاده <ArrowRight size={15}/></Link></aside></div></div></main><PublicFooter/></>;
+  const courseSchema = buildCourseSchema({ title: course.title, summary: course.summary, path: `/courses/${slug}`, language: "fa-IR", estimatedMinutes: course.estimated_minutes, accessType: course.access_type });
+  const breadcrumbSchema = buildBreadcrumbSchema([
+    { name: "خانه", path: "/" }, { name: "دوره‌ها", path: "/courses" }, { name: course.title, path: `/courses/${slug}` },
+  ]);
+  return <><JsonLd data={[courseSchema, breadcrumbSchema]}/><PublicHeader/><main className="course-detail-page"><div className="public-container"><div className="page-breadcrumb"><Link href="/">خانه</Link><span>/</span><Link href="/courses">دوره‌ها</Link><span>/</span><span>{course.title}</span></div><section className="course-detail-hero"><div><span className="eyebrow">GIN LEARNING COURSE</span><h1>{course.title}</h1><p>{course.summary}</p>{categories.rows.length>0&&<div className="course-category-tags">{categories.rows.map(item=><Link key={item.slug} href={`/courses?category=${item.slug}`}>{item.name}</Link>)}</div>}<div className="course-detail-stats"><span><BookOpen size={16}/> {lessonCount} درس</span><span><Clock3 size={16}/> {course.estimated_minutes ? `${course.estimated_minutes} دقیقه` : "زمان متغیر"}</span></div>{canManage?<Link href="/instructor" className="button button-small">مدیریت محتوای دوره</Link>:<CourseEnrollButton slug={slug} isAuthenticated={Boolean(user)} isEnrolled={isEnrolled} accessType={course.access_type}/>}</div><div className="course-detail-symbol"><span>G</span><small>LEARN · CONNECT · GROW</small></div></section><div className="course-detail-layout"><section className="curriculum"><div className="curriculum-heading"><div><span className="eyebrow">COURSE CONTENT</span><h2>محتوای دوره</h2></div>{isEnrolled && <span className="curriculum-progress"><CheckCircle2 size={15}/> {completedCount} از {lessonCount} درس تکمیل‌شده</span>}</div>{sections.size ? [...sections.values()].map((section,index)=><article className="curriculum-section" key={section.id}><div className="curriculum-section-title"><span>{String(index+1).padStart(2,"0")}</span><div><h3>{section.title}</h3>{section.description && <p>{section.description}</p>}</div></div><div className="curriculum-lessons">{section.lessons.map((lesson)=> <div className="curriculum-lesson" key={lesson.id}>{lesson.locked ? <LockKeyhole size={17}/> : lesson.completed ? <CheckCircle2 size={17} className="lesson-done"/> : <BookOpen size={17}/>}<div><strong>{lesson.title}</strong>{lesson.summary && <small>{lesson.summary}</small>}</div><span>{lesson.duration ? `${Math.ceil(lesson.duration/60)} دقیقه` : lesson.preview ? "پیش‌نمایش" : ""}</span>{lesson.locked ? <span className="lesson-lock-label">قفل</span> : <Link href={`/courses/${slug}/lessons/${lesson.id}`} aria-label={`مشاهده ${lesson.title}`}><ArrowRight size={16}/></Link>}</div>)}</div></article>) : <div className="catalog-empty">محتوای این دوره هنوز اضافه نشده است.</div>}{assessments.rows.length>0&&<section className="curriculum-section"><h2>آزمون‌های دوره</h2>{assessments.rows.map((assessment)=><div className="curriculum-lesson" key={assessment.id}><BookOpen size={17}/><div><strong>{assessment.title}</strong><small>{assessment.description}</small></div><span>{assessment.time_limit_seconds?`${Math.ceil(assessment.time_limit_seconds/60)} دقیقه`:"بدون محدودیت زمانی"}</span><Link href={`/courses/${slug}/assessments/${assessment.id}`}>شروع آزمون</Link></div>)}</section>}</section><aside className="course-sidebar"><h3>درباره این دوره</h3><p>{course.description || course.summary}</p><div className="sidebar-access"><span>نوع دسترسی</span><strong>{course.access_type === "free" ? "رایگان" : course.access_type === "members" ? "ویژه اعضا" : "نیازمند خرید"}</strong></div><Link href="/faq" className="text-arrow">راهنمای استفاده <ArrowRight size={15}/></Link></aside></div></div></main><PublicFooter/></>;
 }

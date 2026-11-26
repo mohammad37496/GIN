@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ensureSchema, pool } from "@/lib/db";
@@ -6,6 +7,7 @@ import PublicFooter from "@/components/public-footer";
 import { GinMark } from "@/components/gin-brand";
 
 export const dynamic = "force-dynamic";
+export const metadata: Metadata = { title: "اعتبارسنجی گواهی", robots: { index: false, follow: false } };
 
 export default async function CertificatePage({ params }: { params: Promise<{ publicId: string }> }) {
   const { publicId } = await params;

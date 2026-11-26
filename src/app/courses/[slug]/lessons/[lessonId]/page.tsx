@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { ArrowRight, BookOpen, LockKeyhole } from "lucide-react";
@@ -8,8 +9,24 @@ import LessonResources from "@/components/lesson-resources";
 import { canManageCourse,getSession } from "@/lib/auth";
 import { ensureSchema, pool } from "@/lib/db";
 import { syncMembershipState } from "@/lib/membership";
+import { buildLessonMetadata, hasUsableLessonTranslation } from "@/lib/lesson-metadata";
 
 export const dynamic = "force-dynamic";
+
+export async function generateMetadata({ params }: { params: Promise<{ slug: string; lessonId: string }> }): Promise<Metadata> {
+  await ensureSchema();
+  const { slug, lessonId: rawLessonId } = await params;
+  const lessonId = Number(rawLessonId);
+  if (!Number.isSafeInteger(lessonId) || lessonId < 1) {
+    return buildLessonMetadata({ locale: "fa", slug, lessonId: 0, title: null, isPreview: false });
+  }
+  const result = await pool.query(`SELECT l.title,l.summary,l.content,l.title_en,l.content_en,l.is_preview
+    FROM lessons l JOIN course_sections s ON s.id=l.section_id JOIN courses c ON c.id=s.course_id
+    WHERE l.id=$1 AND c.slug=$2 AND l.status='published' AND c.status='published'`, [lessonId, slug]);
+  const lesson = result.rows[0];
+  if (!lesson) return { title: "درس پیدا نشد | GIN", robots: { index: false, follow: false } };
+  return buildLessonMetadata({ locale: "fa", slug, lessonId, title: lesson.title, summary: lesson.summary, isPreview: lesson.is_preview === true, hasTranslation: Boolean(lesson.content?.trim()), hasCounterpartTranslation: hasUsableLessonTranslation(lesson.title_en, lesson.content_en) });
+}
 
 export default async function LessonPage({ params }: { params: Promise<{ slug: string; lessonId: string }> }) {
   await ensureSchema();

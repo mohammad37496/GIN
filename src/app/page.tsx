@@ -1,8 +1,17 @@
 import Image from "next/image";
+import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowLeft, ArrowUpLeft, BookOpen, CalendarDays, Compass, GraduationCap, HeartPulse, ShieldCheck, Sparkles, Users, Wallet } from "lucide-react";
 import PublicHeader from "@/components/public-header";
 import PublicFooter from "@/components/public-footer";
+
+export const metadata: Metadata = {
+  title: "شبکه جهانی اطلاعات GIN",
+  description: "شبکه جهانی اطلاعات؛ جامعه‌ای بین‌المللی برای یادگیری، ارتباط و رشد در حوزه‌های سلامت، ثروت و شادی.",
+  alternates: { canonical: "/fa", languages: { fa: "/fa", en: "/en" } },
+  openGraph: { title: "شبکه جهانی اطلاعات GIN", description: "یادگیری، ارتباط و رشد در جامعه جهانی GIN.", url: "/fa", siteName: "Global Information Network", locale: "fa_IR", type: "website", images: [{ url: "/gin/gin-social-card.png", width: 1200, height: 630, alt: "شبکه جهانی اطلاعات GIN" }] },
+  twitter: { card: "summary_large_image", title: "شبکه جهانی اطلاعات GIN", description: "یادگیری، ارتباط و رشد در جامعه جهانی GIN.", images: ["/gin/gin-social-card.png"] },
+};
 
 const pillars = [
   { icon: Wallet, title: "ثروت و استقلال مالی", text: "آموزش سواد مالی، کارآفرینی و شناخت بهتر فرصت‌ها برای تصمیم‌گیری آگاهانه." },
@@ -34,10 +43,12 @@ export default function Home() {
           <h1>به شبکه جهانی اطلاعات <em>GIN</em> خوش آمدید</h1>
           <p>جامعه‌ای بین‌المللی برای یادگیری، ارتباط و رشد در سه حوزه مهم زندگی: سلامت، ثروت و شادی.</p>
           <div className="gin-hero-actions">
-            <Link href="/register" className="button gin-gold-button">درخواست عضویت <ArrowLeft size={17} /></Link>
+            <Link href="/register" className="button gin-gold-button">ایجاد حساب پورتال <ArrowLeft size={17} /></Link>
+            <a href="https://signup.globalinformationnetwork.com/" target="_blank" rel="noreferrer" className="gin-hero-link">درخواست عضویت رسمی GIN</a>
+            <a href="https://calendly.com/d/ct4v-zq9-zqw" target="_blank" rel="noreferrer" className="gin-hero-link">رزرو گفت‌وگو</a>
             <Link href="/about" className="gin-hero-link">درباره شبکه بیشتر بدانید <ArrowUpLeft size={17} /></Link>
           </div>
-          <div className="gin-hero-note"><ShieldCheck size={16} /> درخواست‌های عضویت پس از بررسی و تأیید فعال می‌شوند.</div>
+          <div className="gin-hero-note"><ShieldCheck size={16} /> حساب‌های پورتال پس از بررسی و تأیید مدیر فعال می‌شوند؛ این فرایند با درخواست عضویت رسمی GIN جداست.</div>
         </div>
         <div className="gin-hero-caption">LEARN · CONNECT · GROW</div>
       </section>
@@ -132,14 +143,14 @@ export default function Home() {
           <div className="gin-centered-heading">
             <span className="eyebrow">YOUR GIN JOURNEY</span>
             <h2>شروع عضویت و ورود به جامعه GIN</h2>
-            <p>درخواست خود را ثبت کنید؛ پس از بررسی و تأیید، دسترسی متناسب با سطح عضویت برای شما فعال می‌شود.</p>
+            <p>برای استفاده از امکانات آموزشی پورتال، حساب جداگانه بسازید. درخواست عضویت رسمی GIN از طریق وب‌سایت خود سازمان انجام می‌شود.</p>
           </div>
           <div className="gin-membership-steps">
-            <article><span>01</span><ShieldCheck size={25}/><h3>ثبت درخواست</h3><p>اطلاعات حساب خود را وارد کنید و درخواست عضویت را ارسال کنید.</p></article>
-            <article><span>02</span><Users size={25}/><h3>بررسی عضویت</h3><p>درخواست توسط مدیر بررسی می‌شود و وضعیت آن در حساب شما قابل پیگیری است.</p></article>
+            <article><span>01</span><ShieldCheck size={25}/><h3>ایجاد حساب پورتال</h3><p>برای دسترسی به امکانات همین پورتال، حساب کاربری جداگانه بسازید.</p></article>
+            <article><span>02</span><Users size={25}/><h3>بررسی حساب پورتال</h3><p>درخواست ایجاد حساب پورتال توسط مدیر بررسی می‌شود و وضعیت آن در حساب شما قابل پیگیری است.</p></article>
             <article><span>03</span><BookOpen size={25}/><h3>آغاز یادگیری</h3><p>پس از تأیید، به دوره‌ها، منابع آموزشی و امکانات فعال حساب خود دسترسی خواهید داشت.</p></article>
           </div>
-          <div className="gin-steps-action"><Link href="/register" className="button gin-gold-button">ثبت درخواست عضویت <ArrowLeft size={17}/></Link><Link href="/membership" className="text-arrow">آشنایی با سطوح عضویت <ArrowLeft size={16}/></Link></div>
+          <div className="gin-steps-action"><Link href="/register" className="button gin-gold-button">ایجاد حساب پورتال <ArrowLeft size={17}/></Link><a href="https://signup.globalinformationnetwork.com/" target="_blank" rel="noreferrer" className="text-arrow">درخواست عضویت رسمی GIN <ArrowLeft size={16}/></a><Link href="/membership" className="text-arrow">آشنایی با سطوح عضویت <ArrowLeft size={16}/></Link></div>
         </div>
       </section>
 
@@ -159,8 +170,8 @@ export default function Home() {
 
       <section className="gin-membership-cta">
         <div className="public-container gin-membership-cta-inner">
-          <div><span className="eyebrow">BECOME A MEMBER</span><h2>مسیر یادگیری و ارتباط خود را با GIN آغاز کنید</h2><p>درخواست عضویت خود را ثبت کنید. پس از بررسی و تأیید، به امکانات متناسب با سطح دسترسی حساب خود وارد می‌شوید.</p></div>
-          <div className="gin-cta-actions"><Link href="/register" className="button gin-gold-button">درخواست عضویت <ArrowLeft size={17} /></Link><Link href="/membership" className="gin-cta-secondary">مشاهده سطوح عضویت</Link></div>
+          <div><span className="eyebrow">BECOME A MEMBER</span><h2>مسیر یادگیری و ارتباط خود را با GIN آغاز کنید</h2><p>درخواست عضویت رسمی را در وب‌سایت GIN انجام دهید. ثبت‌نام در این پورتال فرایندی جداگانه برای ایجاد حساب آموزشی است.</p></div>
+          <div className="gin-cta-actions"><a href="https://signup.globalinformationnetwork.com/" target="_blank" rel="noreferrer" className="button gin-gold-button">درخواست عضویت رسمی GIN <ArrowLeft size={17} /></a><a href="https://calendly.com/d/ct4v-zq9-zqw" target="_blank" rel="noreferrer" className="gin-cta-secondary">رزرو گفت‌وگو</a><Link href="/register" className="gin-cta-secondary">ایجاد حساب پورتال آموزشی</Link><Link href="/membership" className="gin-cta-secondary">مشاهده سطوح عضویت</Link></div>
         </div>
       </section>
     </main>

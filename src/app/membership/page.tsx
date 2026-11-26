@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { CheckCircle2,Crown } from "lucide-react";
 import PublicHeader from "@/components/public-header";
 import PublicFooter from "@/components/public-footer";
@@ -8,6 +9,7 @@ import { ensureSchema,pool } from "@/lib/db";
 import { syncMembershipState } from "@/lib/membership";
 
 export const dynamic="force-dynamic";
+export const metadata: Metadata = { title: "پلن‌های عضویت پرتال", description: "پلن‌های داخلی سامانه آموزشی GIN؛ جدا از سطوح عضویت رسمی شبکه اطلاعات جهانی.", alternates: { canonical: "/fa/membership", languages: { fa: "/fa/membership", en: "/en/portal-membership" } }, robots: { index: false, follow: false }, openGraph: { title: "پلن‌های عضویت پرتال | GIN", description: "پلن‌های داخلی سامانه آموزشی GIN، جدا از سطوح عضویت رسمی.", url: "/fa/membership", siteName: "Global Information Network", type: "website", images: ["/gin/gin-social-card.png"] }, twitter: { card: "summary_large_image", title: "پلن‌های عضویت پرتال | GIN", description: "پلن‌های داخلی سامانه آموزشی GIN، جدا از سطوح عضویت رسمی.", images: ["/gin/gin-social-card.png"] } };
 
 export default async function MembershipPage(){
   await ensureSchema();const user=await getSession();if(user)await syncMembershipState(user.id);
