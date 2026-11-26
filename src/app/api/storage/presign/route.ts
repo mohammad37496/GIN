@@ -24,12 +24,14 @@ export async function POST(request: Request) {
   const extension = parsed.data.filename.split(".").pop()?.toLowerCase().replace(/[^a-z0-9]/g, "") || "bin";
   const allowedExtensions:Record<string,string[]>={"image/jpeg":["jpg","jpeg"],"image/png":["png"],"image/webp":["webp"],"image/gif":["gif"],"application/pdf":["pdf"],"video/mp4":["mp4"]};
   if(!allowedExtensions[parsed.data.contentType]?.includes(extension))return errorResponse("پسوند فایل با نوع محتوای اعلام‌شده سازگار نیست.");
-  const key = `uploads/${user.id}/${randomUUID()}.${extension}`;
-  const command = new PutObjectCommand({ Bucket: storage.bucket, Key: key, ContentType: parsed.data.contentType, ContentLength: parsed.data.size });
+  const uploadId = randomUUID();
+  const key = `assets/${user.id}/${uploadId}.${extension}`;
+  const uploadKey = `uploads/${user.id}/${uploadId}.${extension}`;
+  const command = new PutObjectCommand({ Bucket: storage.bucket, Key: uploadKey, ContentType: parsed.data.contentType, ContentLength: parsed.data.size });
   try {
     await ensureSchema();
-    const asset = await pool.query(`INSERT INTO stored_assets(owner_id,object_key,original_filename,content_type,size_bytes)
-      VALUES($1,$2,$3,$4,$5) RETURNING id`, [user.id,key,parsed.data.filename,parsed.data.contentType,parsed.data.size]);
+    const asset = await pool.query(`INSERT INTO stored_assets(owner_id,object_key,upload_key,original_filename,content_type,size_bytes)
+      VALUES($1,$2,$3,$4,$5,$6) RETURNING id`, [user.id,key,uploadKey,parsed.data.filename,parsed.data.contentType,parsed.data.size]);
     const uploadUrl = await getSignedUrl(storage.client, command, { expiresIn: 300 });
     return jsonResponse({ assetId: Number(asset.rows[0].id), uploadUrl, expiresIn: 300 });
   } catch {

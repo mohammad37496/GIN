@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import strictAssert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
+import { readFile, readdir } from "node:fs/promises";
+import { createServer } from "node:http";
 import { spawn, spawnSync } from "node:child_process";
 import { setTimeout as delay } from "node:timers/promises";
 import { PGlite } from "@electric-sql/pglite";
@@ -13,6 +14,86 @@ const { Pool } = pg;
 const root = process.cwd();
 const database = await PGlite.create();
 const server = new PGLiteSocketServer({ db: database, host: "127.0.0.1", port: 55432, maxConnections: 8 });
+const s3Objects = new Map();
+const mutateAfterHead = new Set();
+const s3Server = createServer((request, response) => {
+  void (async () => {
+    const pathParts = decodeURIComponent(new URL(request.url, "http://127.0.0.1").pathname).split("/").filter(Boolean);
+    const bucket = pathParts.shift();
+    const key = pathParts.join("/");
+    if (bucket !== "integration") { response.writeHead(404); response.end(); return; }
+    const metadataFromHeaders = () => Object.fromEntries(Object.entries(request.headers)
+      .filter(([name]) => name.startsWith("x-amz-meta-") )
+      .map(([name, value]) => [name.slice("x-amz-meta-".length), String(value)]));
+    const sendMissing = () => { response.writeHead(404, { "Content-Type": "application/xml" }); response.end("<Error><Code>NoSuchKey</Code></Error>"); };
+
+    if (request.method === "PUT") {
+      const copyHeader = request.headers["x-amz-copy-source"];
+      if (copyHeader) {
+        const sourceParts = decodeURIComponent(String(copyHeader).split("?")[0]).replace(/^\/+/, "").split("/");
+        const sourceBucket = sourceParts.shift();
+        const sourceKey = sourceParts.join("/");
+        const source = sourceBucket === "integration" ? s3Objects.get(sourceKey) : undefined;
+        if (!source) { sendMissing(); return; }
+        const ifMatch = request.headers["x-amz-copy-source-if-match"];
+        if (ifMatch && String(ifMatch) !== source.etag) {
+          response.writeHead(412, { "Content-Type": "application/xml" });
+          response.end("<Error><Code>PreconditionFailed</Code></Error>");
+          return;
+        }
+        const replaceMetadata = String(request.headers["x-amz-metadata-directive"] || "COPY").toUpperCase() === "REPLACE";
+        const copied = {
+          body: Buffer.from(source.body),
+          contentType: replaceMetadata ? String(request.headers["content-type"] || source.contentType) : source.contentType,
+          etag: source.etag,
+          metadata: replaceMetadata ? metadataFromHeaders() : { ...source.metadata },
+        };
+        s3Objects.set(key, copied);
+        response.writeHead(200, { "Content-Type": "application/xml" });
+        response.end(`<CopyObjectResult><ETag>${copied.etag}</ETag><LastModified>2026-11-26T00:00:00.000Z</LastModified></CopyObjectResult>`);
+        return;
+      }
+      const chunks = [];
+      for await (const chunk of request) chunks.push(chunk);
+      const body = Buffer.concat(chunks);
+      const etag = `"${createHash("md5").update(body).digest("hex")}"`;
+      s3Objects.set(key, { body, contentType: String(request.headers["content-type"] || "application/octet-stream"), etag, metadata: metadataFromHeaders() });
+      response.writeHead(200, { ETag: etag });
+      response.end();
+      return;
+    }
+
+    if (request.method === "HEAD" || request.method === "GET") {
+      const object = s3Objects.get(key);
+      if (!object) { sendMissing(); return; }
+      const headers = {
+        "Content-Length": String(object.body.length),
+        "Content-Type": object.contentType,
+        ETag: object.etag,
+        "Last-Modified": new Date("2026-11-26T00:00:00.000Z").toUTCString(),
+        ...Object.fromEntries(Object.entries(object.metadata).map(([name, value]) => [`x-amz-meta-${name}`, value])),
+      };
+      response.writeHead(200, headers);
+      response.end(request.method === "GET" ? object.body : undefined);
+      if (request.method === "HEAD" && mutateAfterHead.has(key)) {
+        mutateAfterHead.delete(key);
+        const replacement = Buffer.alloc(object.body.length, 0x58);
+        s3Objects.set(key, { ...object, body: replacement, etag: `"${createHash("md5").update(replacement).digest("hex")}"` });
+      }
+      return;
+    }
+
+    if (request.method === "DELETE") {
+      s3Objects.delete(key);
+      response.writeHead(204);
+      response.end();
+      return;
+    }
+
+    response.writeHead(501);
+    response.end();
+  })().catch(() => { if (!response.writableEnded) { if (!response.headersSent) response.writeHead(500); response.end(); } });
+});
 let app;
 let pool;
 const baseUrl = "http://127.0.0.1:3100";
@@ -38,6 +119,8 @@ async function api(path, { method = "GET", body, cookie } = {}) {
 
 try {
   await server.start();
+  await new Promise((resolve, reject) => { s3Server.once("error", reject); s3Server.listen(0, "127.0.0.1", resolve); });
+  const s3Port = s3Server.address().port;
   const databaseUrl = `postgresql://postgres:postgres@${server.getServerConn()}/postgres?sslmode=disable`;
   pool = new Pool({ connectionString: databaseUrl, max: 1 });
   await pool.query("SELECT 1");
@@ -52,7 +135,7 @@ try {
       APP_URL: baseUrl,
       BOOTSTRAP_ADMIN_USERNAME: "integration-admin",
       BOOTSTRAP_ADMIN_PASSWORD: "IntegrationAdmin!Password2026",
-      S3_ENDPOINT: "https://s3.integration.invalid",
+      S3_ENDPOINT: `http://127.0.0.1:${s3Port}`,
       S3_BUCKET: "integration",
       S3_ACCESS_KEY_ID: "integration-access-key",
       S3_SECRET_ACCESS_KEY: "integration-secret-key",
@@ -61,7 +144,9 @@ try {
   });
   await waitForApp();
 
-  const lastMigration = "0014_payment_refund_reconciliation.sql";
+  const migrationFiles = (await readdir(`${root}/migrations`)).filter((name) => /^\d{4}_[a-z0-9_-]+\.sql$/i.test(name)).sort();
+  const lastMigration = migrationFiles.at(-1);
+  assert(lastMigration === "0015_immutable_asset_uploads.sql", "The immutable asset migration is the latest ordered migration");
   const lastMigrationSql = await readFile(`${root}/migrations/${lastMigration}`, "utf8");
   const lastMigrationChecksum = createHash("sha256").update(lastMigrationSql).digest("hex");
   const baselineMigration = "0001_core.sql";
@@ -81,12 +166,15 @@ try {
   assert(restoredLastMigration.rows[0]?.checksum === lastMigrationChecksum, "A missing later migration is applied after baseline reconciliation");
 
   await pool.query("UPDATE schema_migrations SET checksum=$1 WHERE version=$2", ["legacy-last-checksum", lastMigration]);
-  await strictAssert.rejects(runMigrations(pool), /Applied migration 0014_payment_refund_reconciliation\.sql was modified/);
+  await strictAssert.rejects(runMigrations(pool), new RegExp(`Applied migration ${lastMigration} was modified`));
   await pool.query("UPDATE schema_migrations SET checksum=$1 WHERE version=$2", [lastMigrationChecksum, lastMigration]);
   await pool.query("DELETE FROM schema_migrations WHERE version=$1", [baselineMigration]);
   await strictAssert.rejects(runMigrations(pool), new RegExp(`Baseline migration ${baselineMigration} is missing from schema_migrations while later migrations are recorded`));
   await pool.query("INSERT INTO schema_migrations(version,checksum) VALUES($1,$2)", [baselineMigration,baselineChecksum]);
   await runMigrations(pool);
+  const storageColumns = await pool.query(`SELECT column_name FROM information_schema.columns
+    WHERE table_name='stored_assets' AND column_name=ANY($1::text[])`, [["upload_key","upload_etag","finalizing_at"]]);
+  assert(storageColumns.rows.length === 3, "Stored assets include independent upload keys and resumable finalization state");
 
   const legacyRoutes = [
     ["/about-us", "/about"],
@@ -131,8 +219,48 @@ try {
 
   result = await api(`/api/admin/courses/${courseId}`, { method: "PATCH", cookie: adminCookie, body: { status: "published" } });
   assert(result.response.status === 200, `Course publishes only after a published lesson exists (HTTP ${result.response.status}: ${JSON.stringify(result.data)})`);
+  const uploadBytes = Buffer.from("%PDF-1.4\nGIN immutable upload regression\n%%EOF");
+  const upload = await api("/api/storage/presign", { method: "POST", cookie: adminCookie, body: { filename: "lesson.pdf", contentType: "application/pdf", size: uploadBytes.length } });
+  assert(upload.response.status === 200 && upload.data.uploadUrl, `Instructor can obtain a staging upload URL (HTTP ${upload.response.status}: ${JSON.stringify(upload.data)})`);
+  const uploadKey = decodeURIComponent(new URL(upload.data.uploadUrl).pathname.split("/").slice(2).join("/"));
+  const putResponse = await fetch(upload.data.uploadUrl, { method: "PUT", headers: { "Content-Type": "application/pdf" }, body: uploadBytes });
+  assert(putResponse.status === 200, `Staging object accepts the initial upload (HTTP ${putResponse.status})`);
+  const completions = await Promise.all([
+    api("/api/storage/complete", { method: "POST", cookie: adminCookie, body: { assetId: upload.data.assetId } }),
+    api("/api/storage/complete", { method: "POST", cookie: adminCookie, body: { assetId: upload.data.assetId } }),
+  ]);
+  assert(completions.some((item) => item.response.status === 200) && completions.every((item) => item.response.status === 200 || item.response.status === 409), "Concurrent completion requests produce one immutable ready asset without duplicate finalization");
+  const storedAsset = await pool.query("SELECT object_key,upload_key,status FROM stored_assets WHERE id=$1", [upload.data.assetId]);
+  assert(storedAsset.rows[0].status === "ready" && storedAsset.rows[0].upload_key === uploadKey && storedAsset.rows[0].object_key !== storedAsset.rows[0].upload_key, "The ready asset uses a final object key distinct from its presigned staging key");
+  result = await api(`/api/admin/lessons/${lessonId}/resources`, { method: "POST", cookie: adminCookie, body: { assetId: upload.data.assetId, title: "Integration PDF", isDownloadable: true } });
+  assert(result.response.status === 201, `A verified immutable asset can be attached to a lesson (HTTP ${result.response.status}: ${JSON.stringify(result.data)})`);
   result = await api(`/api/lessons/${lessonId}/resources`);
-  assert(result.response.status === 200 && Array.isArray(result.data.resources), `Anonymous visitors can read resources attached to a published preview lesson (HTTP ${result.response.status}: ${JSON.stringify(result.data)})`);
+  assert(result.response.status === 200 && result.data.resources.length === 1, `Anonymous visitors can read resources attached to a published preview lesson (HTTP ${result.response.status}: ${JSON.stringify(result.data)})`);
+  const resourceUrl = result.data.resources[0].url;
+  const originalDownload = await fetch(resourceUrl);
+  const originalDownloadedBytes = Buffer.from(await originalDownload.arrayBuffer());
+  assert(originalDownload.status === 200 && originalDownloadedBytes.equals(uploadBytes), "The lesson resource downloads the verified final object bytes");
+  const replayBytes = Buffer.alloc(uploadBytes.length, 0x58);
+  const replayResponse = await fetch(upload.data.uploadUrl, { method: "PUT", headers: { "Content-Type": "application/pdf" }, body: replayBytes });
+  assert(replayResponse.status === 200, "A still-valid presigned URL can only rewrite the isolated staging object");
+  const replayedDownload = await fetch(resourceUrl);
+  const replayedDownloadedBytes = Buffer.from(await replayedDownload.arrayBuffer());
+  assert(replayedDownload.status === 200 && replayedDownloadedBytes.equals(uploadBytes), "Replaying the original upload URL cannot alter the published lesson resource");
+  result = await api("/api/storage/complete", { method: "POST", cookie: adminCookie, body: { assetId: upload.data.assetId } });
+  assert(result.response.status === 200 && result.data.status === "ready", "Repeated completion remains idempotent after the asset is ready");
+  assert(!s3Objects.has(uploadKey), "A repeated completion removes any staging object recreated by a replay");
+
+  const racingBytes = Buffer.from("%PDF-1.4\nGIN race guard\n%%EOF");
+  const racingUpload = await api("/api/storage/presign", { method: "POST", cookie: adminCookie, body: { filename: "race.pdf", contentType: "application/pdf", size: racingBytes.length } });
+  assert(racingUpload.response.status === 200, "A second upload can be staged for the ETag race regression");
+  const racingKey = decodeURIComponent(new URL(racingUpload.data.uploadUrl).pathname.split("/").slice(2).join("/"));
+  const racingPut = await fetch(racingUpload.data.uploadUrl, { method: "PUT", headers: { "Content-Type": "application/pdf" }, body: racingBytes });
+  assert(racingPut.status === 200, "The ETag race fixture is uploaded");
+  mutateAfterHead.add(racingKey);
+  result = await api("/api/storage/complete", { method: "POST", cookie: adminCookie, body: { assetId: racingUpload.data.assetId } });
+  assert(result.response.status === 409, "A staging object changed after HEAD is rejected by conditional CopyObject");
+  const quarantinedAsset = await pool.query("SELECT status FROM stored_assets WHERE id=$1", [racingUpload.data.assetId]);
+  assert(quarantinedAsset.rows[0].status === "quarantined", "An ETag race places the asset in quarantine");
 
   result = await api("/api/courses");
   assert(result.response.status === 200 && result.data.courses.some((course) => course.slug === "integration-course"), "Published course appears in public catalog");
@@ -421,14 +549,14 @@ try {
     (SELECT COUNT(*)::int FROM referral_attributions WHERE affiliate_id=$2) AS referral_attributions,
     (SELECT COUNT(*)::int FROM affiliate_clicks WHERE affiliate_id=$2) AS affiliate_clicks,
     (SELECT COUNT(*)::int FROM support_replies sr JOIN support_messages sm ON sm.id=sr.message_id WHERE sm.user_id=$1 AND sr.is_staff=TRUE) AS support_replies`, [memberId,affiliateId]);
-  assert(counts.rows[0].migrations >= 14, "All versioned SQL migrations are recorded");
+  assert(counts.rows[0].migrations >= migrationFiles.length, "All versioned SQL migrations are recorded");
   assert(counts.rows[0].completed_enrollments === 1 && counts.rows[0].completed_lessons === 1, "Enrollment and progress persisted in PostgreSQL-compatible database");
   assert(counts.rows[0].certificates === 1 && counts.rows[0].passed_assessments === 1, "Assessment and certificate records persisted");
   assert(counts.rows[0].active_memberships === 0 && counts.rows[0].canceled_memberships === 2, "Membership upgrade and cancellation history persisted");
   assert(counts.rows[0].referral_attributions === 1 && counts.rows[0].affiliate_clicks === 1, "Affiliate attribution and click tracking persisted");
   assert(counts.rows[0].support_replies === 1, "Support reply persisted");
 
-  console.log(JSON.stringify({ status: "passed", database: "PGlite PostgreSQL-compatible integration server", migrations: counts.rows[0].migrations, flows: ["legacy reference route redirects", "admin bootstrap/login", "course/section/lesson management", "course publication", "assessment/question management", "public catalog", "member registration and admin approval", "member login", "free enrollment", "lesson progress", "timed assessment attempt and grading", "course completion", "certificate issuance and public verification", "membership plan entitlements", "membership request and admin approval", "scheduled membership activation and expiry reconciliation", "membership upgrade and cancellation", "event publication and registration", "capacity waitlist and automatic promotion", "support inbox and staff reply", "instructor RBAC and course isolation", "finance versus affiliate-manager role separation", "affiliate payout reservation and maker-checker settlement", "affiliate application and referral attribution", "self-referral database guard", "affiliate click tracking and wallet balance guard", "full refund reconciliation and idempotent commission reversal", "checkout disabled without provider", "notification delivery", "profile updates", "CSRF rejection"] }, null, 2));
+  console.log(JSON.stringify({ status: "passed", database: "PGlite PostgreSQL-compatible integration server", migrations: counts.rows[0].migrations, flows: ["legacy reference route redirects", "admin bootstrap/login", "course/section/lesson management", "course publication", "immutable staging-to-final S3 uploads and replay resistance", "conditional copy rejects ETag races", "assessment/question management", "public catalog", "member registration and admin approval", "member login", "free enrollment", "lesson progress", "timed assessment attempt and grading", "course completion", "certificate issuance and public verification", "membership plan entitlements", "membership request and admin approval", "scheduled membership activation and expiry reconciliation", "membership upgrade and cancellation", "event publication and registration", "capacity waitlist and automatic promotion", "support inbox and staff reply", "instructor RBAC and course isolation", "finance versus affiliate-manager role separation", "affiliate payout reservation and maker-checker settlement", "affiliate application and referral attribution", "self-referral database guard", "affiliate click tracking and wallet balance guard", "full refund reconciliation and idempotent commission reversal", "checkout disabled without provider", "notification delivery", "profile updates", "CSRF rejection"] }, null, 2));
 } catch (error) {
   console.error(error);
   process.exitCode = 1;
@@ -441,5 +569,6 @@ try {
   }
   await pool?.end().catch(() => undefined);
   await server.stop().catch(() => undefined);
+  await new Promise((resolve) => s3Server.close(() => resolve(undefined))).catch(() => undefined);
   await database.close().catch(() => undefined);
 }
