@@ -33,10 +33,11 @@
 .gin-en-language-switcher { position: relative; color: #fff; z-index: 10; flex: 0 0 auto; }
 .gin-en-language-switcher summary { list-style: none; cursor: pointer; color: #fff; font-size: 16px; font-weight: 700; white-space: nowrap; display: flex; align-items: center; gap: 8px; }
 .gin-en-language-switcher summary::-webkit-details-marker { display: none; }
-.gin-en-language-options { position: absolute; top: calc(100% + 12px); left: 0; min-width: 160px; display: grid; gap: 0; background: #fff; border: 1px solid #d5d5d5; box-shadow: 0 8px 24px #0003; }
+.gin-en-language-options { position: absolute; top: calc(100% + 12px); inset-inline-start: 0; z-index: 30; width: min(240px, calc(100vw - 24px)); max-height: min(70vh, 420px); overflow-y: auto; display: grid; gap: 0; background: #fff; border: 1px solid #d5d5d5; box-shadow: 0 8px 24px #0003; }
 .gin-en-language-options a { padding: 10px 13px; color: #111; font-size: 16px; }
 .gin-en-language-options a:hover { background: #f1f3f8; }
 .gin-en-language-options a { display: flex; align-items: center; gap: 9px; }
+.gin-en-language-group-label { padding: 8px 13px 5px; border-top: 1px solid #e8ebef; background: #f7f8fa; color: #647080; font-size: 10px; font-weight: 800; letter-spacing: .04em; }
 .gin-en-flag { display: inline-block; width: 22px; height: 15px; flex: 0 0 22px; background-position: center; background-repeat: no-repeat; background-size: cover; box-shadow: 0 0 0 1px #0002; }
 .gin-en-flag-us { background-image: url("/gin/flag-us.svg"); }
 .gin-en-flag-ir { background-image: url("/gin/flag-ir.svg"); }

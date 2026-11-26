@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { englishPathForPersianPath, hasEnglishCounterpart, persianPathForEnglishPath } from "@/lib/locale-routes";
+import { officialGinLanguages } from "@/lib/official-gin-languages";
 
 export default function LocaleSwitcher({ initialLocale = "fa" }: { initialLocale?: "fa" | "en" }) {
   const pathname = usePathname() || "/";
@@ -32,8 +33,15 @@ export default function LocaleSwitcher({ initialLocale = "fa" }: { initialLocale
     <details className={`gin-en-language-switcher polylang-item lang-item lang-item-${english ? "en" : "fa"} pll-parent-menu-item ${english ? "current-lang" : ""}`}>
       <summary aria-label={english ? "Choose language" : "انتخاب زبان"}><span className={`gin-en-flag gin-en-flag-${english ? "us" : "ir"}`} aria-hidden="true" />{english ? "English" : "فارسی"}<span aria-hidden="true">⌄</span></summary>
       <div className="gin-en-language-options">
+        <div className="gin-en-language-group-label">{english ? "Portal language" : "زبان پورتال"}</div>
         <Link className="lang-item lang-item-en" href={englishHref} lang="en" aria-current={english ? "page" : undefined} onClick={() => remember("en")}><span className="gin-en-flag gin-en-flag-us" aria-hidden="true" />English</Link>
         <Link className="lang-item lang-item-fa" href={persianHref} lang="fa" aria-current={!english ? "page" : undefined} onClick={() => remember("fa")}><span className="gin-en-flag gin-en-flag-ir" aria-hidden="true" />فارسی</Link>
+        <div className="gin-en-language-group-label">{english ? "Official GIN website" : "وب‌سایت رسمی GIN"}</div>
+        {officialGinLanguages.map((language) => (
+          <a key={language.code} href={language.href} lang={language.code} target="_blank" rel="noopener noreferrer" aria-label={english ? `Open official GIN website in ${language.label}` : `باز کردن وب‌سایت رسمی GIN به زبان ${language.label}`}>
+            {language.label}
+          </a>
+        ))}
       </div>
     </details>
   );
