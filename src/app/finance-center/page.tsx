@@ -1,9 +1,12 @@
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { CreditCard } from "lucide-react";
 import AdminFinance from "@/components/admin-finance";
 import AdminAffiliates from "@/components/admin-affiliates";
 import { canManageAffiliates,canManageFinance,getSession } from "@/lib/auth";
 import StaffHeader from "@/components/staff-header";
+
+export const metadata: Metadata = { title: "مرکز مالی و همکاری در فروش", robots: { index: false, follow: false } };
 
 export const dynamic="force-dynamic";
 

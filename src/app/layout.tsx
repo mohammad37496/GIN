@@ -1,4 +1,5 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
+import { headers } from "next/headers";
 import "./globals.css";
 import "./public-site.css";
 import "./courses.css";
@@ -13,20 +14,38 @@ import "./membership-controls.css";
 import "./catalog-filters.css";
 import "./gin-reference.css";
 import "./brand.css";
+import "./english-site.css";
+
+const siteUrl = process.env.APP_URL?.trim() || "https://globalinformationnetwork.liara.run";
 
 export const metadata: Metadata = {
+  metadataBase: new URL(siteUrl),
   title: { default: "GIN | Global Information Network", template: "%s | GIN" },
   description: "Global Information Network — شبکه جهانی اطلاعات، یادگیری و ارتباط اعضا.",
   applicationName: "Global Information Network",
-  icons: { icon: "/icon.svg", shortcut: "/icon.svg", apple: "/icon.svg" },
+  icons: {
+    icon: [{ url: "/icon.svg", type: "image/svg+xml" }],
+    shortcut: ["/icon.svg"],
+    apple: [{ url: "/apple-touch-icon.png", type: "image/png" }],
+  },
   openGraph: {
     title: "GIN | Global Information Network",
     description: "شبکه جهانی اطلاعات، یادگیری و ارتباط اعضا.",
     siteName: "Global Information Network",
     type: "website",
+    images: [{ url: "/gin/gin-social-card.png", width: 1200, height: 630, alt: "GIN — Global Information Network" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "GIN | Global Information Network",
+    description: "شبکه جهانی اطلاعات، یادگیری و ارتباط اعضا.",
+    images: ["/gin/gin-social-card.png"],
   },
 };
 
-export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  return <html lang="fa" dir="rtl"><body>{children}</body></html>;
+export const viewport: Viewport = { themeColor: "#173c59" };
+
+export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+  const locale = (await headers()).get("x-website-locale") === "en" ? "en" : "fa";
+  return <html lang={locale} dir={locale === "fa" ? "rtl" : "ltr"}><body className={`locale-${locale}`}>{children}</body></html>;
 }

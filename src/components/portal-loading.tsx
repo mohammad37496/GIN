@@ -1,6 +1,9 @@
+import { GinLogo } from "@/components/gin-brand";
+
 export default function PortalLoading({ label = "در حال آماده‌سازی اطلاعات" }: { label?: string }) {
   return (
     <main className="system-page" dir="rtl" aria-live="polite" aria-busy="true">
+      <GinLogo width={230} height={52} />
       <section className="system-card system-loading">
         <span className="system-spinner" aria-hidden="true" />
         <h1>{label}</h1>

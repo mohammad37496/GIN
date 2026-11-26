@@ -1,0 +1,23 @@
+-- Optional English translations. Existing Persian content remains untouched.
+ALTER TABLE courses ADD COLUMN IF NOT EXISTS title_en VARCHAR(180);
+ALTER TABLE courses ADD COLUMN IF NOT EXISTS summary_en VARCHAR(360);
+ALTER TABLE courses ADD COLUMN IF NOT EXISTS description_en TEXT;
+
+ALTER TABLE course_sections ADD COLUMN IF NOT EXISTS title_en VARCHAR(180);
+ALTER TABLE course_sections ADD COLUMN IF NOT EXISTS description_en TEXT;
+
+ALTER TABLE lessons ADD COLUMN IF NOT EXISTS title_en VARCHAR(180);
+ALTER TABLE lessons ADD COLUMN IF NOT EXISTS summary_en VARCHAR(360);
+ALTER TABLE lessons ADD COLUMN IF NOT EXISTS content_en TEXT;
+
+ALTER TABLE events ADD COLUMN IF NOT EXISTS title_en VARCHAR(180);
+ALTER TABLE events ADD COLUMN IF NOT EXISTS summary_en VARCHAR(360);
+ALTER TABLE events ADD COLUMN IF NOT EXISTS description_en TEXT;
+ALTER TABLE events ADD COLUMN IF NOT EXISTS location_en VARCHAR(240);
+
+ALTER TABLE course_categories ADD COLUMN IF NOT EXISTS name_en VARCHAR(140);
+ALTER TABLE course_categories ADD COLUMN IF NOT EXISTS description_en TEXT;
+
+ALTER TABLE membership_plans ADD COLUMN IF NOT EXISTS name_en VARCHAR(140);
+ALTER TABLE membership_plans ADD COLUMN IF NOT EXISTS description_en TEXT;
+ALTER TABLE membership_plans ADD COLUMN IF NOT EXISTS benefits_en JSONB;

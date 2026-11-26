@@ -4,7 +4,7 @@ import { ensureSchema, inTransaction } from "@/lib/db";
 import { errorResponse, jsonResponse } from "@/lib/http";
 import { rejectCrossOriginMutation } from "@/lib/request-security";
 
-const schema = z.object({ title: z.string().trim().min(2).max(180), description: z.string().trim().max(4000).default(""), position: z.number().int().min(0).max(10000).optional() });
+const schema = z.object({ title: z.string().trim().min(2).max(180), titleEn: z.string().trim().max(180).default(""), description: z.string().trim().max(4000).default(""), descriptionEn: z.string().trim().max(4000).default(""), position: z.number().int().min(0).max(10000).optional() });
 
 export async function POST(request: Request, { params }: { params: Promise<{ courseId: string }> }) {
   const originError = rejectCrossOriginMutation(request);
@@ -24,7 +24,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ cou
       if (!(await canManageCourse(user,courseId,client))) return { forbidden:true as const };
       const nextResult = await client.query("SELECT COALESCE(MAX(position),-1)+1 AS next FROM course_sections WHERE course_id=$1", [courseId]);
       const position = parsed.data.position ?? Number(nextResult.rows?.[0]?.next ?? 0);
-      const inserted = await client.query("INSERT INTO course_sections(course_id,title,description,position) VALUES($1,$2,$3,$4) RETURNING id,title,position", [courseId, parsed.data.title, parsed.data.description, position]);
+      const inserted = await client.query("INSERT INTO course_sections(course_id,title,title_en,description,description_en,position) VALUES($1,$2,$3,$4,$5,$6) RETURNING id,title,title_en,description,description_en,position", [courseId, parsed.data.title, parsed.data.titleEn || null, parsed.data.description, parsed.data.descriptionEn || null, position]);
       return inserted.rows?.[0] ?? null;
     });
     if (!result) return errorResponse("دوره پیدا نشد.", 404);

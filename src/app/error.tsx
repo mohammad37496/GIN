@@ -3,11 +3,13 @@
 import Link from "next/link";
 import { unstable_rethrow } from "next/navigation";
 import { AlertCircle, RefreshCw } from "lucide-react";
+import { GinLogo } from "@/components/gin-brand";
 
 export default function ErrorPage({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
   unstable_rethrow(error);
   return (
     <main className="system-page" dir="rtl">
+      <GinLogo width={230} height={52} />
       <section className="system-card">
         <AlertCircle size={34} />
         <span className="eyebrow">GIN PORTAL</span>

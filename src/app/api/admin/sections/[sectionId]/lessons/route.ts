@@ -6,8 +6,11 @@ import { rejectCrossOriginMutation } from "@/lib/request-security";
 
 const schema = z.object({
   title: z.string().trim().min(2).max(180),
+  titleEn: z.string().trim().max(180).default(""),
   summary: z.string().trim().max(360).default(""),
+  summaryEn: z.string().trim().max(360).default(""),
   content: z.string().max(30000).default(""),
+  contentEn: z.string().max(30000).default(""),
   videoUrl: z.string().url().max(2000).refine((value) => { try { return new URL(value).protocol === "https:"; } catch { return false; } }).optional().or(z.literal("")),
   durationSeconds: z.number().int().min(0).max(24 * 60 * 60).default(0),
   isPreview: z.boolean().default(false),
@@ -33,9 +36,9 @@ export async function POST(request: Request, { params }: { params: Promise<{ sec
       if (!(await canManageCourse(user,Number(section.rows[0].course_id),client))) return { forbidden:true as const };
       const nextResult = await client.query("SELECT COALESCE(MAX(position),-1)+1 AS next FROM lessons WHERE section_id=$1", [sectionId]);
       const position = parsed.data.position ?? Number(nextResult.rows?.[0]?.next ?? 0);
-      return (await client.query(`INSERT INTO lessons(section_id,title,summary,content,video_url,duration_seconds,is_preview,status,position)
-        VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING id,title,status,position`,
-      [sectionId,parsed.data.title,parsed.data.summary,parsed.data.content,parsed.data.videoUrl || null,parsed.data.durationSeconds,parsed.data.isPreview,parsed.data.status,position])).rows?.[0] ?? null;
+      return (await client.query(`INSERT INTO lessons(section_id,title,title_en,summary,summary_en,content,content_en,video_url,duration_seconds,is_preview,status,position)
+        VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) RETURNING id,title,title_en,status,position`,
+      [sectionId,parsed.data.title,parsed.data.titleEn || null,parsed.data.summary,parsed.data.summaryEn || null,parsed.data.content,parsed.data.contentEn || null,parsed.data.videoUrl || null,parsed.data.durationSeconds,parsed.data.isPreview,parsed.data.status,position])).rows?.[0] ?? null;
     });
     if (!result) return errorResponse("بخش پیدا نشد.", 404);
     if ("forbidden" in result) return errorResponse("شما به مدیریت این دوره دسترسی ندارید.",403);

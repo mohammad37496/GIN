@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { BookOpen, Clock3, GraduationCap } from "lucide-react";
 import PublicHeader from "@/components/public-header";
@@ -6,6 +7,7 @@ import { getSession } from "@/lib/auth";
 import { ensureSchema, pool } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
+export const metadata: Metadata = { title: "دوره‌های آموزشی", description: "فهرست دوره‌های آموزشی منتشرشده شبکه جهانی اطلاعات و مسیرهای یادگیری اعضا.", alternates: { canonical: "/fa/courses", languages: { fa: "/fa/courses", en: "/en/courses" } }, openGraph: { title: "دوره‌های آموزشی | GIN", description: "فهرست دوره‌های آموزشی منتشرشده شبکه جهانی اطلاعات.", url: "/fa/courses", siteName: "Global Information Network", type: "website", images: ["/gin/gin-social-card.png"] }, twitter: { card: "summary_large_image", title: "دوره‌های آموزشی | GIN", description: "فهرست دوره‌های آموزشی منتشرشده شبکه جهانی اطلاعات.", images: ["/gin/gin-social-card.png"] } };
 
 export default async function CoursesPage({searchParams}:{searchParams:Promise<{q?:string;category?:string}>}) {
   await ensureSchema();

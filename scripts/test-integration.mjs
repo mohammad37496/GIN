@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import strictAssert from "node:assert/strict";
-import { readFile, readdir } from "node:fs/promises";
+import { readFile, readdir, writeFile } from "node:fs/promises";
 import { createServer } from "node:http";
 import { spawn, spawnSync } from "node:child_process";
 import { setTimeout as delay } from "node:timers/promises";
@@ -13,7 +13,11 @@ import { runMigrations } from "../src/lib/migrations.ts";
 const { Pool } = pg;
 const root = process.cwd();
 const database = await PGlite.create();
-const server = new PGLiteSocketServer({ db: database, host: "127.0.0.1", port: 55432, maxConnections: 8 });
+const databasePort = Number(process.env.PGLITE_SOCKET_PORT ?? 55432);
+if (!Number.isInteger(databasePort) || databasePort < 1024 || databasePort > 65535) {
+  throw new Error("PGLITE_SOCKET_PORT must be an integer between 1024 and 65535");
+}
+const server = new PGLiteSocketServer({ db: database, host: "127.0.0.1", port: databasePort, maxConnections: 8 });
 const s3Objects = new Map();
 const mutateAfterHead = new Set();
 const s3Server = createServer((request, response) => {
@@ -96,7 +100,11 @@ const s3Server = createServer((request, response) => {
 });
 let app;
 let pool;
-const baseUrl = "http://127.0.0.1:3100";
+const integrationPort = Number(process.env.INTEGRATION_PORT ?? 3100);
+if (!Number.isInteger(integrationPort) || integrationPort < 1024 || integrationPort > 65535) {
+  throw new Error("INTEGRATION_PORT must be an integer between 1024 and 65535");
+}
+const baseUrl = `http://127.0.0.1:${integrationPort}`;
 const origin = baseUrl;
 const assert = (condition, message) => { if (!condition) throw new Error(message); };
 
@@ -117,6 +125,73 @@ async function api(path, { method = "GET", body, cookie } = {}) {
   return { response, data, cookie: response.headers.get("set-cookie")?.split(";")[0] };
 }
 
+async function runAuthenticatedBrowserQa(routes) {
+  if (process.env.GIN_BROWSER_QA !== "1") return;
+  const targets = await (await fetch("http://127.0.0.1:9222/json")).json();
+  const target = targets.find((item) => item.type === "page");
+  if (!target) throw new Error("GIN_BROWSER_QA requires an existing Chrome page on CDP port 9222");
+  const ws = new WebSocket(target.webSocketDebuggerUrl);
+  await new Promise((resolve, reject) => { ws.addEventListener("open", resolve, { once: true }); ws.addEventListener("error", reject, { once: true }); });
+  let commandId = 0;
+  const pending = new Map();
+  const requestUrls = new Map();
+  const consoleErrors = [];
+  ws.addEventListener("message", (event) => {
+    const message = JSON.parse(event.data);
+    if (message.method === "Runtime.exceptionThrown") consoleErrors.push({ kind: "exception", text: message.params.exceptionDetails.text });
+    if (message.method === "Log.entryAdded" && message.params.entry.level === "error" && !/ERR_ABORTED/.test(message.params.entry.text)) consoleErrors.push({ kind: "console", text: message.params.entry.text, url: message.params.entry.url || null });
+    if (message.method === "Network.requestWillBeSent") requestUrls.set(message.params.requestId, message.params.request.url);
+    if (message.method === "Network.responseReceived" && message.params.response.status >= 400) consoleErrors.push({ kind: "http", status: message.params.response.status, url: message.params.response.url });
+    if (message.method === "Network.loadingFailed") consoleErrors.push({ kind: "network", errorText: message.params.errorText, url: requestUrls.get(message.params.requestId) || null });
+    if (message.id && pending.has(message.id)) { pending.get(message.id)(message); pending.delete(message.id); }
+  });
+  const send = (method, params = {}) => new Promise((resolve, reject) => {
+    const id = ++commandId;
+    pending.set(id, (message) => message.error ? reject(new Error(message.error.message)) : resolve(message));
+    ws.send(JSON.stringify({ id, method, params }));
+  });
+  const originalUrl = target.url;
+  const results = [];
+  const screenshots = [];
+  await send("Page.enable"); await send("Runtime.enable"); await send("Log.enable"); await send("Network.enable");
+  try {
+    for (const width of [1920, 1440, 1366, 1024, 390, 320]) {
+      await send("Emulation.setDeviceMetricsOverride", { width, height: 900, deviceScaleFactor: 1, mobile: false });
+      for (const route of routes) {
+        const localeCookie = route.locale === "en" ? "fa" : "en";
+        const sessionValue = route.cookie.slice(route.cookie.indexOf("=") + 1);
+        await send("Network.setCookie", { name: "gin_session", value: sessionValue, url: baseUrl + "/" });
+        await send("Network.setCookie", { name: "gin_locale", value: localeCookie, url: baseUrl + "/" });
+        await send("Page.navigate", { url: baseUrl + route.path });
+        await delay(1100);
+        const evaluated = await send("Runtime.evaluate", { returnByValue: true, expression: "(()=>{const d=document.documentElement;const imgs=[...document.images];const controls=[...document.querySelectorAll('button,input,select,textarea')];const visible=controls.filter(c=>{const r=c.getBoundingClientRect();const s=getComputedStyle(c);return r.width>0&&r.height>0&&s.display!=='none'&&s.visibility!=='hidden'&&c.getAttribute('aria-hidden')!=='true'&&c.getAttribute('type')!=='hidden';});const names=c=>({aria:c.getAttribute('aria-label'),labelledBy:c.getAttribute('aria-labelledby'),labels:c.labels?[...c.labels].map(l=>(l.textContent||'').trim()).filter(Boolean):[],text:(c.textContent||'').trim(),value:c.value||c.getAttribute('value')||'',title:c.getAttribute('title')||'',placeholder:c.getAttribute('placeholder')||''});const unlabeledControls=visible.filter(c=>{const n=names(c);return !(n.aria?.trim()||n.labelledBy?.trim()||n.labels.length||n.text||n.value||n.title);}).map(c=>({tag:c.tagName.toLowerCase(),type:c.getAttribute('type'),id:c.id,name:c.getAttribute('name'),...names(c),html:c.outerHTML.slice(0,320)}));const canonical=document.querySelector('link[rel=canonical]')?.getAttribute('href')||null;const alternates=[...document.querySelectorAll('link[rel=alternate][hreflang]')].map(a=>({lang:a.getAttribute('hreflang'),href:a.getAttribute('href')}));const jsonLdErrors=[...document.querySelectorAll('script[type=\"application/ld+json\"]')].filter(s=>{try{JSON.parse(s.textContent||'');return false;}catch{return true;}}).length;return {path:location.pathname,lang:d.lang,dir:d.dir,width:innerWidth,docWidth:d.scrollWidth,bodyWidth:document.body.scrollWidth,h1:document.querySelector('h1')?.innerText||document.querySelector('h2')?.innerText||'',canonical,alternates,robots:document.querySelector('meta[name=robots]')?.getAttribute('content')||null,jsonLdErrors,brokenImages:imgs.filter(i=>i.complete&&i.naturalWidth===0).length,missingAlt:imgs.filter(i=>!i.hasAttribute('alt')).length,unlabeledControls};})()" });
+        if (evaluated.result?.exceptionDetails) throw new Error(`Browser QA DOM inspection failed at ${route.path}: ${evaluated.result.exceptionDetails.exception?.description || evaluated.result.exceptionDetails.text}`);
+        const value = evaluated.result?.result?.value || {};
+        results.push({ requestedPath: route.path, expectedPath: route.expectedPath || route.path, expectedLocale: route.locale, width, ...value });
+        if (width === 1440 && route.capture) {
+          const screenshot = await send("Page.captureScreenshot", { format: "png", fromSurface: true, captureBeyondViewport: false });
+          screenshots.push({ name: `${route.capture}-staff-${width}.png`, data: screenshot.result.data });
+        }
+      }
+    }
+    const report = { createdAt: new Date().toISOString(), baseUrl, authenticatedWorkspaceQa: true, viewports: [1920, 1440, 1366, 1024, 390, 320], results, consoleErrors };
+    const reportPath = "docs/qa-20261126/final/browser-qa-staff-workspaces-20261126.json";
+    await writeFile(reportPath, JSON.stringify(report, null, 2), { flag: "w" });
+    for (const screenshot of screenshots) await writeFile(`docs/qa-20261126/final/${screenshot.name}`, Buffer.from(screenshot.data, "base64"), { flag: "w" });
+    const failures = results.filter((item) => {
+      const learnerPage = /\/courses\/[^/]+\/(?:assessments|lessons)\//.test(item.path || "");
+      const hasLocaleAlternates = item.alternates?.some((alternate) => alternate.lang === "fa") && item.alternates?.some((alternate) => alternate.lang === "en");
+      return item.path !== item.expectedPath || item.lang !== item.expectedLocale || item.dir !== (item.expectedLocale === "en" ? "ltr" : "rtl") || item.docWidth > item.width || item.brokenImages || item.missingAlt || item.unlabeledControls?.length || !item.h1 || item.jsonLdErrors || (learnerPage && (!item.canonical || !hasLocaleAlternates));
+    });
+    assert(failures.length === 0 && consoleErrors.length === 0, `Authenticated browser QA failed: ${JSON.stringify({ failures, consoleErrors })}`);
+    console.log(JSON.stringify({ browserQa: "passed", reportPath, checks: results.length, screenshots: screenshots.map((item) => item.name) }));
+  } finally {
+    await send("Emulation.clearDeviceMetricsOverride").catch(() => {});
+    if (originalUrl && /^https?:/.test(originalUrl)) await send("Page.navigate", { url: originalUrl }).catch(() => {});
+    ws.close();
+  }
+}
+
 try {
   await server.start();
   await new Promise((resolve, reject) => { s3Server.once("error", reject); s3Server.listen(0, "127.0.0.1", resolve); });
@@ -125,7 +200,7 @@ try {
   pool = new Pool({ connectionString: databaseUrl, max: 1 });
   await pool.query("SELECT 1");
 
-  app = spawn(process.execPath, ["node_modules/next/dist/bin/next", "start", "-p", "3100"], {
+  app = spawn(process.execPath, ["node_modules/next/dist/bin/next", "start", "-p", String(integrationPort)], {
     cwd: root,
     env: {
       ...process.env,
@@ -146,13 +221,15 @@ try {
 
   const migrationFiles = (await readdir(`${root}/migrations`)).filter((name) => /^\d{4}_[a-z0-9_-]+\.sql$/i.test(name)).sort();
   const lastMigration = migrationFiles.at(-1);
-  assert(lastMigration === "0015_immutable_asset_uploads.sql", "The immutable asset migration is the latest ordered migration");
+  assert(migrationFiles.includes("0015_immutable_asset_uploads.sql"), "The immutable asset migration is present");
+  assert(lastMigration === "0019_bilingual_assessments.sql", "The additive bilingual assessment migration is the latest ordered migration");
   const lastMigrationSql = (await readFile(`${root}/migrations/${lastMigration}`, "utf8")).replace(/\r\n?/g, "\n");
   const lastMigrationChecksum = createHash("sha256").update(lastMigrationSql).digest("hex");
   const baselineMigration = "0001_core.sql";
   const baselineSql = (await readFile(`${root}/migrations/${baselineMigration}`, "utf8")).replace(/\r\n?/g, "\n");
   const baselineChecksum = createHash("sha256").update(baselineSql).digest("hex");
 
+  await runMigrations(pool);
   for (const file of migrationFiles) {
     const sql = (await readFile(`${root}/migrations/${file}`, "utf8")).replace(/\r\n?/g, "\n");
     const crlfChecksum = createHash("sha256").update(sql.replace(/\n/g, "\r\n")).digest("hex");
@@ -191,47 +268,129 @@ try {
 
   const legacyRoutes = [
     ["/about-us", "/about"],
-    ["/our-training", "/courses"],
-    ["/member-benefits-associate", "/member-benefits"],
-    ["/our-events", "/events"],
-    ["/membership-levels", "/membership"],
     ["/contact-us", "/contact"],
-    ["/become-a-member", "/register"],
     ["/gin-hotels", "/hotels"],
     ["/gin-clubhouses", "/clubhouses"],
     ["/gin-cruise-ship", "/cruise"],
+    ["/fa/success-training", "/fa/our-training"],
+    ["/fa/training-courses", "/fa/our-training"],
+    ["/en/success-training", "/en/our-training"],
+    ["/en/training-courses", "/en/our-training"],
   ];
   for (const [path, destination] of legacyRoutes) {
     const response = await fetch(`${baseUrl}${path}`, { redirect: "manual" });
     assert(response.status === 307 && response.headers.get("location") === destination, `Legacy route ${path} redirects to ${destination} (HTTP ${response.status})`);
   }
+  const persianReferenceRoutes = [
+    ["/our-training", "آموزش‌های GIN"],
+    ["/member-benefits-associate", "مزایای عضویت Associate"],
+    ["/our-events", "رویدادهای GIN"],
+    ["/become-a-member", "عضویت در GIN"],
+    ["/personal-mastery", "تسلط فردی"],
+    ["/privacy-policy", "سیاست حفظ حریم خصوصی"],
+    ["/cookie-policy", "سیاست کوکی"],
+    ["/terms-of-use", "شرایط استفاده"],
+    ["/member-agreement", "توافق‌نامه اعضا"],
+    ["/wealth-creation", "ایجاد ثروت"],
+    ["/financial-independence", "استقلال مالی"],
+    ["/dynamic-health", "سلامت پویا"],
+    ["/happiness", "شادمانی و بهزیستی"],
+    ["/global-networking", "شبکه‌سازی جهانی"],
+    ["/mentorship", "راهنمایی و منتورینگ"],
+    ["/membership-opportunities", "فرصت‌های عضویت"],
+  ];
+  for (const [path, expectedHeading] of persianReferenceRoutes) {
+    const response = await fetch(`${baseUrl}${path}`, { redirect: "manual" });
+    const html = await response.text();
+    assert(response.status === 200 && html.includes(expectedHeading), `Persian reference route ${path} renders its own page instead of redirecting (HTTP ${response.status})`);
+  }
+  const englishReferenceRoutes = [
+    ["/en/our-training", "Our Training"],
+    ["/en/member-benefits-associate", "Associate Member Benefits"],
+    ["/en/our-events", "GIN Events"],
+    ["/en/become-a-member", "Become a Member"],
+    ["/en/personal-mastery", "Personal Mastery"],
+    ["/en/privacy-policy", "Privacy Policy"],
+    ["/en/cookie-policy", "Cookie Policy"],
+    ["/en/terms-of-use", "Terms of Use"],
+    ["/en/member-agreement", "Member Agreement"],
+    ["/en/wealth-creation", "Wealth Creation"],
+    ["/en/financial-independence", "Financial Independence"],
+    ["/en/dynamic-health", "Dynamic Health"],
+    ["/en/happiness", "Happiness and Well-Being"],
+    ["/en/global-networking", "Global Networking"],
+    ["/en/mentorship", "Mentorship"],
+    ["/en/membership-opportunities", "Membership Opportunities"],
+  ];
+  for (const [path, expectedHeading] of englishReferenceRoutes) {
+    const response = await fetch(`${baseUrl}${path}`, { redirect: "manual" });
+    const html = await response.text();
+    assert(response.status === 200 && html.includes(expectedHeading), `English reference route ${path} renders its localized page (HTTP ${response.status})`);
+  }
+  const persianContactResponse = await fetch(`${baseUrl}/fa/contact`);
+  const persianContactHtml = await persianContactResponse.text();
+  assert(persianContactResponse.status === 200 && persianContactHtml.includes("فرم تماس پورتال آموزشی GIN") && persianContactHtml.includes("جایگزین سامانه تماس رسمی GIN نیست") && persianContactHtml.includes('name="item_6__fluent_sf"') && persianContactHtml.includes('name="country"'), "Persian Contact renders the complete portal-specific contact-submission form without misrepresenting it as the official GIN contact system");
+  const persianSupportResponse = await fetch(`${baseUrl}/fa/support`);
+  const persianSupportHtml = await persianSupportResponse.text();
+  assert(persianSupportResponse.status === 200 && persianSupportHtml.includes("ارسال درخواست پشتیبانی") && persianSupportHtml.includes("next=%2Fsupport"), "Persian Support keeps its separate authenticated support-request form");
+  const publicMembershipLevels = await fetch(`${baseUrl}/membership-levels`, { redirect: "manual" });
+  assert(publicMembershipLevels.status === 200, `Public membership levels page remains independently accessible (HTTP ${publicMembershipLevels.status})`);
 
   let result = await api("/api/auth/login", { method: "POST", body: { username: "integration-admin", password: "IntegrationAdmin!Password2026" } });
   assert(result.response.status === 200 && result.cookie, `Admin login should create an HttpOnly session cookie (HTTP ${result.response.status}: ${JSON.stringify(result.data)})`);
   const adminCookie = result.cookie;
+  result = await api("/api/admin/commission-rules", { cookie: adminCookie });
+  assert(result.response.status === 200 && Array.isArray(result.data.rules), "Admin can load commission rules without ordering by a nonexistent created_at column");
+  for (const [path, locale, direction] of [["/fa/admin", "fa", "rtl"], ["/en/admin", "en", "ltr"]]) {
+    const oppositeCookie = locale === "en" ? "fa" : "en";
+    const response = await fetch(`${baseUrl}${path}`, { redirect: "manual", headers: { cookie: `${adminCookie}; gin_locale=${oppositeCookie}` } });
+    const html = await response.text();
+    assert(response.status === 200 && html.includes(`lang="${locale}"`) && html.includes(`dir="${direction}"`) && html.includes("<main"), `Admin workspace ${path} renders in its explicit locale despite an opposing cookie (HTTP ${response.status})`);
+  }
 
-  result = await api("/api/admin/courses", { method: "POST", cookie: adminCookie, body: { title: "Integration Course", slug: "integration-course", summary: "Integration summary", description: "Integration description", accessType: "free", estimatedMinutes: 10 } });
+  result = await api("/api/admin/courses", { method: "POST", cookie: adminCookie, body: { title: "Integration Course فارسی", titleEn: "Integration Course English", slug: "integration-course", summary: "Integration summary فارسی", summaryEn: "Integration summary English", description: "Integration description فارسی", descriptionEn: "Integration description English", accessType: "free", estimatedMinutes: 10 } });
   assert(result.response.status === 201, `Admin can create course (${result.response.status})`);
   const courseId = Number(result.data.course.id);
 
-  result = await api(`/api/admin/courses/${courseId}/sections`, { method: "POST", cookie: adminCookie, body: { title: "First section" } });
+  result = await api(`/api/admin/courses/${courseId}/sections`, { method: "POST", cookie: adminCookie, body: { title: "First section فارسی", titleEn: "First section English", descriptionEn: "First section description English" } });
   assert(result.response.status === 201, `Admin can add a course section (HTTP ${result.response.status}: ${JSON.stringify(result.data)})`);
   const sectionId = Number(result.data.section.id);
 
-  result = await api(`/api/admin/sections/${sectionId}/lessons`, { method: "POST", cookie: adminCookie, body: { title: "Preview lesson", summary: "Lesson summary", content: "Lesson content", durationSeconds: 120, isPreview: true, status: "published" } });
+  result = await api(`/api/admin/sections/${sectionId}/lessons`, { method: "POST", cookie: adminCookie, body: { title: "Preview lesson فارسی", titleEn: "Preview lesson English", summary: "Lesson summary فارسی", summaryEn: "Lesson summary English", content: "Lesson content فارسی", contentEn: "Lesson content English", durationSeconds: 120, isPreview: true, status: "published" } });
   assert(result.response.status === 201, "Admin can publish a lesson");
   const lessonId = Number(result.data.lesson.id);
+  result = await api(`/api/admin/courses/${courseId}`, { method: "PATCH", cookie: adminCookie, body: { titleEn: "Updated course title English", summaryEn: "Updated course summary English", descriptionEn: "Updated course description English" } });
+  assert(result.response.status === 200 && result.data.course.title_en === "Updated course title English", "Admin can edit course English fields without changing Persian fields");
+  result = await api(`/api/admin/sections/${sectionId}`, { method: "PATCH", cookie: adminCookie, body: { titleEn: "Updated section title English", descriptionEn: "Updated section description English" } });
+  assert(result.response.status === 200 && result.data.section.title_en === "Updated section title English", "Admin can edit section English fields");
+  result = await api(`/api/admin/lessons/${lessonId}`, { method: "PATCH", cookie: adminCookie, body: { titleEn: "Updated lesson title English", summaryEn: "Updated lesson summary English", contentEn: "Updated lesson content English" } });
+  assert(result.response.status === 200 && result.data.lesson.content_en === "Updated lesson content English", "Admin can edit lesson English fields");
 
-  result = await api(`/api/admin/courses/${courseId}/assessments`, { method: "POST", cookie: adminCookie, body: { title: "Course knowledge check", timeLimitSeconds: 600, maxAttempts: 2, passPercent: 70 } });
+  result = await api(`/api/admin/courses/${courseId}/assessments`, { method: "POST", cookie: adminCookie, body: { title: "Course knowledge check فارسی", titleEn: "Course knowledge check English", description: "توضیح آزمون فارسی", descriptionEn: "English assessment description", timeLimitSeconds: 600, maxAttempts: 2, passPercent: 70 } });
   assert(result.response.status === 201, `Admin can create an assessment (HTTP ${result.response.status}: ${JSON.stringify(result.data)})`);
   const assessmentId = Number(result.data.assessment.id);
-  result = await api(`/api/admin/assessments/${assessmentId}/questions`, { method: "POST", cookie: adminCookie, body: { questionType: "true_false", prompt: "A course can have lessons.", answerKey: true, points: 1 } });
-  assert(result.response.status === 201, `Admin can create a true/false question (HTTP ${result.response.status}: ${JSON.stringify(result.data)})`);
+  result = await api(`/api/admin/assessments/${assessmentId}/questions`, { method: "POST", cookie: adminCookie, body: { questionType: "single_choice", prompt: "پرسش فارسی", promptEn: "English question", options: [{ id: "A", label: "گزینه فارسی", label_en: "English option" }], answerKey: "A", explanation: "توضیح پاسخ فارسی", explanationEn: "English explanation", points: 1 } });
+  assert(result.response.status === 201, `Admin can create a bilingual single-choice question (HTTP ${result.response.status}: ${JSON.stringify(result.data)})`);
   result = await api(`/api/admin/assessments/${assessmentId}`, { method: "PATCH", cookie: adminCookie, body: { status: "published" } });
   assert(result.response.status === 200, `Assessment publishes after a question exists (HTTP ${result.response.status}: ${JSON.stringify(result.data)})`);
+  result = await api(`/api/admin/assessments/${assessmentId}`, { method: "PATCH", cookie: adminCookie, body: { titleEn: "Updated assessment title English", descriptionEn: "Updated assessment description English" } });
+  assert(result.response.status === 200 && result.data.assessment.title_en === "Updated assessment title English", "Admin can update assessment English fields after publication");
+  result = await api(`/api/admin/assessments/${assessmentId}/questions?questionId=${Number((await pool.query("SELECT id FROM assessment_questions WHERE assessment_id=$1", [assessmentId])).rows[0].id)}`, { method: "PATCH", cookie: adminCookie, body: { promptEn: "Updated English question", explanationEn: "Updated English explanation", optionTranslations: [{ id: "A", labelEn: "Updated English option" }] } });
+  assert(result.response.status === 200 && result.data.question.prompt === "پرسش فارسی" && result.data.question.options[0].label === "گزینه فارسی", "Published question translations can be updated while Persian prompt and option labels remain unchanged");
+  result = await api(`/api/assessments/${assessmentId}`);
+  assert(result.response.status === 401, "Assessment details require an authenticated learner");
+  result = await api(`/api/assessments/${assessmentId}`, { cookie: adminCookie });
+  assert(result.response.status === 403, "Assessment details require active course enrollment even for a signed-in non-enrolled user");
 
   result = await api(`/api/admin/courses/${courseId}`, { method: "PATCH", cookie: adminCookie, body: { status: "published" } });
   assert(result.response.status === 200, `Course publishes only after a published lesson exists (HTTP ${result.response.status}: ${JSON.stringify(result.data)})`);
+  const englishCoursePage = await fetch(`${baseUrl}/en/courses/integration-course`);
+  const englishCourseHtml = await englishCoursePage.text();
+  assert(englishCoursePage.status === 200 && englishCourseHtml.includes("Updated course title English") && englishCourseHtml.includes("Updated section title English") && englishCourseHtml.includes("Updated lesson title English") && englishCourseHtml.includes("Updated assessment title English") && englishCourseHtml.includes("Updated assessment description English"), "English course page lists assessments using their English translations");
+  assert(!englishCourseHtml.includes("Integration Course فارسی") && !englishCourseHtml.includes("First section فارسی") && !englishCourseHtml.includes("Preview lesson فارسی"), "English course page never falls back to Persian dynamic content");
+  const englishLessonPage = await fetch(`${baseUrl}/en/courses/integration-course/lessons/${lessonId}`);
+  const englishLessonHtml = await englishLessonPage.text();
+  assert(englishLessonPage.status === 200 && englishLessonHtml.includes("Updated lesson content English") && !englishLessonHtml.includes("Lesson content فارسی"), "English lesson page uses only translated lesson content");
   const uploadBytes = Buffer.from("%PDF-1.4\nGIN immutable upload regression\n%%EOF");
   const upload = await api("/api/storage/presign", { method: "POST", cookie: adminCookie, body: { filename: "lesson.pdf", contentType: "application/pdf", size: uploadBytes.length } });
   assert(upload.response.status === 200 && upload.data.uploadUrl, `Instructor can obtain a staging upload URL (HTTP ${upload.response.status}: ${JSON.stringify(upload.data)})`);
@@ -283,6 +442,9 @@ try {
   const member = await pool.query("SELECT id FROM users WHERE username_normalized='integration-member'");
   const memberId = Number(member.rows[0].id);
 
+  result = await api("/api/auth/login", { method: "POST", body: { username: "integration-member", password: "IntegrationMember!Password2026" } });
+  assert(result.response.status === 403 && !result.cookie, "Pending accounts cannot establish a session before administrator approval");
+
   result = await api("/api/admin/users", { method: "PATCH", cookie: adminCookie, body: { id: memberId, status: "approved" } });
   assert(result.response.status === 200, "Admin can approve a pending member");
   await pool.query("INSERT INTO user_roles(user_id,role) VALUES($1,'instructor')", [memberId]);
@@ -290,6 +452,11 @@ try {
   result = await api("/api/auth/login", { method: "POST", body: { username: "integration-member", password: "IntegrationMember!Password2026" } });
   assert(result.response.status === 200 && result.cookie && result.data.redirectTo === "/instructor", "Approved instructors are sent to their staff workspace after login");
   const memberCookie = result.cookie;
+
+  result = await api("/api/storage/complete", { method: "POST", cookie: memberCookie, body: { assetId: upload.data.assetId } });
+  assert(result.response.status === 404, "A different instructor cannot finalize another user's stored asset");
+  result = await api(`/api/admin/lessons/${lessonId}/resources`, { method: "POST", cookie: memberCookie, body: { assetId: upload.data.assetId, title: "Unauthorized cross-course resource", isDownloadable: true } });
+  assert(result.response.status === 403, "An instructor without course assignment cannot attach an asset to another course");
 
   result = await api(`/api/courses/integration-course/enroll`, { method: "POST", cookie: memberCookie });
   assert(result.response.status === 201, "Member can enroll in a free published course");
@@ -308,19 +475,215 @@ try {
   assert(result.response.status === 200 && !result.data.courseCompleted, `Lesson completion after the server-enforced minimum time does not bypass a required assessment (HTTP ${result.response.status}: ${JSON.stringify(result.data)})`);
 
   result = await api(`/api/assessments/${assessmentId}`, { cookie: memberCookie });
-  assert(result.response.status === 200 && result.data.questions.length === 1 && !("answer_key" in result.data.questions[0]), "Member sees questions without answer keys");
+  assert(result.response.status === 200 && result.data.assessment.title_en === "Updated assessment title English" && result.data.questions.length === 1 && result.data.questions[0].prompt_en === "Updated English question" && result.data.questions[0].options[0].label_en === "Updated English option" && !("answer_key" in result.data.questions[0]) && !("explanation" in result.data.questions[0]), "Enrolled member receives edited English assessment/question text while answer keys and explanations remain secret");
+  const persianAssessmentPage = await fetch(`${baseUrl}/courses/integration-course/assessments/${assessmentId}`, { headers: { Cookie: memberCookie } });
+  const englishAssessmentPage = await fetch(`${baseUrl}/en/courses/integration-course/assessments/${assessmentId}`, { headers: { Cookie: memberCookie } });
+  const [persianAssessmentHtml, englishAssessmentHtml] = await Promise.all([persianAssessmentPage.text(), englishAssessmentPage.text()]);
+  assert(persianAssessmentPage.status === 200 && persianAssessmentHtml.includes("assessment-panel"), "Authenticated learner assessment page renders in Persian");
+  assert(englishAssessmentPage.status === 200 && englishAssessmentHtml.includes("assessment-panel") && englishAssessmentHtml.includes('dir="ltr"'), "Authenticated learner assessment page renders in English with LTR direction");
   result = await api(`/api/assessments/${assessmentId}/attempts`, { method: "POST", cookie: memberCookie, body: {} });
   assert(result.response.status === 201, `Member can start a timed assessment attempt (HTTP ${result.response.status}: ${JSON.stringify(result.data)})`);
   const attemptId = Number(result.data.attempt.id);
   const questionId = Number(result.data.questions[0].id);
-  result = await api(`/api/assessment-attempts/${attemptId}/submit`, { method: "POST", cookie: memberCookie, body: { answers: [{ questionId, answer: true }] } });
+  result = await api(`/api/assessment-attempts/${attemptId}/answers`, { method: "POST", cookie: memberCookie, body: { answers: [{ questionId, answer: "A" }] } });
+  assert(result.response.status === 200, "Learner can autosave an answer on their active attempt");
+  result = await api(`/api/assessment-attempts/${attemptId}/answers`, { method: "POST", cookie: adminCookie, body: { answers: [{ questionId, answer: "A" }] } });
+  assert(result.response.status === 409, "A different account cannot save answers to another learner's attempt");
+  result = await api(`/api/assessments/${assessmentId}`, { cookie: memberCookie });
+  assert(result.response.status === 200 && Number(result.data.activeAttempt.id) === attemptId && result.data.activeAnswers.some((answer) => Number(answer.question_id) === questionId && answer.answer === "A"), "Assessment GET restores the active attempt and its autosaved answers after refresh");
+  result = await api(`/api/assessments/${assessmentId}/attempts`, { method: "POST", cookie: memberCookie, body: {} });
+  assert(result.response.status === 201 && Number(result.data.attempt.id) === attemptId && result.data.resumed === true, "Starting again resumes the existing attempt without consuming another attempt");
+  result = await api(`/api/assessment-attempts/${attemptId}/submit`, { method: "POST", cookie: adminCookie, body: { answers: [{ questionId, answer: "A" }] } });
+  assert(result.response.status === 409, "Assessment attempts cannot be submitted by a different account");
+  result = await api(`/api/assessment-attempts/${attemptId}/submit`, { method: "POST", cookie: memberCookie, body: { answers: [{ questionId, answer: "A" }] } });
   assert(result.response.status === 200 && result.data.passed && result.data.courseCompleted, `Passing the required assessment completes the course (HTTP ${result.response.status}: ${JSON.stringify(result.data)})`);
+
+  result = await api(`/api/admin/courses/${courseId}/assessments`, { method: "POST", cookie: adminCookie, body: { title: "Revoked enrollment autosave guard", maxAttempts: 2 } });
+  const revokedGuardAssessmentId = Number(result.data.assessment.id);
+  result = await api(`/api/admin/assessments/${revokedGuardAssessmentId}/questions`, { method: "POST", cookie: adminCookie, body: { questionType: "true_false", prompt: "Enrollment still valid?", answerKey: true } });
+  assert(result.response.status === 201, "Revocation guard assessment question is created");
+  result = await api(`/api/admin/assessments/${revokedGuardAssessmentId}`, { method: "PATCH", cookie: adminCookie, body: { status: "published" } });
+  assert(result.response.status === 200, "Revocation guard assessment is published");
+  result = await api(`/api/assessments/${revokedGuardAssessmentId}/attempts`, { method: "POST", cookie: memberCookie, body: {} });
+  assert(result.response.status === 201, "Learner can start before enrollment revocation");
+  const revokedGuardAttemptId = Number(result.data.attempt.id);
+  const revokedGuardQuestionId = Number(result.data.questions[0].id);
+  await pool.query("UPDATE course_enrollments SET status='revoked' WHERE course_id=$1 AND user_id=$2", [courseId,memberId]);
+  result = await api(`/api/assessment-attempts/${revokedGuardAttemptId}/answers`, { method: "POST", cookie: memberCookie, body: { answers: [{ questionId: revokedGuardQuestionId, answer: true }] } });
+  assert(result.response.status === 403, "Revoked enrollment blocks autosave on an existing attempt");
+  result = await api(`/api/assessment-attempts/${revokedGuardAttemptId}/submit`, { method: "POST", cookie: memberCookie, body: { answers: [{ questionId: revokedGuardQuestionId, answer: true }] } });
+  const revokedAnswerCount = await pool.query("SELECT COUNT(*)::int AS count FROM assessment_answers WHERE attempt_id=$1", [revokedGuardAttemptId]);
+  const revokedAttemptState = await pool.query("SELECT status FROM assessment_attempts WHERE id=$1", [revokedGuardAttemptId]);
+  assert(result.response.status === 403 && revokedAnswerCount.rows[0].count === 0 && revokedAttemptState.rows[0].status === "in_progress", "Revoked enrollment also blocks final submission without persisting answers or grading the attempt");
+  await pool.query("UPDATE course_enrollments SET status='completed',expires_at=NULL WHERE course_id=$1 AND user_id=$2", [courseId,memberId]);
+
+  result = await api(`/api/admin/courses/${courseId}/assessments`, { method: "POST", cookie: adminCookie, body: { title: "Expired enrollment submit guard", maxAttempts: 2 } });
+  const expiredGuardAssessmentId = Number(result.data.assessment.id);
+  result = await api(`/api/admin/assessments/${expiredGuardAssessmentId}/questions`, { method: "POST", cookie: adminCookie, body: { questionType: "true_false", prompt: "Enrollment still current?", answerKey: true } });
+  assert(result.response.status === 201, "Expiry guard assessment question is created");
+  result = await api(`/api/admin/assessments/${expiredGuardAssessmentId}`, { method: "PATCH", cookie: adminCookie, body: { status: "published" } });
+  assert(result.response.status === 200, "Expiry guard assessment is published");
+  result = await api(`/api/assessments/${expiredGuardAssessmentId}/attempts`, { method: "POST", cookie: memberCookie, body: {} });
+  assert(result.response.status === 201, "Learner can start before enrollment expiry");
+  const expiredGuardAttemptId = Number(result.data.attempt.id);
+  const expiredGuardQuestionId = Number(result.data.questions[0].id);
+  await pool.query("UPDATE course_enrollments SET expires_at=NOW()-INTERVAL '1 second' WHERE course_id=$1 AND user_id=$2", [courseId,memberId]);
+  result = await api(`/api/assessment-attempts/${expiredGuardAttemptId}/answers`, { method: "POST", cookie: memberCookie, body: { answers: [{ questionId: expiredGuardQuestionId, answer: true }] } });
+  assert(result.response.status === 403, "Expired enrollment blocks autosave on an existing attempt");
+  result = await api(`/api/assessment-attempts/${expiredGuardAttemptId}/submit`, { method: "POST", cookie: memberCookie, body: { answers: [{ questionId: expiredGuardQuestionId, answer: true }] } });
+  const expiredSubmitCount = await pool.query("SELECT COUNT(*)::int AS count FROM assessment_answers WHERE attempt_id=$1", [expiredGuardAttemptId]);
+  const expiredAttemptState = await pool.query("SELECT status FROM assessment_attempts WHERE id=$1", [expiredGuardAttemptId]);
+  assert(result.response.status === 403 && expiredSubmitCount.rows[0].count === 0 && expiredAttemptState.rows[0].status === "in_progress", "Expired enrollment blocks final submission without persisting answers or grading the attempt");
+  await pool.query("UPDATE course_enrollments SET expires_at=NULL WHERE course_id=$1 AND user_id=$2", [courseId,memberId]);
+  for (const guardedAssessmentId of [revokedGuardAssessmentId,expiredGuardAssessmentId]) {
+    result = await api(`/api/admin/assessments/${guardedAssessmentId}`, { method: "PATCH", cookie: adminCookie, body: { status: "archived" } });
+    assert(result.response.status === 200, "Enrollment guard regression fixtures are archived before certificate eligibility is checked");
+  }
+
+  result = await api(`/api/admin/courses/${courseId}/assessments`, { method: "POST", cookie: adminCookie, body: { title: "Enrollment expiry lock-wait guard" } });
+  const lockWaitExpiryAssessmentId = Number(result.data.assessment.id);
+  result = await api(`/api/admin/assessments/${lockWaitExpiryAssessmentId}/questions`, { method: "POST", cookie: adminCookie, body: { questionType: "true_false", prompt: "Still enrolled after lock wait?", answerKey: true } });
+  assert(result.response.status === 201, "Lock-wait expiry assessment question is created");
+  result = await api(`/api/admin/assessments/${lockWaitExpiryAssessmentId}`, { method: "PATCH", cookie: adminCookie, body: { status: "published" } });
+  assert(result.response.status === 200, "Lock-wait expiry assessment is published");
+  await pool.query("UPDATE course_enrollments SET expires_at=clock_timestamp()+INTERVAL '2 seconds' WHERE course_id=$1 AND user_id=$2", [courseId,memberId]);
+  const expiryLock = await pool.connect();
+  await expiryLock.query("BEGIN");
+  await expiryLock.query("SELECT id FROM assessments WHERE id=$1 FOR UPDATE", [lockWaitExpiryAssessmentId]);
+  await expiryLock.query("SELECT id FROM course_enrollments WHERE course_id=$1 AND user_id=$2 FOR UPDATE", [courseId,memberId]);
+  const delayedExpiredStart = api(`/api/assessments/${lockWaitExpiryAssessmentId}/attempts`, { method: "POST", cookie: memberCookie, body: {} });
+  const expiryStartWaited = await Promise.race([delayedExpiredStart.then(() => false), new Promise((resolve) => setTimeout(() => resolve(true), 250))]);
+  await new Promise((resolve) => setTimeout(resolve, 2100));
+  await expiryLock.query("COMMIT");
+  expiryLock.release();
+  result = await delayedExpiredStart;
+  const lockWaitExpiredAttemptCount = await pool.query("SELECT COUNT(*)::int AS count FROM assessment_attempts WHERE assessment_id=$1 AND user_id=$2", [lockWaitExpiryAssessmentId,memberId]);
+  assert(expiryStartWaited === true && result.response.status === 403 && lockWaitExpiredAttemptCount.rows[0].count === 0, "Start rechecks enrollment expiry after waiting on row locks and does not create an attempt");
+  await pool.query("UPDATE course_enrollments SET expires_at=NULL WHERE course_id=$1 AND user_id=$2", [courseId,memberId]);
+  result = await api(`/api/admin/assessments/${lockWaitExpiryAssessmentId}`, { method: "PATCH", cookie: adminCookie, body: { status: "archived" } });
+  assert(result.response.status === 200, "Lock-wait expiry fixture is archived before certificate eligibility is checked");
+
+  result = await api(`/api/admin/courses/${courseId}/assessments`, { method: "POST", cookie: adminCookie, body: { title: "Time limit lock-wait guard", timeLimitSeconds: 4 } });
+  const lockWaitTimerAssessmentId = Number(result.data.assessment.id);
+  result = await api(`/api/admin/assessments/${lockWaitTimerAssessmentId}/questions`, { method: "POST", cookie: adminCookie, body: { questionType: "true_false", prompt: "Timer starts after lock acquisition?", answerKey: true } });
+  assert(result.response.status === 201, "Lock-wait timer assessment question is created");
+  result = await api(`/api/admin/assessments/${lockWaitTimerAssessmentId}`, { method: "PATCH", cookie: adminCookie, body: { status: "published" } });
+  assert(result.response.status === 200, "Lock-wait timer assessment is published");
+  const timerLock = await pool.connect();
+  await timerLock.query("BEGIN");
+  await timerLock.query("SELECT id FROM assessments WHERE id=$1 FOR UPDATE", [lockWaitTimerAssessmentId]);
+  const delayedTimedStart = api(`/api/assessments/${lockWaitTimerAssessmentId}/attempts`, { method: "POST", cookie: memberCookie, body: {} });
+  const timerStartWaited = await Promise.race([delayedTimedStart.then(() => false), new Promise((resolve) => setTimeout(() => resolve(true), 250))]);
+  await new Promise((resolve) => setTimeout(resolve, 1500));
+  await timerLock.query("COMMIT");
+  timerLock.release();
+  result = await delayedTimedStart;
+  const remainingTimeMs = result.data.attempt?.due_at ? new Date(result.data.attempt.due_at).getTime() - Date.now() : -1;
+  assert(timerStartWaited === true && result.response.status === 201 && remainingTimeMs >= 3500, "A timed attempt receives its full configured duration after row-lock wait");
+  result = await api(`/api/admin/assessments/${lockWaitTimerAssessmentId}`, { method: "PATCH", cookie: adminCookie, body: { status: "archived" } });
+  assert(result.response.status === 200, "Lock-wait timer fixture is archived before certificate eligibility is checked");
+
+  result = await api(`/api/admin/courses/${courseId}/assessments`, { method: "POST", cookie: adminCookie, body: { title: "Concurrent attempt guard", maxAttempts: 1 } });
+  const concurrentAssessmentId = Number(result.data.assessment.id);
+  result = await api(`/api/admin/assessments/${concurrentAssessmentId}/questions`, { method: "POST", cookie: adminCookie, body: { questionType: "true_false", prompt: "Concurrent request guard?", answerKey: true } });
+  assert(result.response.status === 201, "Concurrent attempt assessment question is created");
+  result = await api(`/api/admin/assessments/${concurrentAssessmentId}`, { method: "PATCH", cookie: adminCookie, body: { status: "published" } });
+  assert(result.response.status === 200, "Concurrent attempt assessment is published");
+  const concurrentStarts = await Promise.all([
+    api(`/api/assessments/${concurrentAssessmentId}/attempts`, { method: "POST", cookie: memberCookie, body: {} }),
+    api(`/api/assessments/${concurrentAssessmentId}/attempts`, { method: "POST", cookie: memberCookie, body: {} }),
+  ]);
+  const concurrentAttemptIds = concurrentStarts.map((item) => Number(item.data.attempt?.id));
+  const concurrentQuestionId = Number(concurrentStarts[0].data.questions[0].id);
+  const concurrentAttemptCount = await pool.query("SELECT COUNT(*)::int AS count FROM assessment_attempts WHERE assessment_id=$1 AND user_id=$2", [concurrentAssessmentId,memberId]);
+  assert(concurrentStarts.every((item) => item.response.status === 201) && concurrentAttemptIds[0] === concurrentAttemptIds[1] && concurrentAttemptCount.rows[0].count === 1, "Concurrent starts resume one shared attempt instead of creating duplicate attempts");
+  const concurrentAttemptId = concurrentAttemptIds[0];
+  const concurrentSaves = await Promise.all([
+    api(`/api/assessment-attempts/${concurrentAttemptId}/answers`, { method: "POST", cookie: memberCookie, body: { answers: [{ questionId: concurrentQuestionId, answer: true }] } }),
+    api(`/api/assessment-attempts/${concurrentAttemptId}/answers`, { method: "POST", cookie: memberCookie, body: { answers: [{ questionId: concurrentQuestionId, answer: true }] } }),
+  ]);
+  const concurrentAnswerCount = await pool.query("SELECT COUNT(*)::int AS count FROM assessment_answers WHERE attempt_id=$1", [concurrentAttemptId]);
+  assert(concurrentSaves.every((item) => item.response.status === 200) && concurrentAnswerCount.rows[0].count === 1, "Concurrent autosaves serialize and retain one answer row per question");
+  const concurrentSubmissions = await Promise.all([
+    api(`/api/assessment-attempts/${concurrentAttemptId}/submit`, { method: "POST", cookie: memberCookie, body: { answers: [{ questionId: concurrentQuestionId, answer: true }] } }),
+    api(`/api/assessment-attempts/${concurrentAttemptId}/submit`, { method: "POST", cookie: memberCookie, body: { answers: [{ questionId: concurrentQuestionId, answer: true }] } }),
+  ]);
+  const concurrentFinalState = await pool.query("SELECT status,COUNT(*) OVER()::int AS row_count FROM assessment_attempts WHERE id=$1", [concurrentAttemptId]);
+  assert(concurrentSubmissions.filter((item) => item.response.status === 200).length === 1 && concurrentSubmissions.filter((item) => item.response.status === 409).length === 1 && concurrentFinalState.rows[0]?.status === "graded" && concurrentFinalState.rows[0]?.row_count === 1, "Concurrent final submissions grade an attempt exactly once and reject the duplicate");
+  result = await api(`/api/admin/assessments/${concurrentAssessmentId}`, { method: "PATCH", cookie: adminCookie, body: { status: "archived" } });
+  assert(result.response.status === 200, "Concurrent assessment fixture is archived before certificate eligibility is checked");
 
   result = await api(`/api/courses/integration-course/certificate`, { method: "POST", cookie: memberCookie, body: {} });
   assert(result.response.status === 201 && result.data.certificate.serial_number, `Member can issue a certificate after completing lessons and assessments (HTTP ${result.response.status}: ${JSON.stringify(result.data)})`);
   const certificateId = result.data.certificate.public_id;
   result = await api(`/api/certificates/${certificateId}`);
   assert(result.response.status === 200 && result.data.certificate.valid, "Certificate has a public verification endpoint");
+
+  result = await api(`/api/admin/courses/${courseId}/assessments`, { method: "POST", cookie: adminCookie, body: { title: "Manual review", titleEn: "Manual review English", descriptionEn: "Manual review description" } });
+  assert(result.response.status === 201, "Admin can create an additional assessment for manual grading");
+  const manualAssessmentId = Number(result.data.assessment.id);
+  result = await api(`/api/admin/assessments/${manualAssessmentId}/questions`, { method: "POST", cookie: adminCookie, body: { questionType: "short_text", prompt: "پاسخ تشریحی", promptEn: "Explain your answer", explanationEn: "Instructor feedback guide", points: 2 } });
+  assert(result.response.status === 201, "Admin can create an English short-text question");
+  result = await api(`/api/admin/assessments/${manualAssessmentId}/questions`, { method: "POST", cookie: adminCookie, body: { questionType: "multiple_choice", prompt: "انتخاب درست", promptEn: "Choose the correct option", options: [{ id: "A", label: "درست", label_en: "Correct" }, { id: "B", label: "نادرست", label_en: "Incorrect" }], answerKey: ["A"], points: 1 } });
+  assert(result.response.status === 201, "Admin can create a bilingual multiple-choice question");
+  result = await api(`/api/admin/assessments/${manualAssessmentId}`, { method: "PATCH", cookie: adminCookie, body: { status: "published" } });
+  assert(result.response.status === 200, "Manual grading assessment can be published");
+  result = await api(`/api/assessments/${manualAssessmentId}/attempts`, { method: "POST", cookie: memberCookie, body: {} });
+  assert(result.response.status === 201, "Enrolled learner can start the manual grading assessment");
+  const manualAttemptId = Number(result.data.attempt.id);
+  const manualQuestionId = Number(result.data.questions.find((question) => question.question_type === "short_text").id);
+  const multipleChoiceQuestionId = Number(result.data.questions.find((question) => question.question_type === "multiple_choice").id);
+  result = await api(`/api/assessment-attempts/${manualAttemptId}/submit`, { method: "POST", cookie: memberCookie, body: { answers: [{ questionId: manualQuestionId, answer: "" }, { questionId: multipleChoiceQuestionId, answer: [] }] } });
+  assert(result.response.status === 400, "Final submission rejects empty written answers and empty multiple-choice selections");
+  result = await api(`/api/assessment-attempts/${manualAttemptId}/submit`, { method: "POST", cookie: memberCookie, body: { answers: [{ questionId: manualQuestionId, answer: "My considered response" }, { questionId: multipleChoiceQuestionId, answer: ["A"] }] } });
+  assert(result.response.status === 200 && result.data.requiresManualGrade && result.data.status === "submitted", "Short-text answers are submitted for manual grading without being auto-passed");
+  result = await api(`/api/assessments/${manualAssessmentId}`, { cookie: memberCookie });
+  assert(result.response.status === 200 && result.data.attemptHistory.some((attempt) => attempt.status === "submitted"), "Learner assessment history shows a submitted attempt awaiting manual grading");
+  const manualAnswer = await pool.query("SELECT id FROM assessment_answers WHERE attempt_id=$1", [manualAttemptId]);
+  result = await api(`/api/admin/assessment-attempts/${manualAttemptId}`, { method: "PATCH", cookie: adminCookie, body: { answers: [{ answerId: Number(manualAnswer.rows[0].id), pointsAwarded: 2, feedback: "Well explained" }] } });
+  assert(result.response.status === 200 && result.data.result.passed, "Instructor can manually grade a submitted short-text response");
+  result = await api(`/api/assessments/${manualAssessmentId}`, { cookie: memberCookie });
+  assert(result.response.status === 200 && result.data.attemptHistory.some((attempt) => attempt.status === "graded" && attempt.passed === true && Number(attempt.score_percent) === 100), "Learner history exposes their own final score and manual grading outcome");
+
+  result = await api(`/api/admin/courses/${courseId}/assessments`, { method: "POST", cookie: adminCookie, body: { title: "Shuffled questions", shuffleQuestions: true } });
+  const shuffledAssessmentId = Number(result.data.assessment.id);
+  for (let index = 0; index < 5; index += 1) {
+    result = await api(`/api/admin/assessments/${shuffledAssessmentId}/questions`, { method: "POST", cookie: adminCookie, body: { questionType: "true_false", prompt: `Shuffle question ${index + 1}`, answerKey: true } });
+    assert(result.response.status === 201, "Shuffled assessment question is created");
+  }
+  result = await api(`/api/admin/assessments/${shuffledAssessmentId}`, { method: "PATCH", cookie: adminCookie, body: { status: "published" } });
+  assert(result.response.status === 200, "Shuffled assessment is published");
+  result = await api(`/api/assessments/${shuffledAssessmentId}/attempts`, { method: "POST", cookie: memberCookie, body: {} });
+  const shuffledAttemptId = Number(result.data.attempt.id);
+  const shuffledOrder = result.data.questions.map((question) => Number(question.id));
+  result = await api(`/api/assessments/${shuffledAssessmentId}`, { cookie: memberCookie });
+  assert(result.response.status === 200 && result.data.questions.map((question) => Number(question.id)).join(",") === shuffledOrder.join(","), "Shuffled question order is deterministic for GET refresh recovery");
+  result = await api(`/api/assessments/${shuffledAssessmentId}/attempts`, { method: "POST", cookie: memberCookie, body: {} });
+  assert(result.response.status === 201 && Number(result.data.attempt.id) === shuffledAttemptId && result.data.questions.map((question) => Number(question.id)).join(",") === shuffledOrder.join(","), "Repeated start resumes the same shuffled question order");
+
+  result = await api(`/api/admin/courses/${courseId}/assessments`, { method: "POST", cookie: adminCookie, body: { title: "Ordered questions", shuffleQuestions: false, timeLimitSeconds: 300 } });
+  const orderedAssessmentId = Number(result.data.assessment.id);
+  for (let index = 0; index < 3; index += 1) {
+    result = await api(`/api/admin/assessments/${orderedAssessmentId}/questions`, { method: "POST", cookie: adminCookie, body: { questionType: "true_false", prompt: `Ordered question ${index + 1}`, answerKey: true } });
+    assert(result.response.status === 201, "Ordered assessment question is created");
+  }
+  result = await api(`/api/admin/assessments/${orderedAssessmentId}`, { method: "PATCH", cookie: adminCookie, body: { status: "published" } });
+  assert(result.response.status === 200, "Non-shuffled assessment is published");
+  const expectedPositionOrder = (await pool.query("SELECT id FROM assessment_questions WHERE assessment_id=$1 ORDER BY position", [orderedAssessmentId])).rows.map((question) => Number(question.id));
+  result = await api(`/api/assessments/${orderedAssessmentId}/attempts`, { method: "POST", cookie: memberCookie, body: {} });
+  assert(result.response.status === 201 && result.data.questions.map((question) => Number(question.id)).join(",") === expectedPositionOrder.join(","), "Non-shuffled assessment preserves author-defined question position");
+  const orderedAttemptId = Number(result.data.attempt.id);
+  const orderedQuestionId = Number(result.data.questions[0].id);
+  await pool.query("UPDATE assessment_attempts SET due_at=NOW()-INTERVAL '1 second' WHERE id=$1", [orderedAttemptId]);
+  result = await api(`/api/assessment-attempts/${orderedAttemptId}/answers`, { method: "POST", cookie: memberCookie, body: { answers: [{ questionId: orderedQuestionId, answer: "A" }] } });
+  assert(result.response.status === 409, "Autosave is rejected after the server-enforced assessment deadline");
+  result = await api(`/api/assessment-attempts/${orderedAttemptId}/submit`, { method: "POST", cookie: memberCookie, body: { answers: [{ questionId: orderedQuestionId, answer: "A" }] } });
+  const timedOutAnswerCount = await pool.query("SELECT COUNT(*)::int AS count FROM assessment_answers WHERE attempt_id=$1", [orderedAttemptId]);
+  assert(result.response.status === 409 && timedOutAnswerCount.rows[0].count === 0, "Final submission after the deadline is rejected without persisting answers");
+  result = await api(`/api/assessments/${orderedAssessmentId}`, { cookie: memberCookie });
+  assert(result.response.status === 200 && result.data.activeAttempt === null && result.data.attemptHistory.some((attempt) => attempt.status === "expired"), "Expired in-progress attempts are closed and remain visible in learner history");
+  result = await api(`/api/assessments/${orderedAssessmentId}/attempts`, { method: "POST", cookie: memberCookie, body: {} });
+  assert(result.response.status === 409, "Expired attempts remain counted against the configured attempt limit");
 
   result = await api("/api/admin/courses", { method: "POST", cookie: adminCookie, body: { title: "Members Course", slug: "members-course", accessType: "members", priceMinor: 0 } });
   assert(result.response.status === 201, "Admin can create a members-only course");
@@ -332,6 +695,10 @@ try {
   assert(result.response.status === 201, "Admin can add a lesson to members-only course");
   result = await api(`/api/admin/courses/${membersCourseId}`, { method: "PATCH", cookie: adminCookie, body: { status: "published" } });
   assert(result.response.status === 200, "Members-only course can be published");
+  const untranslatedEnglishCoursePage = await fetch(`${baseUrl}/en/courses/members-course`);
+  const untranslatedEnglishCourseHtml = await untranslatedEnglishCoursePage.text();
+  assert(untranslatedEnglishCoursePage.status === 200 && untranslatedEnglishCourseHtml.includes("Translation pending"), "Missing course, section and lesson translations are explicitly marked pending");
+  assert(!untranslatedEnglishCourseHtml.includes("Members Course") && !untranslatedEnglishCourseHtml.includes("Member section") && !untranslatedEnglishCourseHtml.includes("Members lesson") && !untranslatedEnglishCourseHtml.includes("Members only"), "English course detail never falls back to untranslated source content");
 
   result = await api("/api/admin/membership-plans", { method: "POST", cookie: adminCookie, body: { code: "integration-member", name: "Integration Member", level: 1, priceMinor: 0, billingInterval: "none", benefits: ["Members-only course access"] } });
   assert(result.response.status === 201, `Admin can create a free membership plan (HTTP ${result.response.status}: ${JSON.stringify(result.data)})`);
@@ -369,11 +736,29 @@ try {
   const scheduledEvents = await pool.query("SELECT id FROM course_enrollment_events WHERE enrollment_id=(SELECT id FROM course_enrollments WHERE course_id=$1 AND user_id=$2) AND event_type='revoked'", [scheduledCourseId,memberId]);
   assert(scheduledEnrollment.rows[0]?.status === "revoked" && scheduledEvents.rowCount === 1, "Membership expiry revokes its entitlement and records one enrollment event");
 
-  result = await api("/api/admin/events", { method: "POST", cookie: adminCookie, body: { slug: "integration-event", title: "Integration Community Event", summary: "Capacity and waitlist test", description: "Integration event", location: "Online", startsAt: new Date(Date.now()+86400000).toISOString(), endsAt: new Date(Date.now()+90000000).toISOString(), capacity: 1, accessType: "public", priceMinor: 0 } });
+  result = await api("/api/admin/events", { method: "POST", cookie: adminCookie, body: { slug: "integration-event", title: "Integration Community Event فارسی", titleEn: "Integration Community Event English", summary: "Capacity and waitlist test فارسی", summaryEn: "Capacity and waitlist test English", description: "Integration event فارسی", descriptionEn: "Integration event English", location: "تهران", locationEn: "Online English", startsAt: new Date(Date.now()+86400000).toISOString(), endsAt: new Date(Date.now()+90000000).toISOString(), capacity: 1, accessType: "public", priceMinor: 0 } });
   assert(result.response.status === 201, `Admin can create an event (HTTP ${result.response.status}: ${JSON.stringify(result.data)})`);
   const eventId = Number(result.data.event.id);
+  result = await api(`/api/admin/events/${eventId}`, { method: "PATCH", cookie: adminCookie, body: { titleEn: "Updated community event English", summaryEn: "Updated event summary English", descriptionEn: "Updated event description English", locationEn: "Virtual venue English" } });
+  assert(result.response.status === 200 && result.data.event.title_en === "Updated community event English", "Admin can edit English event fields");
   result = await api(`/api/admin/events/${eventId}`, { method: "PATCH", cookie: adminCookie, body: { status: "published" } });
   assert(result.response.status === 200, "Admin can publish an event");
+  const englishEventsPage = await fetch(`${baseUrl}/en/events`);
+  const englishEventsHtml = await englishEventsPage.text();
+  assert(englishEventsPage.status === 200 && englishEventsHtml.includes("Updated community event English") && englishEventsHtml.includes("Updated event summary English"), "English events catalog uses translated event fields");
+  const englishEventPage = await fetch(`${baseUrl}/en/events/integration-event`);
+  const englishEventHtml = await englishEventPage.text();
+  assert(englishEventPage.status === 200 && englishEventHtml.includes("Updated event description English") && englishEventHtml.includes("Virtual venue English"), "English event detail uses translated description and location");
+  assert(!englishEventHtml.includes("Integration Community Event فارسی") && !englishEventHtml.includes("تهران"), "English event detail never falls back to Persian content");
+  result = await api("/api/admin/events", { method: "POST", cookie: adminCookie, body: { slug: "integration-event-untranslated", title: "رویداد بدون ترجمه", summary: "خلاصه فارسی", description: "توضیح فارسی", location: "تهران", startsAt: new Date(Date.now()+172800000).toISOString(), endsAt: new Date(Date.now()+176400000).toISOString(), capacity: null, accessType: "public", priceMinor: 0 } });
+  assert(result.response.status === 201, "Admin can create an event before its English translation is ready");
+  const untranslatedEventId = Number(result.data.event.id);
+  result = await api(`/api/admin/events/${untranslatedEventId}`, { method: "PATCH", cookie: adminCookie, body: { status: "published" } });
+  assert(result.response.status === 200, "Untranslated event can still be published in the source locale");
+  const untranslatedEnglishEventPage = await fetch(`${baseUrl}/en/events/integration-event-untranslated`);
+  const untranslatedEnglishEventHtml = await untranslatedEnglishEventPage.text();
+  assert(untranslatedEnglishEventPage.status === 200 && untranslatedEnglishEventHtml.includes("Translation pending"), "Missing English event translations are explicitly marked pending");
+  assert(!untranslatedEnglishEventHtml.includes("رویداد بدون ترجمه") && !untranslatedEnglishEventHtml.includes("خلاصه فارسی") && !untranslatedEnglishEventHtml.includes("تهران"), "English event detail never falls back to Persian source content");
   result = await api("/api/events/integration-event/register", { method: "POST", cookie: memberCookie });
   assert(result.response.status === 201 && result.data.registration.status === "registered", "First member receives the final event seat");
   result = await api("/api/auth/register", { method: "POST", body: { username: "integration-member-two", password: "IntegrationMemberTwo!Password2026" } });
@@ -392,9 +777,16 @@ try {
   const promoted = await pool.query("SELECT status FROM event_registrations WHERE event_id=$1 AND user_id=$2", [eventId,memberTwoId]);
   assert(promoted.rows[0].status === "registered", "Waitlisted member promotion is persisted");
 
-  result = await api("/api/admin/membership-plans", { method: "POST", cookie: adminCookie, body: { code: "integration-member-plus", name: "Integration Member Plus", level: 2, priceMinor: 0, billingInterval: "none", benefits: ["Expanded member access"] } });
+  result = await api("/api/admin/membership-plans", { method: "POST", cookie: adminCookie, body: { code: "integration-member-plus", name: "Integration Member Plus فارسی", nameEn: "Integration Member Plus English", description: "Plan description فارسی", descriptionEn: "Plan description English", level: 2, priceMinor: 0, billingInterval: "none", benefits: ["Expanded member access فارسی"], benefitsEn: ["Expanded member access English"] } });
   assert(result.response.status === 201, "Admin can create a second membership tier");
   const higherPlanId = Number(result.data.plan.id);
+  result = await api(`/api/admin/membership-plans/${higherPlanId}`, { method: "PATCH", cookie: adminCookie, body: { nameEn: "Updated membership plan English", descriptionEn: "Updated membership description English", benefitsEn: ["Updated English benefit"] } });
+  assert(result.response.status === 200 && result.data.plan.name_en === "Updated membership plan English", "Admin can edit membership plan English fields");
+  const englishPortalMembershipPage = await fetch(`${baseUrl}/en/portal-membership`);
+  const englishPortalMembershipHtml = await englishPortalMembershipPage.text();
+  assert(englishPortalMembershipPage.status === 200 && englishPortalMembershipHtml.includes("Updated membership plan English") && englishPortalMembershipHtml.includes("Updated membership description English") && englishPortalMembershipHtml.includes("Updated English benefit"), "English portal membership page uses translated plan fields");
+  assert(englishPortalMembershipHtml.includes("Translation pending"), "Portal membership plans without English fields are marked pending");
+  assert(!englishPortalMembershipHtml.includes("Integration Member Plus فارسی") && !englishPortalMembershipHtml.includes("Plan description فارسی") && !englishPortalMembershipHtml.includes("Expanded member access فارسی"), "English portal membership never falls back to Persian plan content");
   result = await api(`/api/admin/membership-plans/${higherPlanId}/courses`, { method: "PUT", cookie: adminCookie, body: { courseIds: [membersCourseId] } });
   assert(result.response.status === 200, "Second membership tier can receive course entitlements");
   result = await api("/api/membership/change", { method: "POST", cookie: memberCookie, body: { planId: higherPlanId } });
@@ -419,6 +811,32 @@ try {
   assert(result.response.status === 201, "Admin can grant the support role");
   result = await api("/api/admin/support/messages", { cookie: memberTwoCookie });
   assert(result.response.status === 200 && result.data.messages.some((item) => Number(item.id) === Number(supportMessage.rows[0].id)), "Support role can view support inbox");
+  result = await api("/api/contact", { method: "POST", cookie: memberCookie, body: {
+    firstName: "Alex", lastName: "Morgan", email: "ALEX@example.com", confirmEmail: "alex@example.com",
+    phone: "+1 708 669 9544", addressLine1: "100 Main Street", addressLine2: "", city: "Chicago",
+    stateRegion: "Illinois", postalCode: "60601", country: "US", preferredLanguage: "English",
+    secondaryLanguage: "", preferredContactMethods: ["Email", "Telegram", "WhatsApp"],
+    telegramHandle: "@alex", whatsappNumber: "+1 555 0100", subject: "Integration contact request",
+    message: "Please send information about the official membership process.", smsConsent: true, legalConsent: true,
+    item_6__fluent_sf: "",
+  } });
+  assert(result.response.status === 201 && result.data.submissionId, "Contact form stores a valid request and consent choices");
+  const contactRow = await pool.query("SELECT id,email,country,preferred_language,preferred_contact_methods,telegram_handle,whatsapp_number,sms_consent,legal_consent FROM contact_submissions WHERE id=$1", [result.data.submissionId]);
+  assert(contactRow.rows[0].email === "alex@example.com" && contactRow.rows[0].country === "US" && contactRow.rows[0].preferred_language === "English" && contactRow.rows[0].preferred_contact_methods.join(",") === "Email,Telegram,WhatsApp", "Contact request normalizes email and stores exact country, language and independent contact channels");
+  assert(contactRow.rows[0].sms_consent === true && contactRow.rows[0].legal_consent === true, "Contact request persists SMS and legal consent independently");
+  result = await api("/api/admin/contact-submissions", { cookie: memberTwoCookie });
+  assert(result.response.status === 200 && result.data.submissions.some((item) => Number(item.id) === Number(contactRow.rows[0].id) && item.preferred_contact_methods.includes("WhatsApp")), "Support role can review contact requests and their selected channels");
+  const contactCountBeforeHoneypot = await pool.query("SELECT COUNT(*)::int AS count FROM contact_submissions");
+  result = await api("/api/contact", { method: "POST", body: {
+    firstName: "Bot", lastName: "Submission", email: "bot@example.com", confirmEmail: "bot@example.com",
+    phone: "+1 555 0100", addressLine1: "100 Main Street", city: "Chicago", stateRegion: "Illinois",
+    postalCode: "60601", country: "US", preferredLanguage: "English", preferredContactMethods: [],
+    subject: "Spam test", message: "This is a honeypot integration test message.", legalConsent: true,
+    item_6__fluent_sf: "https://spam.example",
+  } });
+  assert(result.response.status === 202, "Filled contact honeypot is silently acknowledged without exposing bot detection");
+  const contactCountAfterHoneypot = await pool.query("SELECT COUNT(*)::int AS count FROM contact_submissions");
+  assert(contactCountBeforeHoneypot.rows[0].count === contactCountAfterHoneypot.rows[0].count, "Honeypot submission is not persisted");
   result = await api(`/api/admin/support/messages/${Number(supportMessage.rows[0].id)}/replies`, { method: "POST", cookie: memberTwoCookie, body: { body: "Support team reply from integration test." } });
   assert(result.response.status === 201, "Support staff can reply to a member");
   result = await api("/api/support/messages", { cookie: memberCookie });
@@ -426,6 +844,8 @@ try {
 
   result = await api(`/api/admin/users/${memberTwoId}/roles`, { method: "POST", cookie: adminCookie, body: { role: "instructor" } });
   assert(result.response.status === 201, "Admin can grant the instructor role");
+  result = await api("/api/storage/complete", { method: "POST", cookie: memberTwoCookie, body: { assetId: Number(upload.data.assetId) } });
+  assert(result.response.status === 404, "An instructor cannot finalize another user's stored asset");
   result = await api(`/api/admin/courses/${membersCourseId}/instructors`, { method: "POST", cookie: adminCookie, body: { userId: memberTwoId } });
   assert(result.response.status === 201, "Admin can assign an instructor to a course");
   result = await api("/api/admin/courses", { cookie: memberTwoCookie });
@@ -482,6 +902,47 @@ try {
   const payoutAudit = await pool.query("SELECT status,approved_by,paid_by FROM affiliate_payouts WHERE id=$1", [payoutId]);
   assert(payoutAudit.rows[0].status === "paid" && Number(payoutAudit.rows[0].approved_by) !== Number(payoutAudit.rows[0].paid_by), "Payout approval and payment are recorded under different actors");
 
+  result = await api(`/api/admin/users/${memberTwoId}/roles`, { method: "POST", cookie: adminCookie, body: { role: "event_manager" } });
+  assert(result.response.status === 201, "Admin can grant the event manager role");
+  const authenticatedWorkspacePages = [
+    ["/fa/finance-center", "fa", "rtl", memberTwoCookie], ["/en/finance-center", "en", "ltr", memberTwoCookie],
+    ["/fa/support-center", "fa", "rtl", memberTwoCookie], ["/en/support-center", "en", "ltr", memberTwoCookie],
+    ["/fa/instructor", "fa", "rtl", memberTwoCookie], ["/en/instructor", "en", "ltr", memberTwoCookie],
+    ["/fa/events-manager", "fa", "rtl", memberTwoCookie], ["/en/events-manager", "en", "ltr", memberTwoCookie],
+    ["/fa/affiliate", "fa", "rtl", memberCookie], ["/en/affiliate", "en", "ltr", memberCookie],
+    ["/fa/profile", "fa", "rtl", memberCookie], ["/en/profile", "en", "ltr", memberCookie],
+    ["/fa/membership", "fa", "rtl", memberCookie], ["/en/portal-membership", "en", "ltr", memberCookie],
+  ];
+  for (const [path, locale, direction, cookie] of authenticatedWorkspacePages) {
+    const oppositeCookie = locale === "en" ? "fa" : "en";
+    const response = await fetch(`${baseUrl}${path}`, { redirect: "manual", headers: { cookie: `${cookie}; gin_locale=${oppositeCookie}` } });
+    const html = await response.text();
+    assert(response.status === 200 && html.includes(`lang="${locale}"`) && html.includes(`dir="${direction}"`) && html.includes("<main"), `Role-authorized workspace ${path} renders in its explicit locale despite an opposing cookie (HTTP ${response.status})`);
+  }
+  await runAuthenticatedBrowserQa([
+    { path: "/fa/admin", locale: "fa", cookie: adminCookie, capture: "fa-admin" },
+    { path: "/en/admin", locale: "en", cookie: adminCookie, capture: "en-admin" },
+    { path: "/fa/finance-center", locale: "fa", cookie: memberTwoCookie, capture: "fa-finance-center" },
+    { path: "/en/finance-center", locale: "en", cookie: memberTwoCookie, capture: "en-finance-center" },
+    { path: "/fa/support-center", locale: "fa", cookie: memberTwoCookie, capture: "fa-support-center" },
+    { path: "/en/support-center", locale: "en", cookie: memberTwoCookie, capture: "en-support-center" },
+    { path: "/fa/instructor", locale: "fa", cookie: memberTwoCookie, capture: "fa-instructor" },
+    { path: "/en/instructor", locale: "en", cookie: memberTwoCookie, capture: "en-instructor" },
+    { path: "/fa/events-manager", locale: "fa", cookie: memberTwoCookie },
+    { path: "/en/events-manager", locale: "en", cookie: memberTwoCookie },
+    { path: "/fa/affiliate", locale: "fa", cookie: memberCookie },
+    { path: "/en/affiliate", locale: "en", cookie: memberCookie },
+    { path: "/fa/dashboard", locale: "fa", cookie: memberTwoCookie, expectedPath: "/fa/finance-center" },
+    { path: "/en/dashboard", locale: "en", cookie: memberTwoCookie, expectedPath: "/en/finance-center" },
+    { path: "/fa/profile", locale: "fa", cookie: memberCookie },
+    { path: "/en/profile", locale: "en", cookie: memberCookie },
+    { path: "/fa/membership", locale: "fa", cookie: memberCookie },
+    { path: "/en/portal-membership", locale: "en", cookie: memberCookie },
+    { path: `/fa/courses/integration-course/assessments/${assessmentId}`, locale: "fa", cookie: memberCookie, capture: "fa-assessment" },
+    { path: `/en/courses/integration-course/assessments/${assessmentId}`, locale: "en", cookie: memberCookie, capture: "en-assessment" },
+    { path: `/fa/courses/integration-course/lessons/${lessonId}`, locale: "fa", cookie: memberCookie, capture: "fa-lesson" },
+    { path: `/en/courses/integration-course/lessons/${lessonId}`, locale: "en", cookie: memberCookie, capture: "en-lesson" },
+  ]);
   const refundPlan = await pool.query(`INSERT INTO membership_plans(code,name,level,price_minor,currency,billing_interval)
     VALUES('integration-refund','Refund integration plan',5,5000,'EUR','month') RETURNING id`);
   const refundPlanId = Number(refundPlan.rows[0].id);
@@ -543,6 +1004,10 @@ try {
   const orderCountBeforeCheckout = await pool.query("SELECT COUNT(*)::int AS count FROM orders");
   result = await api("/api/checkout", { method: "POST", cookie: memberCookie, body: { itemType: "course", itemId: membersCourseId, idempotencyKey: "integration-checkout-key-0001" } });
   assert(result.response.status === 503 && result.data.code === "PAYMENT_PROVIDER_NOT_CONFIGURED", "Checkout stays disabled without a selected payment provider");
+  const webhookCountBeforeDisabledProvider = await pool.query("SELECT COUNT(*)::int AS count FROM payment_webhook_events");
+  result = await api("/api/webhooks/payments/stripe", { method: "POST", body: { id: "evt_disabled_provider_integration" } });
+  const webhookCountAfterDisabledProvider = await pool.query("SELECT COUNT(*)::int AS count FROM payment_webhook_events");
+  assert(result.response.status === 503 && webhookCountBeforeDisabledProvider.rows[0].count === webhookCountAfterDisabledProvider.rows[0].count, "Payment webhook processing remains disabled and stores no events without a configured provider adapter");
   const orderCountAfterCheckout = await pool.query("SELECT COUNT(*)::int AS count FROM orders");
   assert(orderCountBeforeCheckout.rows[0].count === orderCountAfterCheckout.rows[0].count, "Unconfigured checkout creates no fake order or transaction");
   result = await api("/api/notifications", { cookie: memberTwoCookie });
@@ -550,6 +1015,9 @@ try {
 
   result = await api("/api/admin/courses", { method: "POST", body: { title: "CSRF blocked", slug: "csrf-blocked" } });
   assert(result.response.status === 403, "Cross-origin state-changing requests are rejected");
+  await pool.query("UPDATE users SET token_version=token_version+1 WHERE id=$1", [memberId]);
+  result = await api("/api/profile", { cookie: memberCookie });
+  assert(result.response.status === 401, "Incrementing a user's token version immediately revokes existing sessions");
 
   const counts = await pool.query(`SELECT
     (SELECT COUNT(*)::int FROM schema_migrations) AS migrations,
@@ -561,15 +1029,21 @@ try {
     (SELECT COUNT(*)::int FROM memberships WHERE user_id=$1 AND status='canceled') AS canceled_memberships,
     (SELECT COUNT(*)::int FROM referral_attributions WHERE affiliate_id=$2) AS referral_attributions,
     (SELECT COUNT(*)::int FROM affiliate_clicks WHERE affiliate_id=$2) AS affiliate_clicks,
-    (SELECT COUNT(*)::int FROM support_replies sr JOIN support_messages sm ON sm.id=sr.message_id WHERE sm.user_id=$1 AND sr.is_staff=TRUE) AS support_replies`, [memberId,affiliateId]);
-  assert(counts.rows[0].migrations >= migrationFiles.length, "All versioned SQL migrations are recorded");
+    (SELECT COUNT(*)::int FROM support_replies sr JOIN support_messages sm ON sm.id=sr.message_id WHERE sm.user_id=$1 AND sr.is_staff=TRUE) AS support_replies,
+    (SELECT COUNT(*)::int FROM contact_submissions) AS contact_submissions` , [memberId,affiliateId]);
+  assert(counts.rows[0].migrations === migrationFiles.length, "Exactly all versioned SQL migrations are recorded once");
   assert(counts.rows[0].completed_enrollments === 1 && counts.rows[0].completed_lessons === 1, "Enrollment and progress persisted in PostgreSQL-compatible database");
-  assert(counts.rows[0].certificates === 1 && counts.rows[0].passed_assessments === 1, "Assessment and certificate records persisted");
+  assert(counts.rows[0].certificates === 1 && counts.rows[0].passed_assessments === 3, "The original objective, concurrent-submission and manually graded assessments are persisted as passed");
   assert(counts.rows[0].active_memberships === 0 && counts.rows[0].canceled_memberships === 2, "Membership upgrade and cancellation history persisted");
   assert(counts.rows[0].referral_attributions === 1 && counts.rows[0].affiliate_clicks === 1, "Affiliate attribution and click tracking persisted");
   assert(counts.rows[0].support_replies === 1, "Support reply persisted");
+  assert(counts.rows[0].contact_submissions === 1, "Valid contact request persisted while the honeypot was not");
 
-  console.log(JSON.stringify({ status: "passed", database: "PGlite PostgreSQL-compatible integration server", migrations: counts.rows[0].migrations, flows: ["legacy reference route redirects", "admin bootstrap/login", "course/section/lesson management", "course publication", "immutable staging-to-final S3 uploads and replay resistance", "conditional copy rejects ETag races", "assessment/question management", "public catalog", "member registration and admin approval", "member login", "free enrollment", "lesson progress", "timed assessment attempt and grading", "course completion", "certificate issuance and public verification", "membership plan entitlements", "membership request and admin approval", "scheduled membership activation and expiry reconciliation", "membership upgrade and cancellation", "event publication and registration", "capacity waitlist and automatic promotion", "support inbox and staff reply", "instructor RBAC and course isolation", "finance versus affiliate-manager role separation", "affiliate payout reservation and maker-checker settlement", "affiliate application and referral attribution", "self-referral database guard", "affiliate click tracking and wallet balance guard", "full refund reconciliation and idempotent commission reversal", "checkout disabled without provider", "notification delivery", "profile updates", "CSRF rejection"] }, null, 2));
+  console.log(JSON.stringify({ status: "passed", database: "PGlite PostgreSQL-compatible integration server", migrations: counts.rows[0].migrations, flows: ["legacy reference route redirects", "admin bootstrap/login", "authenticated bilingual staff/member HTML routes with opposing locale cookies", "course/section/lesson management", "course publication", "immutable staging-to-final S3 uploads and replay resistance", "conditional copy rejects ETag races", "course-wide assessments with answer-key privacy, autosave/resume, deterministic shuffle, manual grading, enrollment revocation/expiry guards, lock-wait deadline enforcement and concurrent start/save/submit idempotency", "public catalog", "member registration and admin approval", "member login", "free enrollment", "lesson progress", "course completion", "certificate issuance and public verification", "membership plan entitlements", "membership request and admin approval", "scheduled membership activation and expiry reconciliation", "membership upgrade and cancellation", "event publication and registration", "capacity waitlist and automatic promotion", "support inbox and staff reply", "contact submission, consent persistence, support review and honeypot", "instructor RBAC and course isolation", "finance versus affiliate-manager role separation", "affiliate payout reservation and maker-checker settlement", "affiliate application and referral attribution", "self-referral database guard", "affiliate click tracking and wallet balance guard", "full refund reconciliation and idempotent commission reversal", "checkout disabled without provider", "notification delivery", "profile updates", "CSRF rejection"] }, null, 2));
+  if (process.env.KEEP_INTEGRATION_SERVER === "1") {
+    console.log(`Integration server retained for browser QA at ${baseUrl}; press Ctrl+C when finished.`);
+    await new Promise((resolve) => process.once("SIGINT", resolve));
+  }
 } catch (error) {
   console.error(error);
   process.exitCode = 1;
