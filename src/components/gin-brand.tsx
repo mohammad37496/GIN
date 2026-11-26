@@ -20,6 +20,6 @@ export function GinLogo({ variant = "default", width = 280, height = 63, classNa
   );
 }
 
-export function GinMark({ size = 42 }: { size?: number }) {
-  return <Image src="/gin/gin-mark.svg" alt="GIN" width={size} height={size} />;
+export function GinMark({ size = 42, className }: { size?: number; className?: string }) {
+  return <Image src="/gin/gin-mark.svg" alt="GIN" width={size} height={size} className={className} />;
 }
