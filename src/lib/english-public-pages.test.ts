@@ -162,6 +162,23 @@ test("English mobile masthead crop keeps the reference seal and excludes the des
   assert.match(mobile, /\.gin-en-masthead::after\s*\{\s*display:\s*none;\s*\}/);
 });
 
+test("English public typography follows the official GeneratePress system-font scale", () => {
+  const css = readFileSync(new URL("../app/english-site.css", import.meta.url), "utf8");
+  const root = css.match(/\.gin-en-site\s*\{([^}]*)\}/)?.[1] ?? "";
+  const heading = css.match(/\.gin-en-home h1, \.gin-en-page h1\s*\{([^}]*)\}/)?.[1] ?? "";
+  const bodyCopy = css.match(/\.gin-en-home p, \.gin-en-page p\s*\{([^}]*)\}/)?.[1] ?? "";
+  const referenceCopy = css.match(/\.gin-en-reference-copy\s*\{([^}]*)\}/)?.[1] ?? "";
+  assert.match(root, /font-family:\s*-apple-system,\s*system-ui,\s*BlinkMacSystemFont,\s*"Segoe UI",\s*Helvetica,\s*Arial,\s*sans-serif/);
+  assert.match(root, /font-size:\s*17px/);
+  assert.match(root, /line-height:\s*1\.5/);
+  assert.match(heading, /font-size:\s*clamp\(30px,\s*3vw,\s*42px\)/);
+  assert.match(heading, /font-weight:\s*400/);
+  assert.match(bodyCopy, /line-height:\s*1\.5/);
+  assert.match(referenceCopy, /font-size:\s*17px/);
+  assert.match(referenceCopy, /line-height:\s*1\.5/);
+  assert.doesNotMatch(root, /Times New Roman/);
+});
+
 test("Persian GIN gold CTA keeps its gold background and readable navy text", () => {
   const css = readFileSync(new URL("../app/gin-reference.css", import.meta.url), "utf8");
   assert.match(css, /\.button\.gin-gold-button\s*\{[^}]*background:\s*#c6a15b[^}]*color:\s*#142b40/i);
