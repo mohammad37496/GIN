@@ -1,0 +1,1 @@
+ALTER TABLE memberships ALTER COLUMN source TYPE VARCHAR(20);

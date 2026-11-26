@@ -1,0 +1,10 @@
+import Link from "next/link";
+import { CalendarDays,MapPin,Users } from "lucide-react";
+import PublicHeader from "@/components/public-header";
+import PublicFooter from "@/components/public-footer";
+import { ensureSchema,pool } from "@/lib/db";
+
+export const dynamic="force-dynamic";
+export default async function EventsPage(){await ensureSchema();const result=await pool.query(`SELECT e.id,e.slug,e.title,e.summary,e.location,e.starts_at,e.ends_at,e.capacity,e.access_type,
+  COUNT(r.id) FILTER(WHERE r.status='registered')::int AS registered_count
+  FROM events e LEFT JOIN event_registrations r ON r.event_id=e.id WHERE e.status='published' AND e.ends_at>NOW() GROUP BY e.id ORDER BY e.starts_at`);return <><PublicHeader/><main className="events-page"><div className="public-container"><section className="catalog-heading"><span className="eyebrow">GIN EVENTS</span><h1>رویدادها و گردهمایی‌ها</h1><p>برنامه‌های منتشرشده با زمان، محل برگزاری و ظرفیت مشخص در این تقویم نمایش داده می‌شوند.</p></section>{result.rows.length?<div className="events-grid">{result.rows.map((event)=><article className="event-card" key={event.id}><span className="eyebrow">{event.access_type==="public"?"PUBLIC EVENT":event.access_type==="members"?"MEMBERS EVENT":"PAID EVENT"}</span><h2><Link href={`/events/${event.slug}`}>{event.title}</Link></h2><p>{event.summary}</p><div className="event-meta"><span><CalendarDays size={15}/>{new Date(event.starts_at).toLocaleString("fa-IR")}</span>{event.location&&<span><MapPin size={15}/>{event.location}</span>}<span><Users size={15}/>{event.capacity===null?"ظرفیت آزاد":`${Math.max(0,event.capacity-event.registered_count)} ظرفیت باقی‌مانده`}</span></div><Link href={`/events/${event.slug}`} className="text-arrow">جزئیات و ثبت‌نام ←</Link></article>)}</div>:<div className="catalog-empty"><CalendarDays size={34}/><h2>در حال حاضر رویداد منتشرشده‌ای وجود ندارد</h2><p>رویدادهای جدید پس از تأیید جزئیات و ظرفیت در این صفحه قرار می‌گیرند.</p></div>}</div></main><PublicFooter/></>}

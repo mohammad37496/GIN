@@ -7,6 +7,10 @@
     "build": "next build",
     "start": "next start --hostname 0.0.0.0",
     "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "test": "node --import tsx --test src/lib/domain.test.ts",
+    "test:integration": "npm run build && node --import tsx scripts/test-integration.mjs",
+    "db:migrate": "tsx scripts/migrate.ts",
     "db:admin": "tsx scripts/create-admin.ts"
   },
   "dependencies": {
@@ -23,6 +27,8 @@
     "zod": "^4.1.12"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.6.0",
+    "@electric-sql/pglite-socket": "^0.3.0",
     "@types/bcryptjs": "^2.4.6",
     "@types/node": "^22.19.1",
     "@types/pg": "^8.15.6",

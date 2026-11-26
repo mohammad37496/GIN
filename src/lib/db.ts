@@ -1,5 +1,6 @@
-import { Pool } from "pg";
+import { Pool, type PoolClient } from "pg";
 import bcrypt from "bcryptjs";
+import { runMigrations } from "@/lib/migrations";
 
 const globalForPg = globalThis as unknown as { pool?: Pool; schemaReady?: Promise<void> };
 
@@ -13,53 +14,59 @@ export const pool = globalForPg.pool ?? new Pool({
 
 if (process.env.NODE_ENV !== "production") globalForPg.pool = pool;
 
-export async function ensureSchema() {
-  if (!process.env.DATABASE_URL) throw new Error("DATABASE_URL is not configured");
-  globalForPg.schemaReady ??= pool.query(`
-    CREATE TABLE IF NOT EXISTS users (
-      id BIGSERIAL PRIMARY KEY,
-      username VARCHAR(32) NOT NULL,
-      username_normalized VARCHAR(32) NOT NULL UNIQUE,
-      password_hash TEXT NOT NULL,
-      token_version INTEGER NOT NULL DEFAULT 0,
-      role VARCHAR(10) NOT NULL DEFAULT 'user' CHECK (role IN ('user','admin')),
-      status VARCHAR(12) NOT NULL DEFAULT 'pending' CHECK (status IN ('pending','approved','rejected','suspended')),
-      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-      reviewed_at TIMESTAMPTZ,
-      reviewed_by BIGINT REFERENCES users(id) ON DELETE SET NULL
-    );
-    CREATE INDEX IF NOT EXISTS users_status_created_idx ON users(status, created_at DESC);
-    ALTER TABLE users ADD COLUMN IF NOT EXISTS token_version INTEGER NOT NULL DEFAULT 0;
-    CREATE TABLE IF NOT EXISTS audit_logs (
-      id BIGSERIAL PRIMARY KEY,
-      actor_id BIGINT REFERENCES users(id) ON DELETE SET NULL,
-      action VARCHAR(40) NOT NULL,
-      target_user_id BIGINT REFERENCES users(id) ON DELETE SET NULL,
-      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-    );
-    CREATE TABLE IF NOT EXISTS admin_password_change_attempts (
-      admin_id BIGINT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
-      attempts INTEGER NOT NULL DEFAULT 0,
-      window_started_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-    );
-  `).then(async () => {
-    const adminUsername = process.env.BOOTSTRAP_ADMIN_USERNAME?.trim();
-    const adminPassword = process.env.BOOTSTRAP_ADMIN_PASSWORD;
-    if (adminUsername || adminPassword) {
-      if (!adminUsername || !/^[a-zA-Z0-9_.-]{3,32}$/.test(adminUsername) || !adminPassword || adminPassword.length < 14 || adminPassword.length > 72) {
-        throw new Error("BOOTSTRAP_ADMIN_USERNAME and BOOTSTRAP_ADMIN_PASSWORD must both be set; username must be 3-32 allowed characters and password 14-72 characters.");
-      }
-      const existingAdmin = await pool.query("SELECT 1 FROM users WHERE role = 'admin' LIMIT 1");
-      if (existingAdmin.rowCount === 0) {
-        const hash = await bcrypt.hash(adminPassword, 12);
-        const created = await pool.query(`INSERT INTO users(username, username_normalized, password_hash, role, status)
-          VALUES($1,$2,$3,'admin','approved') ON CONFLICT(username_normalized) DO NOTHING RETURNING id`, [adminUsername, adminUsername.toLowerCase(), hash]);
-        if (created.rowCount === 0) throw new Error("Bootstrap admin username already belongs to another account. Choose a different username.");
-      }
+async function bootstrapAdmin() {
+  const username = process.env.BOOTSTRAP_ADMIN_USERNAME?.trim();
+  const password = process.env.BOOTSTRAP_ADMIN_PASSWORD;
+  if (!username && !password) return;
+  if (!username || !/^[a-zA-Z0-9_.-]{3,32}$/.test(username) || !password || password.length < 14 || Buffer.byteLength(password, "utf8") > 72) {
+    throw new Error("BOOTSTRAP_ADMIN_USERNAME and BOOTSTRAP_ADMIN_PASSWORD must both be set; username must be 3-32 allowed characters and password 14-72 bytes.");
+  }
+
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    await client.query("SELECT pg_advisory_xact_lock(8247312910)");
+    const existingAdmin = await client.query("SELECT 1 FROM users WHERE role='admin' LIMIT 1");
+    if (existingAdmin.rowCount === 0) {
+      const hash = await bcrypt.hash(password, 12);
+      const created = await client.query(`INSERT INTO users(username,username_normalized,password_hash,role,status)
+        VALUES($1,$2,$3,'admin','approved') ON CONFLICT(username_normalized) DO NOTHING RETURNING id`,
+      [username, username.toLowerCase(), hash]);
+      if (created.rowCount === 0) throw new Error("Bootstrap admin username already belongs to another account. Choose a different username.");
     }
-  }).catch((error) => {
+    await client.query("COMMIT");
+  } catch (error) {
+    await client.query("ROLLBACK").catch(() => undefined);
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
+export async function ensureSchema(): Promise<void> {
+  if (!process.env.DATABASE_URL) throw new Error("DATABASE_URL is not configured");
+  globalForPg.schemaReady ??= (async () => {
+    await runMigrations(pool);
+    await bootstrapAdmin();
+  })().catch((error) => {
+    console.error("GIN database initialization failed", error);
     globalForPg.schemaReady = undefined;
     throw error;
   });
   await globalForPg.schemaReady;
+}
+
+export async function inTransaction<T>(work: (client: PoolClient) => Promise<T>): Promise<T> {
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const result = await work(client);
+    await client.query("COMMIT");
+    return result;
+  } catch (error) {
+    await client.query("ROLLBACK").catch(() => undefined);
+    throw error;
+  } finally {
+    client.release();
+  }
 }

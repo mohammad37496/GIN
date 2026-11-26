@@ -3,6 +3,7 @@ import { z } from "zod";
 import { pool, ensureSchema } from "@/lib/db";
 import { createSession, requireAdmin } from "@/lib/auth";
 import { errorResponse, jsonResponse } from "@/lib/http";
+import { rejectCrossOriginMutation } from "@/lib/request-security";
 
 const schema = z.object({
   currentPassword: z.string().min(1).max(72).refine((value) => Buffer.byteLength(value, "utf8") <= 72),
@@ -17,11 +18,10 @@ const schema = z.object({
 });
 
 export async function POST(request: Request) {
+  const originError = rejectCrossOriginMutation(request);
+  if (originError) return originError;
   const admin = await requireAdmin();
   if (!admin) return errorResponse("دسترسی غیرمجاز است.", 403);
-
-  const origin = request.headers.get("origin");
-  if (origin !== new URL(request.url).origin) return errorResponse("درخواست نامعتبر است.", 403);
 
   const body = await request.json().catch(() => null);
   const parsed = schema.safeParse(body);

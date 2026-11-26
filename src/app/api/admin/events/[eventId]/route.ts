@@ -1,0 +1,9 @@
+import { z } from "zod";
+import { getSession,hasRole } from "@/lib/auth";
+import { ensureSchema,inTransaction } from "@/lib/db";
+import { errorResponse,jsonResponse } from "@/lib/http";
+import { rejectCrossOriginMutation } from "@/lib/request-security";
+
+const schema=z.object({status:z.enum(["draft","published","canceled","completed"])});
+
+export async function PATCH(request:Request,{params}:{params:Promise<{eventId:string}>}){const originError=rejectCrossOriginMutation(request);if(originError)return originError;const admin=await getSession();if(!admin||(admin.role!=="admin"&&!(await hasRole(admin,"event_manager"))))return errorResponse("دسترسی مدیریت رویداد ندارید.",403);const id=Number((await params).eventId);if(!Number.isSafeInteger(id)||id<1)return errorResponse("رویداد پیدا نشد.",404);const parsed=schema.safeParse(await request.json().catch(()=>null));if(!parsed.success)return errorResponse("وضعیت رویداد معتبر نیست.");try{await ensureSchema();const result=await inTransaction(async(client)=>{const event=await client.query("SELECT id,status,starts_at,ends_at FROM events WHERE id=$1 FOR UPDATE",[id]);if(!event.rowCount)return null;if(parsed.data.status==='published'&&new Date(event.rows[0].ends_at).getTime()<=Date.now())return {expired:true as const};const updated=await client.query("UPDATE events SET status=$1::varchar WHERE id=$2 RETURNING id,status",[parsed.data.status,id]);await client.query("INSERT INTO audit_logs(actor_id,action,entity_type,entity_id,metadata) VALUES($1,$2,'event',$3,$4::jsonb)",[admin.id,`event_${parsed.data.status}`,id,JSON.stringify({previousStatus:event.rows[0].status,nextStatus:parsed.data.status})]);return updated.rows[0];});if(!result)return errorResponse("رویداد پیدا نشد.",404);if('expired'in result)return errorResponse("رویداد گذشته را نمی‌توان منتشر کرد.",409);return jsonResponse({event:result,message:"وضعیت رویداد تغییر کرد."});}catch{return errorResponse("تغییر وضعیت رویداد انجام نشد.",503);}}
