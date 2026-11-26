@@ -62,10 +62,10 @@ try {
   await waitForApp();
 
   const lastMigration = "0014_payment_refund_reconciliation.sql";
-  const lastMigrationSql = await readFile(`${root}/migrations/${lastMigration}`, "utf8");
+  const lastMigrationSql = (await readFile(`${root}/migrations/${lastMigration}`, "utf8")).replace(/\r\n?/g, "\n");
   const lastMigrationChecksum = createHash("sha256").update(lastMigrationSql).digest("hex");
   const baselineMigration = "0001_core.sql";
-  const baselineSql = await readFile(`${root}/migrations/${baselineMigration}`, "utf8");
+  const baselineSql = (await readFile(`${root}/migrations/${baselineMigration}`, "utf8")).replace(/\r\n?/g, "\n");
   const baselineChecksum = createHash("sha256").update(baselineSql).digest("hex");
 
   await pool.query("UPDATE schema_migrations SET checksum=$1 WHERE version=$2", ["legacy-baseline-checksum", baselineMigration]);

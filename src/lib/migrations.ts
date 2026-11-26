@@ -21,7 +21,9 @@ export async function runMigrations(pool: Pool): Promise<void> {
     if (!files.length) throw new Error("No database migrations were found.");
 
     const migrations = await Promise.all(files.map(async (file) => {
-      const sql = await readFile(path.join(directory, file), "utf8");
+      // Git may check SQL files out with CRLF on Windows and LF on Linux. Normalize
+      // before hashing and execution so the same migration has one stable checksum.
+      const sql = (await readFile(path.join(directory, file), "utf8")).replace(/\r\n?/g, "\n");
       return { file, sql, checksum: createHash("sha256").update(sql).digest("hex") };
     }));
     const applied = await client.query("SELECT version,checksum FROM schema_migrations");
