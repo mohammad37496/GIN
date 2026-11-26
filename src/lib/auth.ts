@@ -25,11 +25,41 @@ export async function clearSession() {
   jar.set(COOKIE, "", { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax", path: "/", maxAge: 0 });
 }
 
+export async function revokeCurrentSession() {
+  const token = (await cookies()).get(COOKIE)?.value;
+  if (!token) {
+    await clearSession();
+    return;
+  }
+
+  let payload;
+  const signingKey = secret();
+  try {
+    ({ payload } = await jwtVerify(token, signingKey));
+  } catch {
+    await clearSession();
+    return;
+  }
+
+  const id = Number(payload.sub);
+  const tokenVersion = Number(payload.ver ?? 0);
+  if (!Number.isSafeInteger(id) || !Number.isSafeInteger(tokenVersion)) {
+    await clearSession();
+    return;
+  }
+
+  await ensureSchema();
+  // token_version is account-wide: logout revokes every outstanding token for this user.
+  await pool.query("UPDATE users SET token_version=token_version+1 WHERE id=$1 AND token_version=$2", [id, tokenVersion]);
+  await clearSession();
+}
+
 export async function getSession(): Promise<SessionUser | null> {
   const token = (await cookies()).get(COOKIE)?.value;
   if (!token) return null;
+  const signingKey = secret();
   try {
-    const { payload } = await jwtVerify(token, secret());
+    const { payload } = await jwtVerify(token, signingKey);
     const id = Number(payload.sub);
     if (!Number.isSafeInteger(id)) return null;
     await ensureSchema();

@@ -58,13 +58,26 @@ export function EnglishProfileForm() {
 
 export function EnglishLogoutButton() {
   const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
   async function logout() {
     setBusy(true);
+    setError("");
     try {
-      await fetch("/api/auth/logout", { method: "POST" });
-    } finally {
+      const response = await fetch("/api/auth/logout?locale=en", { method: "POST" });
+      if (!response.ok) {
+        const result = await response.json().catch(() => ({}));
+        setError(result.error_en || "The server could not revoke this session. Please try again.");
+        setBusy(false);
+        return;
+      }
       window.location.assign("/en");
+    } catch {
+      setError("The server could not revoke this session. Please try again.");
+      setBusy(false);
     }
   }
-  return <button className="gin-en-button gin-en-button-alt" onClick={logout} disabled={busy}>{busy ? "Signing out…" : "Sign out"}</button>;
+  return <>
+    <button className="gin-en-button gin-en-button-alt" onClick={logout} disabled={busy}>{busy ? "Signing out…" : "Sign out"}</button>
+    {error && <p className="gin-en-form-error" role="alert">{error}</p>}
+  </>;
 }

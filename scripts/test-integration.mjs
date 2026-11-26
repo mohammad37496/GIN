@@ -117,8 +117,8 @@ async function waitForApp() {
   throw new Error("Next.js did not become ready in time");
 }
 
-async function api(path, { method = "GET", body, cookie } = {}) {
-  const headers = { Origin: origin, ...(body === undefined ? {} : { "Content-Type": "application/json" }), ...(cookie ? { Cookie: cookie } : {}) };
+async function api(path, { method = "GET", body, cookie, headers: extraHeaders = {} } = {}) {
+  const headers = { Origin: origin, ...(body === undefined ? {} : { "Content-Type": "application/json" }), ...(cookie ? { Cookie: cookie } : {}), ...extraHeaders };
   const response = await fetch(`${baseUrl}${path}`, { method, headers, ...(body === undefined ? {} : { body: JSON.stringify(body) }), redirect: "manual", signal: AbortSignal.timeout(15000) });
   const data = await response.json().catch(() => ({}));
   console.log(`${method} ${path} -> ${response.status}`);
@@ -1043,8 +1043,8 @@ try {
   result = await api("/api/notifications", { cookie: memberTwoCookie });
   assert(result.response.status === 200 && result.data.notifications.some((item) => item.type === "event_waitlist_promoted"), "Members receive event waitlist promotion notifications");
 
-  result = await api("/api/admin/courses", { method: "POST", body: { title: "CSRF blocked", slug: "csrf-blocked" } });
-  assert(result.response.status === 403, "Cross-origin state-changing requests are rejected");
+  result = await api("/api/admin/courses", { method: "POST", cookie: adminCookie, headers: { Origin: "https://attacker.example" }, body: { title: "CSRF blocked", slug: "csrf-blocked" } });
+  assert(result.response.status === 403, "Cross-origin state-changing requests are rejected before an authenticated admin action");
   await pool.query("UPDATE users SET token_version=token_version+1 WHERE id=$1", [memberId]);
   result = await api("/api/profile", { cookie: memberCookie });
   assert(result.response.status === 401, "Incrementing a user's token version immediately revokes existing sessions");
@@ -1069,7 +1069,35 @@ try {
   assert(counts.rows[0].support_replies === 1, "Support reply persisted");
   assert(counts.rows[0].contact_submissions === 1, "Valid contact request persisted while the honeypot was not");
 
-  console.log(JSON.stringify({ status: "passed", database: "PGlite PostgreSQL-compatible integration server", migrations: counts.rows[0].migrations, flows: ["legacy reference route redirects", "admin bootstrap/login", "atomic admin password-change rate limiting", "authenticated bilingual staff/member HTML routes with opposing locale cookies", "course/section/lesson management", "course publication", "immutable staging-to-final S3 uploads and replay resistance", "conditional copy rejects ETag races", "course-wide assessments with answer-key privacy, autosave/resume, deterministic shuffle, manual grading, enrollment revocation/expiry guards, lock-wait deadline enforcement and concurrent start/save/submit idempotency", "public catalog", "member registration and admin approval", "member login", "free enrollment", "lesson progress", "course completion", "certificate issuance and public verification", "membership plan entitlements", "membership request and admin approval", "scheduled membership activation and expiry reconciliation", "membership upgrade and cancellation", "event publication and registration", "capacity waitlist and automatic promotion", "support inbox and staff reply", "contact submission, consent persistence, support review and honeypot", "instructor RBAC and course isolation", "finance versus affiliate-manager role separation", "affiliate payout reservation and maker-checker settlement", "affiliate application and referral attribution", "self-referral database guard", "affiliate click tracking and wallet balance guard", "full refund reconciliation and idempotent commission reversal", "checkout disabled without provider", "notification delivery", "profile updates", "CSRF rejection"] }, null, 2));
+  result = await api("/api/auth/login", { method: "POST", body: { username: "integration-admin", password: "IntegrationAdmin!Password2026" } });
+  assert(result.response.status === 200 && result.cookie, "A second admin session is available for logout revocation testing");
+  const secondAdminCookie = result.cookie;
+  result = await api("/api/profile", { cookie: adminCookie });
+  assert(result.response.status === 200, "The original admin session can access its profile before logout");
+  const tokenVersionBeforeLogout = Number((await pool.query("SELECT token_version FROM users WHERE id=$1", [adminId])).rows[0].token_version);
+  const csrfLogout = await fetch(`${baseUrl}/api/auth/logout?locale=en`, {
+    method: "POST",
+    headers: { Origin: "https://attacker.example", Cookie: adminCookie },
+    redirect: "manual",
+    signal: AbortSignal.timeout(15000),
+  });
+  const tokenVersionAfterCsrfLogout = Number((await pool.query("SELECT token_version FROM users WHERE id=$1", [adminId])).rows[0].token_version);
+  assert(csrfLogout.status === 403 && tokenVersionAfterCsrfLogout === tokenVersionBeforeLogout, "Cross-origin logout is rejected without revoking the account token version");
+  const logoutResults = await Promise.all([
+    api("/api/auth/logout?locale=en", { method: "POST", cookie: adminCookie }),
+    api("/api/auth/logout?locale=en", { method: "POST", cookie: secondAdminCookie }),
+  ]);
+  result = logoutResults[0];
+  const concurrentLogout = logoutResults[1];
+  const tokenVersionAfterLogout = Number((await pool.query("SELECT token_version FROM users WHERE id=$1", [adminId])).rows[0].token_version);
+  assert(result.response.status === 303 && new URL(result.response.headers.get("location"), baseUrl).pathname === "/en", `English staff logout preserves the English locale (Location: ${result.response.headers.get("location") || "missing"})`);
+  assert(concurrentLogout.response.status === 303 && /max-age=0/i.test(result.response.headers.get("set-cookie") || "") && /max-age=0/i.test(concurrentLogout.response.headers.get("set-cookie") || "") && tokenVersionAfterLogout === tokenVersionBeforeLogout + 1, "Concurrent logout clears both cookies and increments the account token version exactly once");
+  for (const replayCookie of [adminCookie, secondAdminCookie]) {
+    result = await api("/api/profile", { cookie: replayCookie });
+    assert(result.response.status === 401, "A copied session token cannot be replayed after logout");
+  }
+
+  console.log(JSON.stringify({ status: "passed", database: "PGlite PostgreSQL-compatible integration server", migrations: counts.rows[0].migrations, flows: ["legacy reference route redirects", "admin bootstrap/login", "atomic admin password-change rate limiting", "authenticated bilingual staff/member HTML routes with opposing locale cookies", "course/section/lesson management", "course publication", "immutable staging-to-final S3 uploads and replay resistance", "conditional copy rejects ETag races", "course-wide assessments with answer-key privacy, autosave/resume, deterministic shuffle, manual grading, enrollment revocation/expiry guards, lock-wait deadline enforcement and concurrent start/save/submit idempotency", "public catalog", "member registration and admin approval", "member login", "free enrollment", "lesson progress", "course completion", "certificate issuance and public verification", "membership plan entitlements", "membership request and admin approval", "scheduled membership activation and expiry reconciliation", "membership upgrade and cancellation", "event publication and registration", "capacity waitlist and automatic promotion", "support inbox and staff reply", "contact submission, consent persistence, support review and honeypot", "instructor RBAC and course isolation", "finance versus affiliate-manager role separation", "affiliate payout reservation and maker-checker settlement", "affiliate application and referral attribution", "self-referral database guard", "affiliate click tracking and wallet balance guard", "full refund reconciliation and idempotent commission reversal", "checkout disabled without provider", "notification delivery", "profile updates", "authenticated CSRF rejection", "cross-origin logout rejection", "concurrent server-side logout revocation and locale-preserving redirect"] }, null, 2));
   if (process.env.KEEP_INTEGRATION_SERVER === "1") {
     console.log(`Integration server retained for browser QA at ${baseUrl}; press Ctrl+C when finished.`);
     await new Promise((resolve) => process.once("SIGINT", resolve));
