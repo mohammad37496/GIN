@@ -155,14 +155,15 @@ try {
 
   for (const file of migrationFiles) {
     const sql = (await readFile(`${root}/migrations/${file}`, "utf8")).replace(/\r\n?/g, "\n");
-    const windowsChecksum = createHash("sha256").update(sql.replace(/\n/g, "\r\n")).digest("hex");
-    await pool.query("UPDATE schema_migrations SET checksum=$1 WHERE version=$2", [windowsChecksum, file]);
+    const crlfChecksum = createHash("sha256").update(sql.replace(/\n/g, "\r\n")).digest("hex");
+    await pool.query("UPDATE schema_migrations SET checksum=$1 WHERE version=$2", [crlfChecksum, file]);
   }
   await runMigrations(pool);
-  const normalizedChecksums = await pool.query("SELECT version,checksum FROM schema_migrations ORDER BY version");
-  for (const row of normalizedChecksums.rows) {
-    const sql = (await readFile(`${root}/migrations/${row.version}`, "utf8")).replace(/\r\n?/g, "\n");
-    strictAssert.equal(row.checksum, createHash("sha256").update(sql).digest("hex"), `Migration ${row.version} checksum is canonical across operating systems`);
+  for (const file of migrationFiles) {
+    const sql = (await readFile(`${root}/migrations/${file}`, "utf8")).replace(/\r\n?/g, "\n");
+    const expectedChecksum = createHash("sha256").update(sql).digest("hex");
+    const stored = await pool.query("SELECT checksum FROM schema_migrations WHERE version=$1", [file]);
+    assert(stored.rows[0]?.checksum === expectedChecksum, `CRLF checksum for ${file} is reconciled to canonical LF`);
   }
 
   await pool.query("UPDATE schema_migrations SET checksum=$1 WHERE version=$2", ["legacy-baseline-checksum", baselineMigration]);
