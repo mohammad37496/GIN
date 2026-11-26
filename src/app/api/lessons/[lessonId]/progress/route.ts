@@ -28,20 +28,35 @@ export async function POST(request: Request, { params }: { params: Promise<{ les
         AND e.status IN ('active','completed') AND (e.expires_at IS NULL OR e.expires_at > NOW())
       FOR UPDATE OF e`, [lessonId, user.id]);
       if (!access.rowCount) return { denied: true as const };
-    const { status, watchedSeconds, lastPositionSeconds } = parsed.data;
+      const { status, watchedSeconds, lastPositionSeconds } = parsed.data;
       const durationSeconds = Number(access.rows[0].duration_seconds);
       if (!isValidCompletionPosition({ durationSeconds, watchedSeconds, lastPositionSeconds }) || (status === "completed" && durationSeconds > 30 && watchedSeconds < durationSeconds - 30)) {
         return { invalid: true as const };
       }
-      await client.query(`INSERT INTO lesson_progress(lesson_id,user_id,status,watched_seconds,last_position_seconds,completed_at)
-      VALUES($1,$2,$3,$4,$5,CASE WHEN $3::varchar='completed' THEN NOW() ELSE NULL END)
-      ON CONFLICT(lesson_id,user_id) DO UPDATE SET
-        status=CASE WHEN lesson_progress.status='completed' THEN 'completed' ELSE EXCLUDED.status END,
-        watched_seconds=GREATEST(lesson_progress.watched_seconds,EXCLUDED.watched_seconds),
-        last_position_seconds=EXCLUDED.last_position_seconds,
-        updated_at=NOW(),
-        completed_at=CASE WHEN lesson_progress.status='completed' OR EXCLUDED.status='completed' THEN COALESCE(lesson_progress.completed_at,NOW()) ELSE NULL END`,
-      [lessonId, user.id, status, watchedSeconds, lastPositionSeconds]);
+      if (status === "in_progress") {
+        const progress = await client.query(`INSERT INTO lesson_progress(lesson_id,user_id,status,watched_seconds,last_position_seconds)
+          VALUES($1,$2,'in_progress',$3,$4)
+          ON CONFLICT(lesson_id,user_id) DO UPDATE SET
+            status=CASE WHEN lesson_progress.status='completed' THEN 'completed' ELSE 'in_progress' END,
+            watched_seconds=GREATEST(lesson_progress.watched_seconds,EXCLUDED.watched_seconds),
+            last_position_seconds=CASE WHEN lesson_progress.status='completed' OR EXCLUDED.last_position_seconds=0 THEN lesson_progress.last_position_seconds ELSE EXCLUDED.last_position_seconds END,
+            updated_at=NOW()
+          RETURNING started_at,status`, [lessonId,user.id,watchedSeconds,lastPositionSeconds]);
+        return { courseCompleted: false, startedAt: progress.rows[0].started_at, alreadyCompleted: progress.rows[0].status === "completed" };
+      }
+
+      const progress = await client.query(`SELECT started_at FROM lesson_progress
+        WHERE lesson_id=$1 AND user_id=$2 FOR UPDATE`, [lessonId,user.id]);
+      if (!progress.rowCount) return { notStarted: true as const };
+      const elapsed = await client.query(`SELECT FLOOR(EXTRACT(EPOCH FROM (NOW()-$1::timestamptz)))::int AS seconds`, [progress.rows[0].started_at]);
+      const requiredSeconds = Math.max(0,durationSeconds-30);
+      const elapsedSeconds = Math.max(0,Number(elapsed.rows[0].seconds));
+      if (elapsedSeconds < requiredSeconds) return { tooSoon: true as const, remainingSeconds: requiredSeconds-elapsedSeconds };
+
+      await client.query(`UPDATE lesson_progress SET status='completed',
+        watched_seconds=GREATEST(watched_seconds,$3),last_position_seconds=$4,
+        updated_at=NOW(),completed_at=COALESCE(completed_at,NOW())
+        WHERE lesson_id=$1 AND user_id=$2`, [lessonId,user.id,watchedSeconds,lastPositionSeconds]);
       let courseCompleted = false;
       if (status === "completed") {
         const totals = await client.query(`SELECT COUNT(l.id)::int AS total,
@@ -65,7 +80,9 @@ export async function POST(request: Request, { params }: { params: Promise<{ les
     });
     if ("denied" in result) return errorResponse("برای ثبت پیشرفت این درس باید در دوره فعال باشید.", 403);
     if ("invalid" in result) return errorResponse("میزان پیشرفت با مدت درس سازگار نیست.", 400);
-    return jsonResponse({ message: parsed.data.status === "completed" ? "پیشرفت درس ثبت شد." : "موقعیت یادگیری ذخیره شد.", courseCompleted: result.courseCompleted });
+    if ("notStarted" in result) return errorResponse("ابتدا درس را باز کنید تا زمان شروع یادگیری ثبت شود.", 409);
+    if ("tooSoon" in result) return errorResponse(`برای تکمیل درس هنوز ${result.remainingSeconds} ثانیه زمان لازم است.`, 409);
+    return jsonResponse({ message: parsed.data.status === "completed" ? "پیشرفت درس ثبت شد." : "موقعیت یادگیری ذخیره شد.", courseCompleted: result.courseCompleted, startedAt: "startedAt" in result ? result.startedAt : undefined });
   } catch (error) {
     console.error("Save lesson progress failed", error);
     return errorResponse("ذخیره پیشرفت درس ممکن نشد.", 503);
