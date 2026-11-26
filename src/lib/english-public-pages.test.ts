@@ -137,12 +137,27 @@ test("English public sidebar link contrast meets WCAG AA for normal text", () =>
   assert.ok(ratio >= 4.5, `sidebar contrast ${ratio.toFixed(2)}:1 is below 4.5:1`);
 });
 
-test("English mobile masthead crops the reference seal without showing the desktop wordmark", () => {
+test("English mobile masthead crop keeps the reference seal and excludes the desktop wordmark", () => {
   const css = readFileSync(new URL("../app/english-site.css", import.meta.url), "utf8");
   const mobile = [...css.matchAll(/@media \(max-width: 768px\) \{([\s\S]*?)\n\}/g)]
     .map((match) => match[1])
     .find((block) => block.includes(".gin-en-masthead::before")) ?? "";
-  assert.match(mobile, /\.gin-en-masthead::before\s*\{[^}]*width:\s*70px[^}]*background-image:\s*url\("\/gin\/reference-header-banner\.jpg"\)/);
+  const crop = mobile.match(/\.gin-en-masthead::before\s*\{([^}]*)\}/)?.[1] ?? "";
+  const width = Number(crop.match(/width:\s*(\d+)px/)?.[1]);
+  const height = Number(crop.match(/height:\s*(\d+)px/)?.[1]);
+  const offset = Number(crop.match(/background-position:\s*(-?\d+)px\s+center/)?.[1]);
+  assert.equal(width, 70);
+  assert.equal(height, 68);
+  assert.match(crop, /background-image:\s*url\("\/gin\/reference-header-banner\.jpg"\)/);
+  assert.match(crop, /background-size:\s*auto\s+68px/);
+  // The 1400x200 source banner places the seal at x=294..458 and the wordmark at x=482.
+  // At a 68px rendered height, the seal stays within the 70px crop while the wordmark starts outside it.
+  const scale = height / 200;
+  const sealLeft = 294 * scale + offset;
+  const sealRight = 458 * scale + offset;
+  const wordmarkLeft = 482 * scale + offset;
+  assert.ok(sealLeft >= 0 && sealRight <= width, `reference seal bounds ${sealLeft.toFixed(1)}..${sealRight.toFixed(1)} exceed crop`);
+  assert.ok(wordmarkLeft >= width, `desktop wordmark starts at ${wordmarkLeft.toFixed(1)}px inside the mobile crop`);
   assert.match(mobile, /\.gin-en-masthead > img\s*\{\s*display:\s*none;\s*\}/);
   assert.match(mobile, /\.gin-en-masthead::after\s*\{\s*display:\s*none;\s*\}/);
 });
