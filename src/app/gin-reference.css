@@ -13,8 +13,10 @@ body { background: #fbfaf7; color: #17283a; }
 .public-header .header-inner { height: auto; display: block; padding-block: 0; }
 .brand-emblem { background: #173c59; }
 .public-brand strong { color: #173c59; }
-.reference-brand { display: block; width: 100%; max-width: 1180px; margin-inline: auto; }
+.reference-brand { display: block; width: 300px; max-width: min(68vw, 300px); margin-inline: 0; padding-block: 10px; }
 .reference-brand img { display: block; width: 100%; height: auto; object-fit: contain; }
+.footer-logo { width: 250px; max-width: 100%; }
+.footer-logo img { display: block; width: 100%; height: auto; }
 .reference-navigation { position: relative; z-index: 6; background: #142d43; border-bottom: 1px solid #e5e8e9; }
 .reference-navigation-inner { min-height: 58px; display: flex; align-items: center; justify-content: center; gap: 22px; }
 .desktop-nav { gap: clamp(10px, 1.4vw, 20px); }
