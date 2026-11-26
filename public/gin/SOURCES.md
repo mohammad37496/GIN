@@ -2,6 +2,7 @@
 
 The following image assets were downloaded from the public Global Information Network website for the requested visual reference implementation:
 
+- `gin-header-banner.jpg` — https://globalinformationnetwork.com/wp-content/uploads/2022/04/GIN-banner-1.jpg
 - `gin-banner.webp` — https://globalinformationnetwork.com/wp-content/uploads/2022/04/GIN-banner.webp
 - `paris-intercontinental.webp` — https://globalinformationnetwork.com/wp-content/uploads/2022/04/paris-intercontinental.webp
 - `gin-training.webp` — https://globalinformationnetwork.com/wp-content/uploads/2025/08/gin-hp-red-1.webp

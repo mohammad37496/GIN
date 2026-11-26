@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { ArrowLeft, ChevronDown, Globe2 } from "lucide-react";
 
 const links = [
@@ -22,7 +23,7 @@ export default function PublicHeader() {
   return <>
     <div className="utility-bar"><div className="public-container utility-inner"><span>شبکه جهانی اطلاعات | سلامت، ثروت و شادی</span><span className="language-label"><Globe2 size={14}/> فارسی</span></div></div>
     <header className="public-header"><div className="public-container header-inner">
-      <Link href="/" className="public-brand" aria-label="GIN صفحه اصلی"><span className="brand-emblem">G</span><span><strong>GIN</strong><small>GROW IN KNOWLEDGE</small></span></Link>
+      <Link href="/" className="public-brand reference-brand" aria-label="GIN صفحه اصلی"><Image src="/gin/gin-header-banner.jpg" alt="Global Information Network" width={350} height={50} priority /></Link>
       <nav className="desktop-nav" aria-label="ناوبری اصلی">
         <Link href="/">خانه</Link>
         <details className="desktop-nav-dropdown"><summary>آشنایی با GIN <ChevronDown size={13}/></summary><div>{links.slice(1, 6).map(([label, href]) => <Link href={href} key={href}>{label}</Link>)}</div></details>

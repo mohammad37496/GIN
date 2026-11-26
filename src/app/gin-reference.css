@@ -13,6 +13,8 @@ body { background: #fbfaf7; color: #17283a; }
 .public-header { border-bottom-color: #e5e8e9; }
 .brand-emblem { background: #173c59; }
 .public-brand strong { color: #173c59; }
+.reference-brand { width: 350px; max-width: 30vw; }
+.reference-brand img { display: block; width: 100%; height: auto; object-fit: contain; }
 .desktop-nav { gap: clamp(13px, 1.8vw, 25px); }
 .desktop-nav a, .desktop-nav-dropdown summary, .header-login { color: #425568; }
 .desktop-nav-dropdown { position: relative; }
@@ -106,17 +108,35 @@ body { background: #fbfaf7; color: #17283a; }
 .footer-main h3 { color: #e5d2a8; }
 .footer-main > div > a:hover { color: #fff; }
 .footer-join-link { display: inline-flex; align-items: center; gap: 9px; color: #e4c783 !important; font-weight: 800; }
+
+.gin-community-section { padding-block: 100px; background: #fff; }
+.gin-community-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 75px; align-items: center; }
+.gin-community-copy h2 { margin: 13px 0 15px; color: #1a3045; font-size: clamp(27px, 3vw, 39px); line-height: 1.6; font-weight: 900; }
+.gin-community-copy p { color: #718091; font-size: 13px; line-height: 2.35; }
+.gin-community-copy .text-arrow { display: inline-flex; margin-top: 15px; }
+.gin-community-image { position: relative; min-height: 390px; overflow: hidden; background: #dce2e4; }
+.gin-community-image img { object-fit: cover; }
+.gin-community-image > span { position: absolute; right: 18px; bottom: 18px; z-index: 1; padding: 10px 13px; background: #122a40e8; color: #e7d3a7; font: 9px Georgia, serif; letter-spacing: 2px; }
+.gin-membership-steps-section { padding-block: 100px; background: #f2f3f2; }
+.gin-membership-steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.gin-membership-steps article { position: relative; min-height: 220px; padding: 30px 25px; background: #fff; border: 1px solid #e4e8e9; }
+.gin-membership-steps article > span { position: absolute; top: 25px; left: 22px; color: #a9b4bc; font: 14px Georgia, serif; }
+.gin-membership-steps article > svg { color: #a8874d; }
+.gin-membership-steps h3 { margin: 20px 0 8px; color: #20374b; font-size: 15px; }
+.gin-membership-steps p { margin: 0; color: #7b8792; font-size: 11px; line-height: 2.1; }
+.gin-steps-action { display: flex; align-items: center; justify-content: center; gap: 25px; margin-top: 32px; }
 .footer-bottom { border-top-color: #294052; }
 
 @media (max-width: 1080px) {
   .gin-intro-section { grid-template-columns: 1fr; gap: 40px; }
-  .gin-offer-layout, .gin-video-layout, .gin-learning-layout, .gin-events-layout, .gin-cruise-layout { gap: 45px; }
+  .gin-offer-layout, .gin-video-layout, .gin-learning-layout, .gin-events-layout, .gin-cruise-layout, .gin-community-layout { gap: 45px; }
 }
 @media (max-width: 850px) {
+  .reference-brand { width: 300px; max-width: min(68vw, 300px); }
   .desktop-nav-dropdown > div { position: static; box-shadow: none; border: 0; padding-inline: 18px; }
   .gin-hero { min-height: 590px; }
   .gin-hero-content { padding-block: 85px 100px; }
-  .gin-offer-layout, .gin-video-layout, .gin-learning-layout, .gin-events-layout, .gin-cruise-layout { grid-template-columns: 1fr; }
+  .gin-offer-layout, .gin-video-layout, .gin-learning-layout, .gin-events-layout, .gin-cruise-layout, .gin-community-layout { grid-template-columns: 1fr; }
   .gin-video-copy { max-width: 620px; }
   .gin-offer-image { order: 2; }
   .gin-membership-cta-inner { align-items: flex-start; flex-direction: column; }
@@ -131,9 +151,12 @@ body { background: #fbfaf7; color: #17283a; }
   .gin-hero-content > p { font-size: 12px; }
   .gin-hero-actions { align-items: flex-start; flex-direction: column; gap: 17px; }
   .gin-hero-note { align-items: flex-start; margin-top: 32px; line-height: 1.9; }
-  .gin-intro-section, .gin-offer-section, .gin-video-section, .gin-learning-section, .gin-stories-section, .gin-events-section, .gin-cruise-section { padding-block: 65px; }
+  .gin-intro-section, .gin-community-section, .gin-membership-steps-section, .gin-offer-section, .gin-video-section, .gin-learning-section, .gin-stories-section, .gin-events-section, .gin-cruise-section { padding-block: 65px; }
   .gin-pillar-grid { grid-template-columns: 1fr; }
   .gin-pillar { min-height: 0; }
+  .gin-membership-steps { grid-template-columns: 1fr; }
+  .gin-membership-steps article { min-height: 0; }
+  .gin-steps-action { align-items: flex-start; flex-direction: column; }
   .gin-offer-image, .gin-events-image, .gin-cruise-image { min-height: 260px; }
   .gin-centered-heading h2 { font-size: 25px; }
   .gin-membership-cta { padding-block: 50px; }
