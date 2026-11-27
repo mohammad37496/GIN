@@ -15,6 +15,7 @@ import "./catalog-filters.css";
 import "./gin-reference.css";
 import "./brand.css";
 import "./english-site.css";
+import "./official-public-locales.css";
 
 const siteUrl = process.env.APP_URL?.trim() || "https://globalinformationnetwork.liara.run";
 
@@ -46,6 +47,7 @@ export const metadata: Metadata = {
 export const viewport: Viewport = { themeColor: "#173c59" };
 
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  const locale = (await headers()).get("x-website-locale") === "en" ? "en" : "fa";
+  const requestedLocale = (await headers()).get("x-website-locale") ?? "fa";
+  const locale = ["fa", "en", "de", "fr", "es", "hu", "sq", "pt"].includes(requestedLocale) ? requestedLocale : "fa";
   return <html lang={locale} dir={locale === "fa" ? "rtl" : "ltr"}><body className={`locale-${locale}`}>{children}</body></html>;
 }

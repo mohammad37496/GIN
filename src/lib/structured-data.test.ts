@@ -16,7 +16,7 @@ test("organization and website schemas use the configured site identity and real
     assert.equal(organization.logo, "https://gin.example.test/gin/gin-logo.svg");
     assert.equal(organization["@id"], "https://gin.example.test/#organization");
     assert.equal(website.url, organization.url);
-    assert.deepEqual(website.inLanguage, ["en", "fa"]);
+    assert.deepEqual(website.inLanguage, ["en", "fa", "de", "fr", "es", "hu", "sq", "pt"]);
     assert.equal(website.publisher["@id"], "https://gin.example.test/#organization");
   } finally {
     if (previous === undefined) delete process.env.APP_URL;
@@ -83,6 +83,9 @@ test("sitemap and robots use the same normalized site origin as structured data"
   assert.match(robots, /import \{ getSiteUrl \} from "@\/lib\/structured-data"/);
   assert.doesNotMatch(sitemap, /process\.env\.APP_URL/);
   assert.doesNotMatch(robots, /process\.env\.APP_URL/);
+  assert.match(sitemap, /export const dynamic = "force-dynamic"/);
+  assert.match(sitemap, /BEGIN READ ONLY/);
+  assert.doesNotMatch(sitemap, /ensureSchema|runMigrations|bootstrapAdmin/);
 });
 
 test("site schemas fall back to the configured production origin", () => {

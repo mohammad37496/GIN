@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
+import { officialPublicLocaleAlternates } from "@/lib/official-public-locales";
 
 export const metadata: Metadata = {
   title: "The Global Information Network",
   description: "Discover the Global Information Network: a private membership community focused on learning, connection and personal development.",
-  alternates: { canonical: "/en", languages: { en: "/en", fa: "/fa" } },
+  alternates: { canonical: "/en", languages: officialPublicLocaleAlternates("homePath") },
   openGraph: { title: "The Global Information Network", description: "Learn, connect and grow with the Global Information Network.", url: "/en", siteName: "Global Information Network", locale: "en_US", type: "website", images: [{ url: "/gin/gin-social-card.png", width: 1200, height: 630, alt: "Global Information Network" }] },
   twitter: { card: "summary_large_image", title: "The Global Information Network", description: "Learn, connect and grow with the Global Information Network.", images: ["/gin/gin-social-card.png"] },
 };
@@ -37,6 +38,10 @@ export default function EnglishHomePage() {
 
       <section className="gin-en-story-grid"><div><p>The reference site describes members as people interested in improving their quality of life, developing relationships and sharing knowledge across business, social and professional backgrounds. It says that the membership list is confidential and that some training and information is reserved for members.</p><p>GIN describes its subject areas as including wealth creation, investment and real-estate information, health, happiness, personal development, spiritual freedom and related learning topics. These are descriptions and claims made by the organization, not independent assessments or promises of results.</p></div><Image src="/gin/paris-intercontinental.webp" alt="GIN event at the InterContinental in Paris" width={720} height={480} sizes="(max-width: 768px) 100vw, 38vw" /></section>
 
+      <section className="gin-en-band"><h2>History and International Membership</h2><p>The official homepage says the Global Information Network was conceived at the Ritz-Carlton Hotel in Istanbul, Turkey, in 2003 by more than 15 global figures and formally established in 2009. GIN states that it has members in more than 160 countries. These are statements published by the organization.</p></section>
+
+      <section className="gin-en-band"><h2>Member Training Topics</h2><p>The official homepage lists a broad range of member-only subjects, including:</p><ul><li>Wealth creation and investment opportunities, including real estate</li><li>Stocks, cryptocurrencies, bonds, commodities, Forex and trading knowledge</li><li>The Law of Attraction and personal development</li><li>Asset protection and offshore banking</li><li>Natural health topics, happiness, inner peace and emotional well-being</li><li>Spiritual freedom, consciousness, awareness and mental capacity</li></ul><p>These are descriptions of the organization&apos;s training catalogue, not medical, investment or financial advice.</p></section>
+
       <section className="gin-en-band">
         <h2>Why Would People From All Quarters of the Earth Gather Together?</h2>
         <p>The reference page frames the question around three broad areas of interest:</p>
@@ -60,6 +65,8 @@ export default function EnglishHomePage() {
 
       <section className="gin-en-band"><h2>GIN Has Experts on Its Faculty Who Specialize in Health, Relationships and Wealth Creation</h2><p>The reference homepage names health and wellness presenters, relationship educators and wealth-related faculty as part of its description of member learning. Any medical, investment, business or financial information should be independently evaluated and is not a substitute for qualified professional advice.</p><Link className="gin-en-button gin-en-button-alt" href="/en/what-we-offer">Explore What GIN Offers</Link></section>
 
+      <section className="gin-en-band"><h2>Faculty Named on the Official Homepage</h2><p>The reference homepage identifies Dr. Tom Morter and Dr. Ted Morter in connection with health and wellness education, and John Gray, author of <em>Men Are from Mars, Women Are from Venus</em>, in connection with relationship education. These names are reproduced as part of GIN&apos;s published faculty description; this page does not independently assess their claims or services.</p></section>
+
       <section className="gin-en-story-grid"><div><h2>GIN Is Also About Creating More Adventure and Fun in Your Life</h2><p>The reference page describes GIN Adventures as travel to destinations around the world, along with local outings such as dining, hiking, rafting and ski trips. Actual events, dates, eligibility and availability are published separately.</p><Link className="gin-en-button gin-en-button-alt" href="/en/our-events">Explore GIN Events</Link></div><Image src="/gin/gin-cruise.webp" alt="Cruise ship featured in GIN group travel information" width={720} height={480} sizes="(max-width: 768px) 100vw, 38vw" /></section>
 
       <section className="gin-en-band"><h2>The Global Information Recipe for Success</h2><p>GIN describes its core recipe as a combination of audio learning, books, events, member relationships and opportunities for ongoing personal and professional development.</p></section>
@@ -69,6 +76,8 @@ export default function EnglishHomePage() {
       <section className="gin-en-story-grid"><div><h2>If This Information Were Available to the General Public</h2><p>The reference homepage states that its information would be worth more than USD 5 million if sold publicly. This is GIN&apos;s own valuation claim, not an independently verified appraisal or a promise of financial return.</p></div><Image src="/gin/gin-family-reunion.jpg" alt="Members gathered at a GIN family reunion event" width={1000} height={360} sizes="(max-width: 768px) 100vw, 38vw" /></section>
 
       <section className="gin-en-band"><h2>Books, Events and the Member Library</h2><p>The reference page describes suggested reading, internal publications, live and virtual weekend events, seminars, local chapter meetings and an online library of audio, books and training. Access is described as dependent on membership level and event registration.</p></section>
+
+      <section className="gin-en-band"><h2>Annual and Local Events</h2><p>The official homepage describes four major weekend events each year, four virtual seminars and awards rallies annually, and live or virtual local chapter meetings each month. Dates, venues, registration requirements and availability are subject to the official event listings.</p></section>
 
       <section className="gin-en-story-grid"><div><h2>Members Advance Their Finances and Relationships</h2><p>The homepage describes members exchanging knowledge, contacts, mentoring and mutual support. It says members pledge to help other members first and emphasizes community relationships as an important part of the network.</p></div><Image src="/gin/gin-community.webp" alt="Members attending a GIN event" width={720} height={480} sizes="(max-width: 768px) 100vw, 38vw" /></section>
 

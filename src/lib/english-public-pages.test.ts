@@ -7,7 +7,7 @@ test("all public reference sections have complete English page content", () => {
   const required = [
     "about-us", "who-we-are", "what-we-offer", "our-training", "personal-mastery", "member-benefits", "member-benefits-associate",
     "the-gin-success-system", "our-events", "gin-hotels", "clubhouses-and-lodges",
-    "the-gin-cruise-ship", "membership-levels", "faq", "contact-us", "become-a-member", "cookie-policy",
+    "the-gin-cruise-ship", "membership-levels", "faq", "contact-us", "become-a-member", "privacy-policy-2", "cookie-policy",
   ];
   for (const slug of required) {
     const page = englishPublicPages[slug];
@@ -20,10 +20,12 @@ test("all public reference sections have complete English page content", () => {
 });
 
 test("legal pages link to the official authoritative documents", () => {
-  assert.equal(englishPublicPages["privacy-policy"].officialUrl, "https://globalinformationnetwork.com/privacy-policy-2/");
+  assert.equal(englishPublicPages["privacy-policy-2"].officialUrl, "https://globalinformationnetwork.com/privacy-policy-2/");
   assert.equal(englishPublicPages["cookie-policy"].officialUrl, "https://globalinformationnetwork.com/privacy-policy-2/");
   assert.equal(englishPublicPages["terms-of-use"].officialUrl, "https://globalinformationnetwork.com/terms-of-use/");
   assert.equal(englishPublicPages["member-agreement"].officialUrl, "https://globalinformationnetwork.com/member-agreement/");
+  const legacyPrivacyRoute = readFileSync(new URL("../app/en/privacy-policy/page.tsx", import.meta.url), "utf8");
+  assert.match(legacyPrivacyRoute, /permanentRedirect\("\/en\/privacy-policy-2"\)/);
 });
 
 test("Cookie Policy distinguishes official-site privacy terms from this portal's observed cookies", () => {
@@ -61,7 +63,7 @@ test("public member benefits page describes the listed initiation fee and compli
 });
 
 test("legal, FAQ and contact pages do not use unrelated images", () => {
-  for (const slug of ["faq", "contact-us", "privacy-policy", "cookie-policy", "terms-of-use", "member-agreement", "membership-levels", "support"]) {
+  for (const slug of ["faq", "contact-us", "privacy-policy-2", "cookie-policy", "terms-of-use", "member-agreement", "membership-levels", "support"]) {
     assert.equal(englishPublicPages[slug].image, undefined);
   }
 });
@@ -98,7 +100,7 @@ test("English subject and membership pages render as localized content rather th
 
 test("English navigation and What We Offer expose the dedicated subject pages", () => {
   const footer = readFileSync(new URL("../components/english-public-footer.tsx", import.meta.url), "utf8");
-  const sidebar = readFileSync(new URL("../components/english-site-frame.tsx", import.meta.url), "utf8");
+  const sidebar = readFileSync(new URL("../components/english-public-header.tsx", import.meta.url), "utf8");
   const whatWeOffer = readFileSync(new URL("../components/english-reference-pages.tsx", import.meta.url), "utf8");
   for (const slug of ["wealth-creation", "financial-independence", "dynamic-health", "happiness", "global-networking", "mentorship", "membership-opportunities"]) {
     assert.ok(footer.includes(`/en/${slug}`), `English footer is missing ${slug}`);
@@ -137,6 +139,32 @@ test("English public sidebar link contrast meets WCAG AA for normal text", () =>
   assert.ok(ratio >= 4.5, `sidebar contrast ${ratio.toFixed(2)}:1 is below 4.5:1`);
 });
 
+test("English public frame renders the reference left sidebar beside the main content", () => {
+  const css = readFileSync(new URL("../app/english-site.css", import.meta.url), "utf8");
+  const frame = readFileSync(new URL("../components/english-site-frame.tsx", import.meta.url), "utf8");
+  const header = readFileSync(new URL("../components/english-public-header.tsx", import.meta.url), "utf8");
+  assert.match(css, /\.gin-en-shell\s*\{[^}]*display:\s*grid[^}]*grid-template-columns:\s*280px\s+minmax\(0,\s*1fr\)/);
+  assert.match(frame, /EnglishPublicSidebar/);
+  assert.match(header, /export function EnglishPublicSidebar/);
+  assert.match(header, /className=\{href === "\/en" \? "gin-en-primary-home" : undefined\}/);
+  assert.match(css, /\.gin-en-primary-inner > nav a \{ color: #fff;/);
+  assert.match(css, /\.gin-en-primary-inner > nav \.gin-en-primary-home \{ color: #2660ff; \}/);
+  assert.match(css, /\.gin-en-sidebar\s*\{[^}]*background:\s*#757575/);
+  assert.match(css, /\.gin-en-sidebar nav \{[^}]*max-height: calc\(100vh - 16px\); overflow-y: auto;/);
+  assert.match(frame, /EnglishPublicHeader/);
+  assert.match(frame, /EnglishPublicFooter/);
+});
+
+test("English mobile header keeps language choices in the menu and preserves the reference hero image ratio", () => {
+  const css = readFileSync(new URL("../app/english-site.css", import.meta.url), "utf8");
+  const header = readFileSync(new URL("../components/english-public-header.tsx", import.meta.url), "utf8");
+  assert.match(header, /<nav aria-label="Mobile navigation"><LocaleSwitcher initialLocale="en" \/><NavigationLinks mobile \/><\/nav>/);
+  assert.doesNotMatch(header, /<div className="gin-en-mobile-tools">\s*<LocaleSwitcher/);
+  assert.match(css, /\.gin-en-mobile-menu nav \.gin-en-language-switcher summary \{[^}]*color:\s*#fff/);
+  assert.match(css, /\.gin-en-hero-image \{ height:\s*auto; max-height:\s*none;/);
+  assert.doesNotMatch(css, /\.gin-en-hero-image\s*\{[^}]*aspect-ratio:\s*2\.1\s*\/\s*1/);
+});
+
 test("English mobile masthead crop keeps the reference seal and excludes the desktop wordmark", () => {
   const css = readFileSync(new URL("../app/english-site.css", import.meta.url), "utf8");
   const mobile = [...css.matchAll(/@media \(max-width: 768px\) \{([\s\S]*?)\n\}/g)]
@@ -162,21 +190,24 @@ test("English mobile masthead crop keeps the reference seal and excludes the des
   assert.match(mobile, /\.gin-en-masthead::after\s*\{\s*display:\s*none;\s*\}/);
 });
 
-test("English public typography follows the official GeneratePress system-font scale", () => {
+test("English public typography matches the measured reference Times New Roman scale", () => {
   const css = readFileSync(new URL("../app/english-site.css", import.meta.url), "utf8");
   const root = css.match(/\.gin-en-site\s*\{([^}]*)\}/)?.[1] ?? "";
   const heading = css.match(/\.gin-en-home h1, \.gin-en-page h1\s*\{([^}]*)\}/)?.[1] ?? "";
   const bodyCopy = css.match(/\.gin-en-home p, \.gin-en-page p\s*\{([^}]*)\}/)?.[1] ?? "";
   const referenceCopy = css.match(/\.gin-en-reference-copy\s*\{([^}]*)\}/)?.[1] ?? "";
-  assert.match(root, /font-family:\s*-apple-system,\s*system-ui,\s*BlinkMacSystemFont,\s*"Segoe UI",\s*Helvetica,\s*Arial,\s*sans-serif/);
-  assert.match(root, /font-size:\s*17px/);
+  assert.match(root, /font-family:\s*"Times New Roman",\s*Times,\s*serif/);
+  assert.match(root, /font-size:\s*20px/);
+  assert.match(root, /background:\s*#acacac/);
   assert.match(root, /line-height:\s*1\.5/);
-  assert.match(heading, /font-size:\s*clamp\(30px,\s*3vw,\s*42px\)/);
-  assert.match(heading, /font-weight:\s*400/);
+  assert.match(heading, /font-size:\s*40px/);
+  assert.match(heading, /font-weight:\s*700/);
   assert.match(bodyCopy, /line-height:\s*1\.5/);
   assert.match(referenceCopy, /font-size:\s*17px/);
   assert.match(referenceCopy, /line-height:\s*1\.5/);
-  assert.doesNotMatch(root, /Times New Roman/);
+  assert.match(css, /\.gin-en-home h2, \.gin-en-page h2\s*\{[^}]*font-size:\s*35px[^}]*font-weight:\s*400/);
+  assert.match(css, /\.gin-en-site\s*\{[^}]*font-size:\s*17px[^}]*line-height:\s*1\.3/);
+  assert.match(css, /\.gin-en-reference-copy \{ font-size: 17px; line-height: 1\.3; \}/);
 });
 
 test("Persian GIN gold CTA keeps its gold background and readable navy text", () => {

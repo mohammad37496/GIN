@@ -137,6 +137,21 @@ export const englishPublicPages: Record<string, EnglishPublicPage> = {
     sections: [],
     officialUrl: "https://globalinformationnetwork.com/membership-levels/",
   },
+  "the-club-vision": {
+    title: "Club Vision",
+    eyebrow: "THE CLUB VISION",
+    intro: "GIN's official English and six localized pages describe a proposed private international “Successful Life Club”. This English page summarizes that published vision and attributes its claims to GIN; it does not verify them or promise particular outcomes.",
+    description: "An English summary of GIN's official Club Vision page and its six localized versions.",
+    sections: [
+      { title: "The concept GIN describes", body: "GIN presents the Club as a private, invitation-only international community. Its source pages describe a vision of members and local chapters in more than 150 countries, connected by shared learning, relationships and mutual support." },
+      { title: "Aspirational benefits", body: "The source pages describe possible benefits in areas such as financial progress, health, personal and professional growth, friendships, events, networking, inner well-being and personal transformation. These are GIN's promotional claims and aspirations, not independently verified outcomes." },
+      { title: "Member resources and experiences", body: "GIN describes member-only training, an information library, meetings, events, mentoring, networking, local chapters, lodges and clubhouses, and a proposed member cruise ship. Some offerings are presented as possibilities or future plans rather than confirmed services." },
+      { title: "Other proposed services", body: "The source pages also discuss potential offerings such as discounts, health-related products, insurance, banking or credit services, home-sharing, barter and business networking. The wording is often conditional; availability, eligibility, pricing and terms must be confirmed directly with GIN." },
+      { title: "Invitation and eligibility", body: "GIN states that membership is by invitation and that not all applications are accepted. Prospective members should review the current Member Agreement, membership levels, fees, terms and privacy information before applying." },
+    ],
+    legalNotice: "GIN's source pages make claims about health, wealth, personal transformation and future services. This English summary attributes those statements to GIN; it does not endorse them, confirm that the described services are currently available, or promise any result. Seek independent professional advice before making health, financial or legal decisions.",
+    officialUrl: "https://globalinformationnetwork.com/the-club-vision/",
+  },
   faq: {
     title: "Frequently Asked Questions",
     eyebrow: "HELP AND INFORMATION",
@@ -179,7 +194,7 @@ export const englishPublicPages: Record<string, EnglishPublicPage> = {
       { title: "Account-based requests", body: "Sign in before sending a request so the support team can associate it with your portal account and you can track replies." },
     ],
   },
-  "privacy-policy": {
+  "privacy-policy-2": {
     title: "Privacy Policy",
     eyebrow: "LEGAL INFORMATION",
     intro: "The official Global Information Network privacy policy is published by GIN Unite, LLC. Read the current policy on the official website before submitting personal information.",

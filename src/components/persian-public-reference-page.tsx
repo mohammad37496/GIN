@@ -9,10 +9,11 @@ import { persianPublicPages } from "@/lib/persian-public-pages";
 export function persianPublicPageMetadata(slug: string): Metadata {
   const page = persianPublicPages[slug];
   if (!page) return {};
+  const englishSlug = slug === "privacy-policy" ? "privacy-policy-2" : slug;
   return {
     title: /\bGIN\b/i.test(page.title) ? { absolute: page.title } : page.title,
     description: page.description,
-    alternates: { canonical: `/fa/${slug}`, languages: { fa: `/fa/${slug}`, en: `/en/${slug}` } },
+    alternates: { canonical: `/fa/${slug}`, languages: { fa: `/fa/${slug}`, en: `/en/${englishSlug}` } },
     openGraph: { title: page.title, description: page.description, url: `/fa/${slug}`, siteName: "Global Information Network", locale: "fa_IR", type: "article", images: ["/gin/gin-social-card.png"] },
     twitter: { card: "summary_large_image", title: page.title, description: page.description, images: ["/gin/gin-social-card.png"] },
   };

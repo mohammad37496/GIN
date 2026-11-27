@@ -13,6 +13,8 @@ import EnglishMembershipLevelsTable from "@/components/english-membership-levels
 import { EnglishAboutUsContent, EnglishWhoWeAreContent, EnglishWhatWeOfferContent, EnglishMemberBenefitsContent, EnglishAssociateBenefitsContent, EnglishOurTrainingContent, EnglishEventsContent, EnglishPersonalMasteryContent, EnglishClubhousesContent } from "@/components/english-reference-pages";
 import JsonLd from "@/components/json-ld";
 import { buildBreadcrumbSchema, buildFaqSchema } from "@/lib/structured-data";
+import { officialPublicLocales } from "@/lib/official-public-locales";
+import { officialReferencePageAlternates, officialReferencePageKeyForPath } from "@/lib/official-public-reference-routes";
 
 export const dynamic = "force-dynamic";
 
@@ -31,10 +33,20 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const faPath = persianPathForEnglishPath(`/en/${slug}`);
   const hasPersianCounterpart = faPath !== "/fa";
   const description = page.description ?? page.intro;
+  const officialLocalePageKey = slug === "about-us" ? "aboutPath" : slug === "contact-us" ? "contactPath" : null;
+  const referencePageKey = officialReferencePageKeyForPath(`/en/${slug}`);
+  const languageAlternates: Record<string, string> = hasPersianCounterpart ? { en: `/en/${slug}`, fa: faPath } : { en: `/en/${slug}` };
+  if (officialLocalePageKey) {
+    for (const locale of Object.values(officialPublicLocales)) languageAlternates[locale.htmlLang] = locale[officialLocalePageKey];
+  }
+  if (referencePageKey) {
+    for (const [locale, path] of Object.entries(officialReferencePageAlternates(referencePageKey))) languageAlternates[locale] = path;
+  }
+  languageAlternates["x-default"] = `/en/${slug}`;
   return {
     title: /\bGIN\b/i.test(page.title) ? { absolute: page.title } : page.title,
     description,
-    alternates: { canonical: `/en/${slug}`, languages: hasPersianCounterpart ? { en: `/en/${slug}`, fa: faPath } : { en: `/en/${slug}` } },
+    alternates: { canonical: `/en/${slug}`, languages: languageAlternates },
     ...(slug === "support" ? { robots: { index: false, follow: false } } : {}),
     openGraph: { title: page.title, description, url: `/en/${slug}`, siteName: "Global Information Network", locale: "en_US", type: "article", images: [{ url: "/gin/gin-social-card.png", width: 1200, height: 630, alt: page.title }] },
     twitter: { card: "summary_large_image", title: page.title, description, images: ["/gin/gin-social-card.png"] },

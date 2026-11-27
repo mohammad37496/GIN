@@ -34,7 +34,7 @@ export function buildWebsiteSchema() {
     "@type": "WebSite",
     name: ORGANIZATION_NAME,
     url: absoluteSiteUrl("/"),
-    inLanguage: ["en", "fa"],
+    inLanguage: ["en", "fa", "de", "fr", "es", "hu", "sq", "pt"],
     publisher: { "@id": `${absoluteSiteUrl("/")}#organization` },
   };
 }

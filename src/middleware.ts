@@ -1,8 +1,8 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { persianToEnglishRoutes } from "@/lib/locale-routes";
 
-function withLocaleCookie(response: NextResponse, locale: "fa" | "en", persist: boolean) {
-  if (persist) response.cookies.set("gin_locale", locale, { path: "/", maxAge: 60 * 60 * 24 * 365, sameSite: "lax", secure: process.env.NODE_ENV === "production" });
+function withLocaleCookie(response: NextResponse, locale: string, persist: boolean) {
+  if (persist && (locale === "fa" || locale === "en")) response.cookies.set("gin_locale", locale, { path: "/", maxAge: 60 * 60 * 24 * 365, sameSite: "lax", secure: process.env.NODE_ENV === "production" });
   return response;
 }
 
@@ -10,14 +10,15 @@ export function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
   const explicitEnglish = pathname === "/en" || pathname.startsWith("/en/");
   const explicitPersian = pathname === "/fa" || pathname.startsWith("/fa/");
+  const explicitOfficialLocale = pathname.match(/^\/(de|fr|es|hu|sq|pt)(?:\/|$)/)?.[1] ?? null;
   const courseMatch = pathname.match(/^\/courses\/([^/]+)(\/lessons\/\d+)?$/);
   const eventMatch = pathname.match(/^\/events\/([^/]+)$/);
   const certificateMatch = pathname.match(/^\/certificates\/[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i);
   const hasEnglishRoute = Boolean(persianToEnglishRoutes[pathname] || courseMatch || eventMatch || certificateMatch);
   const inheritedLocale = request.headers.get("x-website-path") ? request.headers.get("x-website-locale") : null;
-  const locale = explicitEnglish ? "en" : explicitPersian ? "fa" : inheritedLocale === "en" || inheritedLocale === "fa"
+  const locale = explicitOfficialLocale ?? (explicitEnglish ? "en" : explicitPersian ? "fa" : inheritedLocale === "en" || inheritedLocale === "fa"
     ? inheritedLocale
-    : hasEnglishRoute && request.cookies.get("gin_locale")?.value === "en" ? "en" : "fa";
+    : hasEnglishRoute && request.cookies.get("gin_locale")?.value === "en" ? "en" : "fa");
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set("x-website-locale", locale);
   requestHeaders.set("x-website-path", pathname);

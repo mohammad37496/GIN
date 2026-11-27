@@ -147,9 +147,11 @@ test("Persian metadata and sitemap provide reciprocal language alternates for al
   const component = readFileSync(new URL("../components/persian-public-reference-page.tsx", import.meta.url), "utf8");
   const englishPage = readFileSync(new URL("../app/en/[slug]/page.tsx", import.meta.url), "utf8");
   const sitemap = readFileSync(new URL("../app/sitemap.ts", import.meta.url), "utf8");
-  assert.match(component, /languages: \{ fa: `\/fa\/\$\{slug\}`, en: `\/en\/\$\{slug\}` \}/);
+  assert.match(component, /const englishSlug = slug === "privacy-policy" \? "privacy-policy-2" : slug/);
+  assert.match(component, /languages: \{ fa: `\/fa\/\$\{slug\}`, en: `\/en\/\$\{englishSlug\}` \}/);
   assert.match(englishPage, /const hasPersianCounterpart = faPath !== "\/fa"/);
   for (const slug of slugs) {
-    assert.ok(sitemap.includes(`"/en/${slug}", "/fa/${slug}"`), `sitemap is missing reciprocal pair for ${slug}`);
+    const englishSlug = slug === "privacy-policy" ? "privacy-policy-2" : slug;
+    assert.ok(sitemap.includes(`"/en/${englishSlug}", "/fa/${slug}"`), `sitemap is missing reciprocal pair for ${slug}`);
   }
 });
