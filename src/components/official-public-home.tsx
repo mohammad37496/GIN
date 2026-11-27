@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { officialPublicLocales, type OfficialPublicLocaleCode } from "@/lib/official-public-locales";
+import { officialMemberHomePaths, officialPublicLocales, type OfficialPublicLocaleCode } from "@/lib/official-public-locales";
 import { officialEnglishReferencePages, officialPublicReferencePages, officialReferencePagePath, type OfficialReferencePageKey } from "@/lib/official-public-reference-routes";
 
 const SIGNUP_URL = "https://signup.globalinformationnetwork.com/";
@@ -22,7 +22,7 @@ export function OfficialLocaleNavigation({ locale }: { locale: OfficialPublicLoc
     join: <a href={SIGNUP_URL} target="_blank" rel="noopener noreferrer">{active.navigation.join}</a>,
     about: <Link href={active.navigation.aboutHref}>{active.navigation.about}</Link>,
     contact: <Link href={active.contactPath}>{active.navigation.contact}</Link>,
-    login: <a href={active.navigation.loginHref} target="_blank" rel="noopener noreferrer">{active.navigation.login}</a>,
+    login: <Link href={officialMemberHomePaths[locale]}>{active.navigation.login}</Link>,
   };
   return (
     <nav className="gin-official-locale-nav" aria-label="Primary navigation">
@@ -106,7 +106,7 @@ export default function OfficialPublicHome({ locale }: { locale: OfficialPublicL
       </main>
       </div>
       <footer className="gin-official-locale-footer">
-        <nav aria-label="Footer navigation"><Link href={page.homePath}>{page.navigation.home}</Link><a href={page.navigation.loginHref} target="_blank" rel="noopener noreferrer">{page.navigation.login}</a><Link href={page.contactPath}>{page.navigation.contact}</Link><a href={page.navigation.sidebarJoinHref} target="_blank" rel="noopener noreferrer">{page.navigation.sidebarJoin}</a></nav>
+        <nav aria-label="Footer navigation"><Link href={page.homePath}>{page.navigation.home}</Link><Link href={officialMemberHomePaths[locale]}>{page.navigation.login}</Link><Link href={page.contactPath}>{page.navigation.contact}</Link><a href={page.navigation.sidebarJoinHref} target="_blank" rel="noopener noreferrer">{page.navigation.sidebarJoin}</a></nav>
         {referencePages.length ? <nav aria-label="More official GIN pages">{referencePages.map((item) => <Link key={item.slug} href={`/${locale}/${item.slug}`}>{item.label}</Link>)}</nav> : null}
         <nav aria-label="Change language">{Object.entries(officialPublicLocales).map(([code, item]) => <Link key={code} href={item.homePath} lang={item.htmlLang}>{item.label}</Link>)}</nav>
         <p>Copyright © {new Date().getFullYear()} Global Information Network. All rights reserved.</p>

@@ -203,6 +203,11 @@ export const officialPublicLocales: Record<OfficialPublicLocaleCode, {
 
 export const officialPublicLocaleCodes = Object.keys(officialPublicLocales) as OfficialPublicLocaleCode[];
 
+export const officialMemberHomePaths: Record<OfficialPublicLocaleCode, string> = {
+  en: "/member-home", de: "/de/mitgliederbereich", fr: "/fr/accueil-des-membres", es: "/es/bienvenidos",
+  hu: "/hu/tag-home", sq: "/sq/shtepia-e-anetarit", pt: "/pt/pagina-inicial-do-membro",
+};
+
 export type OfficialPublicPageKey = "homePath" | "aboutPath" | "contactPath";
 export type OfficialPublicPrimaryNavigationKey = "home" | "join" | "about" | "contact" | "login";
 

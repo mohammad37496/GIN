@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { officialLocalePathForPage, officialPublicLocaleCodes, officialPublicLocales, type OfficialPublicLocaleCode } from "@/lib/official-public-locales";
+import { officialLocalePathForPage, officialMemberHomePaths, officialPublicLocaleCodes, officialPublicLocales, type OfficialPublicLocaleCode } from "@/lib/official-public-locales";
 import { getOfficialInfoCopy } from "@/lib/official-public-info-copy";
 import { getOfficialReferenceCopy } from "@/lib/official-public-reference-copy";
 import { OfficialLocaleNavigation, OfficialLocalePicker, OfficialLocaleReferenceNavigation } from "@/components/official-public-home";
@@ -36,7 +36,7 @@ export default function OfficialPublicInfo({ locale, page, referencePageKey }: {
         <aside className="gin-official-locale-source-note"><p>{sourceNote}</p><a href={sourceUrl} target="_blank" rel="noopener noreferrer">{sourceAction}</a></aside>
       </main>
       </div>
-      <footer className="gin-official-locale-footer"><nav><Link href={localeData.homePath}>{localeData.navigation.home}</Link><a href={localeData.navigation.loginHref} target="_blank" rel="noopener noreferrer">{localeData.navigation.login}</a><Link href={localeData.contactPath}>{localeData.navigation.contact}</Link><a href={localeData.navigation.sidebarJoinHref} target="_blank" rel="noopener noreferrer">{localeData.navigation.sidebarJoin}</a></nav><nav aria-label="More official GIN pages">{Object.values(officialPublicReferencePages[locale]).map((item) => <Link key={item.slug} href={`/${locale}/${item.slug}`}>{item.label}</Link>)}</nav><nav aria-label="Change language">{officialPublicLocaleCodes.map((code) => <Link key={code} href={referencePageKey ? officialReferencePagePath(code, referencePageKey) : officialLocalePathForPage(code, pageKey)} lang={officialPublicLocales[code].htmlLang}>{officialPublicLocales[code].label}</Link>)}</nav><p>Copyright © {new Date().getFullYear()} Global Information Network. All rights reserved.</p></footer>
+      <footer className="gin-official-locale-footer"><nav><Link href={localeData.homePath}>{localeData.navigation.home}</Link><Link href={officialMemberHomePaths[locale]}>{localeData.navigation.login}</Link><Link href={localeData.contactPath}>{localeData.navigation.contact}</Link><a href={localeData.navigation.sidebarJoinHref} target="_blank" rel="noopener noreferrer">{localeData.navigation.sidebarJoin}</a></nav><nav aria-label="More official GIN pages">{Object.values(officialPublicReferencePages[locale]).map((item) => <Link key={item.slug} href={`/${locale}/${item.slug}`}>{item.label}</Link>)}</nav><nav aria-label="Change language">{officialPublicLocaleCodes.map((code) => <Link key={code} href={referencePageKey ? officialReferencePagePath(code, referencePageKey) : officialLocalePathForPage(code, pageKey)} lang={officialPublicLocales[code].htmlLang}>{officialPublicLocales[code].label}</Link>)}</nav><p>Copyright © {new Date().getFullYear()} Global Information Network. All rights reserved.</p></footer>
     </div>
   );
 }

@@ -10,6 +10,13 @@ test("explicit locale URLs persist the selected language in a year-long cookie",
   assert.match(persian.headers.get("set-cookie") ?? "", /gin_locale=fa/);
 });
 
+test("the local English member-home route is served directly in English", () => {
+  const response = middleware(new NextRequest("https://gin.test/member-home"));
+  assert.equal(response.headers.get("x-middleware-request-x-website-locale"), "en");
+  assert.equal(response.headers.get("x-middleware-rewrite"), null);
+  assert.match(response.headers.get("set-cookie") ?? "", /gin_locale=en/);
+});
+
 test("official public locale routes carry their own language without changing portal preference cookies", () => {
   for (const [code, path] of [["de", "/de/home-public"], ["fr", "/fr/home-public"], ["es", "/es/home-public-spanish"], ["hu", "/hu/home-public"], ["sq", "/sq/home-public"], ["pt", "/pt/home-public"]] as const) {
     const response = middleware(new NextRequest(`https://gin.test${path}`, { headers: { cookie: "gin_locale=fa" } }));

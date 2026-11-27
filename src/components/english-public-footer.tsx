@@ -32,7 +32,7 @@ export default function EnglishPublicFooter() {
       <div className="gin-en-footer-links">
         <Link href="/en">Home</Link>
         <Link href="/en/login">Portal Login</Link>
-        <a href="https://globalinformationnetwork.com/member-home/" target="_blank" rel="noreferrer">Official Member Login</a>
+        <Link href="/member-home">Official Member Login</Link>
         <Link href="/en/contact-us">Contact Us</Link>
         <a href="https://signup.globalinformationnetwork.com/" target="_blank" rel="noreferrer">Become a Member</a>
         {footerLinks.map(([label, href]) => <Link href={href} key={href}>{label}</Link>)}
