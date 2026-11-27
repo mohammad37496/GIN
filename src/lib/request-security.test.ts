@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import test from "node:test";
-import { enforceRateLimit, getTrustedClientIp, rejectCrossOriginMutation, sameOriginRequest } from "./request-security";
+import { enforceRateLimit, enforceRateLimitForIdentity, getTrustedClientIp, rejectCrossOriginMutation, sameOriginRequest } from "./request-security";
 import { DatabaseInitializationError, isDatabaseUnavailableError } from "./db";
 import { getConfiguredPaymentProvider, InvalidWebhookSignatureError, PaymentProviderUnavailableError } from "./payments/provider";
 
@@ -78,6 +78,25 @@ test("rate limiting uses Vercel's overwritten client-IP header instead of spoofa
   const expected = createHash("sha256").update("login" + "\0" + "203.0.113.11").digest("hex");
   assert.equal(response, null);
   assert.equal(observedDigest, expected);
+});
+
+test("identity rate limiting stores only a normalized SHA-256 digest and fails closed", async () => {
+  let observedDigest = "";
+  const store = {
+    ensureSchema: async () => undefined,
+    consume: async (digest: string) => { observedDigest = digest; return 1; },
+  };
+  const allowed = await enforceRateLimitForIdentity("password-reset-email", " Member@Example.com ", 3, 3600, store);
+  const expected = createHash("sha256").update("password-reset-email" + "\0" + "member@example.com").digest("hex");
+  assert.equal(allowed, null);
+  assert.equal(observedDigest, expected);
+  assert.doesNotMatch(observedDigest, /member|example/i);
+
+  const unavailable = await enforceRateLimitForIdentity("password-reset-email", "member@example.com", 3, 3600, {
+    ensureSchema: async () => { throw new Error("database unavailable"); },
+    consume: async () => 1,
+  });
+  assert.equal(unavailable?.status, 503);
 });
 
 test("trusted client IP extraction ignores x-real-ip and consistently prefers Vercel's protected header", () => {

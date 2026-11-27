@@ -52,17 +52,40 @@ export async function enforceRateLimit(
   limit: number,
   windowSeconds: number,
   store: RateLimitStore = databaseRateLimitStore,
+  locale: "fa" | "en" = "fa",
 ) {
   try {
     await store.ensureSchema();
     const address = getTrustedClientIp(request);
     const digest = createHash("sha256").update(`${bucket}\0${address}`).digest("hex");
     const hits = await store.consume(digest, windowSeconds);
-    if (hits > limit) return errorResponse("تعداد درخواست‌ها بیش از حد مجاز است. کمی بعد دوباره تلاش کنید.", 429);
+    if (hits > limit) return errorResponse(locale === "en" ? "Too many requests. Please try again later." : "تعداد درخواست‌ها بیش از حد مجاز است. کمی بعد دوباره تلاش کنید.", 429);
     return null;
   } catch (error) {
     console.error("GIN rate-limit storage is unavailable", error);
     // Never bypass a database-backed security limit when its state cannot be checked.
-    return errorResponse("سامانه امنیت درخواست موقتاً در دسترس نیست؛ لطفاً بعداً تلاش کنید.", 503);
+    return errorResponse(locale === "en" ? "The request security service is temporarily unavailable. Please try again later." : "سامانه امنیت درخواست موقتاً در دسترس نیست؛ لطفاً بعداً تلاش کنید.", 503);
+  }
+}
+
+/** Rate-limit a privacy-preserving identity bucket without storing the identity itself. */
+export async function enforceRateLimitForIdentity(
+  bucket: string,
+  identity: string,
+  limit: number,
+  windowSeconds: number,
+  store: RateLimitStore = databaseRateLimitStore,
+  locale: "fa" | "en" = "fa",
+) {
+  try {
+    await store.ensureSchema();
+    const normalizedIdentity = identity.trim().toLowerCase();
+    const digest = createHash("sha256").update(`${bucket}\0${normalizedIdentity}`).digest("hex");
+    const hits = await store.consume(digest, windowSeconds);
+    if (hits > limit) return errorResponse(locale === "en" ? "Too many requests. Please try again later." : "تعداد درخواست‌ها بیش از حد مجاز است. کمی بعد دوباره تلاش کنید.", 429);
+    return null;
+  } catch (error) {
+    console.error("GIN identity rate-limit storage is unavailable", error);
+    return errorResponse(locale === "en" ? "The request security service is temporarily unavailable. Please try again later." : "سامانه امنیت درخواست موقتاً در دسترس نیست؛ لطفاً بعداً تلاش کنید.", 503);
   }
 }
