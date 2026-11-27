@@ -3,6 +3,7 @@ import { processVerifiedPaymentWebhook } from "@/lib/payments/webhooks";
 import { ensureSchema, inTransaction } from "@/lib/db";
 import { errorResponse, jsonResponse } from "@/lib/http";
 import { enforceRateLimit } from "@/lib/request-security";
+import { logWebhookFailure, mapWebhookProcessingError } from "@/lib/payments/webhook-errors";
 
 export async function POST(request: Request, context: { params: Promise<{ provider: string }> }) {
   const { provider: providerName } = await context.params;
@@ -22,11 +23,11 @@ export async function POST(request: Request, context: { params: Promise<{ provid
   } catch (error) {
     if (error instanceof InvalidWebhookSignatureError) return errorResponse("امضای وب‌هوک پرداخت معتبر نیست.", 401);
     if (error instanceof PaymentProviderUnavailableError) {
-      console.error("GIN payment provider webhook verification is unavailable", error);
+      logWebhookFailure("verification", error);
       return errorResponse("اعتبارسنجی وب‌هوک موقتاً در دسترس نیست؛ درخواست باید دوباره ارسال شود.", 503);
     }
-    console.error("GIN payment provider webhook verification failed unexpectedly", error);
-    return errorResponse("اعتبارسنجی وب‌هوک موقتاً در دسترس نیست؛ درخواست باید دوباره ارسال شود.", 503);
+    logWebhookFailure("verification", error);
+    throw error;
   }
 
   try {
@@ -38,7 +39,10 @@ export async function POST(request: Request, context: { params: Promise<{ provid
     if ("mismatch" in result) return errorResponse("مبلغ یا ارز پرداخت با تراکنش ثبت‌شده مطابقت ندارد.", 400);
     if ("invalidTransition" in result) return jsonResponse({ received: true, ignored: true });
     return jsonResponse({ received: true, ...result });
-  } catch {
-    return errorResponse("پردازش وب‌هوک موقتاً در دسترس نیست؛ درخواست باید دوباره ارسال شود.", 503);
+  } catch (error) {
+    const infrastructureError = mapWebhookProcessingError(error);
+    if (infrastructureError) return infrastructureError;
+    logWebhookFailure("processing", error);
+    throw error;
   }
 }
