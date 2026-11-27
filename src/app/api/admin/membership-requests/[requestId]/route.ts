@@ -1,3 +1,4 @@
+import { withApiErrorBoundary } from "@/lib/api-error-boundary";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/auth";
 import { ensureSchema,inTransaction } from "@/lib/db";
@@ -7,7 +8,7 @@ import { lockMembershipUser,reconcileMembershipEntitlements } from "@/lib/member
 
 const schema=z.object({status:z.enum(["approved","rejected"]),reason:z.string().trim().max(500).default("")});
 
-export async function PATCH(request:Request,{params}:{params:Promise<{requestId:string}>}){
+async function PATCH(request:Request,{params}:{params:Promise<{requestId:string}>}){
   const originError=rejectCrossOriginMutation(request);if(originError)return originError;
   const admin=await requireAdmin();if(!admin)return errorResponse("دسترسی غیرمجاز است.",403);
   const id=Number((await params).requestId);if(!Number.isSafeInteger(id)||id<1)return errorResponse("درخواست پیدا نشد.",404);
@@ -42,3 +43,6 @@ export async function PATCH(request:Request,{params}:{params:Promise<{requestId:
     return jsonResponse({result,message:"درخواست عضویت بررسی شد."});
   }catch{return errorResponse("بررسی درخواست عضویت انجام نشد.",503);}
 }
+
+const wrappedPATCH = withApiErrorBoundary(PATCH);
+export { wrappedPATCH as PATCH };

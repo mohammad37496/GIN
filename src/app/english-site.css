@@ -309,6 +309,20 @@
   }
 }
 
+/* Match the official English reference homepage typography without changing member workspaces. */
+.gin-en-site:has(.gin-en-home) { font-family:"Times New Roman",Times,serif; font-size:20px; line-height:1.5; }
+.gin-en-home h1 { font-size:40px; font-weight:700; }
+.gin-en-home h3 { font-size:29px; line-height:1.2; font-weight:400; }
+.gin-en-home p { font-size:20px; font-weight:400; }
+.gin-en-home .gin-en-intro > p { font-weight:400; }
+.gin-en-home li { font-size:20px; }
+@media(max-width:850px) {
+  .gin-en-site:has(.gin-en-home) { font-size:17px; line-height:1.3; }
+  .gin-en-home h1 { font-size:25px; font-weight:700; }
+  .gin-en-home h2 { font-size:23px; }
+  .gin-en-home p, .gin-en-home li { font-size:17px; }
+}
+
 @media print {
   .gin-en-header, .gin-en-footer, .gin-en-sidebar, .gin-en-certificate .gin-en-cta { display: none !important; }
   .gin-en-shell { display: block; min-height: 0; }

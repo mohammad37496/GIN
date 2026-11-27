@@ -3,10 +3,12 @@ import { canManageAffiliates,getSession } from "@/lib/auth";
 import { ensureSchema,inTransaction } from "@/lib/db";
 import { errorResponse,jsonResponse } from "@/lib/http";
 import { rejectCrossOriginMutation } from "@/lib/request-security";
+import { withApiErrorBoundary } from "@/lib/api-error-boundary";
+
 
 const schema=z.object({status:z.enum(["active","suspended"])});
 
-export async function PATCH(request:Request,{params}:{params:Promise<{affiliateId:string}>}){
+ async function PATCH(request:Request,{params}:{params:Promise<{affiliateId:string}>}){
   const originError=rejectCrossOriginMutation(request);if(originError)return originError;
   const admin=await getSession();if(!admin||!(await canManageAffiliates(admin)))return errorResponse("دسترسی مدیریت همکاری در فروش ندارید.",403);
   const id=Number((await params).affiliateId);if(!Number.isSafeInteger(id)||id<1)return errorResponse("حساب همکاری پیدا نشد.",404);
@@ -24,3 +26,7 @@ export async function PATCH(request:Request,{params}:{params:Promise<{affiliateI
     return jsonResponse({affiliate,message:"وضعیت حساب همکاری تغییر کرد."});
   }catch{return errorResponse("تغییر وضعیت حساب همکاری انجام نشد.",503);}
 }
+
+
+const wrappedPATCH = withApiErrorBoundary(PATCH);
+export { wrappedPATCH as PATCH };

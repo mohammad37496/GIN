@@ -1,3 +1,4 @@
+import { withApiErrorBoundary } from "@/lib/api-error-boundary";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/auth";
 import { ensureSchema, pool } from "@/lib/db";
@@ -7,7 +8,7 @@ import { rejectCrossOriginMutation } from "@/lib/request-security";
 const schema = z.object({ nameEn: z.string().trim().max(140).nullable().optional(), descriptionEn: z.string().max(2000).nullable().optional() })
   .refine((data) => Object.keys(data).length > 0);
 
-export async function PATCH(request: Request, { params }: { params: Promise<{ categoryId: string }> }) {
+async function PATCH(request: Request, { params }: { params: Promise<{ categoryId: string }> }) {
   const originError = rejectCrossOriginMutation(request);
   if (originError) return originError;
   const admin = await requireAdmin();
@@ -28,3 +29,6 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ ca
     return jsonResponse({ category: updated.rows[0], message: "ترجمه انگلیسی دسته‌بندی ذخیره شد." });
   } catch { return errorResponse("ذخیره ترجمه دسته‌بندی انجام نشد.", 503); }
 }
+
+const wrappedPATCH = withApiErrorBoundary(PATCH);
+export { wrappedPATCH as PATCH };

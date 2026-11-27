@@ -1,11 +1,13 @@
 import { randomUUID } from "node:crypto";
 import { CopyObjectCommand, DeleteObjectCommand, HeadObjectCommand, type HeadObjectCommandOutput } from "@aws-sdk/client-s3";
 import { z } from "zod";
-import { getSession, hasRole } from "@/lib/auth";
-import { ensureSchema, inTransaction, pool } from "@/lib/db";
+import { getSession, hasRole, isSessionSecretConfigurationError } from "@/lib/auth";
+import { ensureSchema, inTransaction, isDatabaseUnavailableError, pool } from "@/lib/db";
 import { getStorageConfig } from "@/lib/storage";
 import { errorResponse, jsonResponse } from "@/lib/http";
 import { enforceRateLimit, rejectCrossOriginMutation } from "@/lib/request-security";
+import { withApiErrorBoundary } from "@/lib/api-error-boundary";
+
 
 const schema = z.object({ assetId: z.number().int().positive() });
 const FINALIZING_LEASE_MS = 2 * 60 * 1000;
@@ -63,11 +65,17 @@ async function removeStagingObject(storage: NonNullable<ReturnType<typeof getSto
   await storage.client.send(new DeleteObjectCommand({ Bucket: storage.bucket, Key: asset.upload_key })).catch(() => undefined);
 }
 
-export async function POST(request: Request) {
+ async function POST(request: Request) {
   const originError = rejectCrossOriginMutation(request);
   if (originError) return originError;
-  const user = await getSession();
-  if (!user || !(await hasRole(user, "instructor"))) return errorResponse("دسترسی بارگذاری ندارید.", 403);
+  let user;
+  try {
+    user = await getSession();
+    if (!user || !(await hasRole(user, "instructor"))) return errorResponse("دسترسی بارگذاری ندارید.", 403);
+  } catch (error) {
+    console.error("GIN storage completion authorization failed", error);
+    return errorResponse("احراز هویت برای تکمیل بارگذاری انجام نشد.", isDatabaseUnavailableError(error) || isSessionSecretConfigurationError(error) ? 503 : 500);
+  }
   const limited = await enforceRateLimit(request, "storage-complete", 30, 3600);
   if (limited) return limited;
   const parsed = schema.safeParse(await request.json().catch(() => null));
@@ -196,3 +204,7 @@ export async function POST(request: Request) {
     return errorResponse("تأیید فایل در فضای ذخیره‌سازی انجام نشد.", 503);
   }
 }
+
+
+const wrappedPOST = withApiErrorBoundary(POST);
+export { wrappedPOST as POST };

@@ -92,6 +92,10 @@ Remove-Item Env:ADMIN_PASSWORD
 
 برای Vercel دو روش ذخیره‌سازی پشتیبانی می‌شود: اتصال S3-compatible با چهار متغیر `S3_ENDPOINT`، `S3_BUCKET`، `S3_ACCESS_KEY_ID` و `S3_SECRET_ACCESS_KEY`؛ یا AWS Integration با `AWS_ROLE_ARN`، `AWS_REGION` و `S3_BUCKET_NAME`. در روش دوم، برنامه از OIDC و اعتبارنامه‌های کوتاه‌مدت AWS استفاده می‌کند و به Access Key و Secret Key دائمی نیاز ندارد. اگر AWS Integration متصل است، نام متغیرهای آن را تغییر ندهید.
 
+برای AWS OIDC، نقش IAM باید فقط به هویت Vercel همین Team/Project/Environment اعتماد کند. شناسه Team در این پروژه `mohammad37496` و نام پروژه Vercel `globalinformationnetwork.liara` است؛ در حالت Team issuer، Provider URL برابر `https://oidc.vercel.com/mohammad37496`، مقدار audience برابر `https://vercel.com/mohammad37496` و Subject محیط Production برابر `owner:mohammad37496:project:globalinformationnetwork.liara:environment:production` است. همین شرط را برای Preview با `environment:preview` جداگانه تعریف کنید اگر Preview نیز باید به AWS دسترسی داشته باشد. از wildcard برای `sub` یا `aud` استفاده نکنید. شناسه حساب AWS و ARN واقعی نقش را از تنظیمات AWS Integration خود بردارید؛ هیچ مقدار نمونه‌ای را به‌عنوان شناسه واقعی جایگزین نکنید. مستندات رسمی: [Vercel AWS OIDC](https://vercel.com/docs/oidc/aws) و [OIDC reference](https://vercel.com/docs/oidc/reference).
+
+سیاست دسترسی S3 نقش باید به همان Bucket محدود شود و با عملیات فعلی برنامه سازگار باشد: `s3:PutObject` برای آپلود/کپی، `s3:GetObject` برای HEAD و خواندن منبع Copy، و `s3:DeleteObject` برای حذف آبجکت staging و فایل‌های پاک‌سازی‌شده، فقط روی Prefixهای `uploads/*` و `assets/*`. در این پروژه `ListBucket` برای مسیر Upload لازم نیست. اگر Bucket از کلید KMS اختصاصی استفاده می‌کند، مجوزهای KMS و Key Policy نیز باید جداگانه و حداقلی تنظیم شوند. وجود متغیرهای Vercel به‌تنهایی اثبات نمی‌کند Trust Policy، مجوزهای Bucket یا Upload واقعی صحیح‌اند.
+
 ### ۳. استقرار کد
 
 در پنل Liara پلتفرم برنامه را روی **Next.js** قرار دهید. از ریشه مخزن و با Liara CLI وارد حساب شوید و برنامه ساخته‌شده را انتخاب کنید. سپس:
@@ -105,6 +109,16 @@ liara deploy
 ### استقرار روی Vercel
 
 مخزن `mohammad37496/GIN` را به پروژه Vercel متصل کنید و Root Directory را روی ریشه مخزن نگه دارید. Vercel با `npm ci` و `npm run build` برنامه Next.js را می‌سازد. در محیط‌های Preview و Production، `DATABASE_URL` و `SESSION_SECRET` باید تنظیم شوند؛ اگر دامنه سفارشی دارید، `APP_URL` را برابر همان دامنه قرار دهید. دامنه پیش‌فرض Vercel به‌صورت خودکار در کد تنظیم شده است. برای فضای ذخیره‌سازی AWS، AWS Integration را متصل کنید تا `AWS_ROLE_ARN`، `AWS_REGION` و `S3_BUCKET_NAME` در اختیار برنامه قرار بگیرند. برای ساخت مدیر اولیه می‌توانید `BOOTSTRAP_ADMIN_USERNAME` و `BOOTSTRAP_ADMIN_PASSWORD` را نیز در محیط Production تعریف کنید. آزمون مرورگر با `npm run test:e2e` در CI اجرا می‌شود.
+
+**الزامات عملیاتی PostgreSQL و نشست در Vercel:**
+
+- `DATABASE_URL` باید یک connection string واقعی PostgreSQL با دسترسی شبکه‌ای از Functionهای Vercel باشد؛ آن را در Production و Preview جداگانه تنظیم کنید. در صورت الزام ارائه‌دهنده، پارامتر TLS مانند `sslmode=require` را در connection string قرار دهید.
+- `SESSION_SECRET` باید حداقل ۳۲ بایت تصادفی و در تمام Functionهای همان محیط یکسان باشد. آن را در Git یا log قرار ندهید. تعویض آن تمام کوکی‌های نشست قبلی را نامعتبر می‌کند.
+- در تنظیمات امنیتی Bunny Stream، دامنه Vercel یعنی `globalinformationnetworkliara.vercel.app` و هر دامنه سفارشی نهایی را به فهرست دامنه‌های مجاز Embed اضافه کنید؛ محدودیت Referrer را به‌طور عمومی غیرفعال نکنید. دامنه رسمی مرجع در آزمون مرورگر پاسخ `200` می‌گیرد، اما پیش‌نمایش محلی بدون Referrer مجاز `403` می‌گیرد.
+- پیش از اولین ترافیک عملیاتی، از دیتابیس نسخه پشتیبان بگیرید و مهاجرت‌ها را با `npm run db:migrate` از محیط امن دارای دسترسی به همان دیتابیس اجرا کنید؛ برنامه نیز در اولین نیاز به Schema، مهاجرت‌های شماره‌گذاری‌شده را با قفل advisory و checksum بررسی می‌کند.
+- Rate Limit مبتنی بر PostgreSQL است و در نبود دیتابیس fail-closed می‌شود: درخواست‌های حساس به‌جای عبور بدون محدودیت، پاسخ `503` می‌گیرند. اختلال دیتابیس نباید به ورود، ثبت‌نام، بارگذاری یا تأیید پرداخت موفق تعبیر شود.
+- Middleware نیز وقتی `DATABASE_URL` اصلاً تنظیم نشده باشد، APIهای دیتابیس‌محور را پیش از اجرای Handler با `503` متوقف می‌کند؛ مسیر Logout مستثناست تا بتواند کوکی نشستِ بدون توکن را پاک کند. اگر توکن وجود داشته باشد، ابطال سمت سرور باید موفق شود و در نبود دیتابیس کوکی حفظ می‌شود.
+- پیش از تغییر `DATABASE_URL` در Production، اتصال، TLS، مجوز اجرای DDL مهاجرت‌ها، ظرفیت Connection Pool و بازیابی Backup را در Preview یا محیط staging بررسی کنید.
 
 ### ۴. ایجاد مدیر اولیه روی PostgreSQL
 
@@ -143,6 +157,7 @@ npm.cmd run test:e2e         # آزمون مرورگر Playwright
 **موارد نیازمند اطلاعات/حساب بیرونی:**
 
 - درگاه پرداخت هنوز به ارائه‌دهنده مشخصی متصل نشده است. آداپتر باید بر اساس ارائه‌دهنده منتخب و کلید/شناسه پذیرنده واقعی فعال شود؛ تا آن زمان checkout با پاسخ صریح `503` متوقف می‌شود و سفارش یا تراکنش ساختگی ایجاد نمی‌کند.
+- قرارداد مشترک در `src/lib/payments/provider.ts` شامل `createCheckout` با کلید Idempotency و `verifyWebhook` با بدنه خام درخواست است. هر آداپتر آینده باید امضای Webhook را پیش از پردازش تأیید کند و شناسه رویداد، مرجع تراکنش، مبلغ و ارز را به قرارداد مشترک تبدیل کند. ثبت رویداد، تغییر وضعیت سفارش/تراکنش، دسترسی عضویت/دوره/رویداد، کمیسیون و Invoice باید در تراکنش دیتابیس اتمیک بمانند. هیچ Provider تا انتخاب مالک و ارائه اعتبارنامه واقعی فعال نمی‌شود.
 - صفحات اطلاعاتی سفر و معرفی، محتوای پایه هستند. انتشار رویداد، مزیت، مکان، تخفیف یا رزرو واقعی نیازمند داده و تأیید برگزارکننده/ارائه‌دهنده است.
 - دامنه سفارشی باید متعلق به مالک پروژه باشد و پس از ارائه نام دامنه، DNS و دامنه Vercel یا Liara تنظیم شوند.
 

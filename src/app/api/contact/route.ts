@@ -4,8 +4,10 @@ import { ensureSchema, pool } from "@/lib/db";
 import { errorResponse, jsonResponse } from "@/lib/http";
 import { contactSubmissionSchema } from "@/lib/contact-submission";
 import { enforceRateLimit, rejectCrossOriginMutation } from "@/lib/request-security";
+import { withApiErrorBoundary } from "@/lib/api-error-boundary";
 
-export async function POST(request: Request) {
+
+ async function POST(request: Request) {
   const originError = rejectCrossOriginMutation(request);
   if (originError) return originError;
   try {
@@ -38,3 +40,7 @@ export async function POST(request: Request) {
     return errorResponse("The contact request could not be saved. Please call the official number listed on the Contact page.", 503);
   }
 }
+
+
+const wrappedPOST = withApiErrorBoundary(POST);
+export { wrappedPOST as POST };

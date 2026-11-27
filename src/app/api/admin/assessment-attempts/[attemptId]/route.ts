@@ -3,10 +3,12 @@ import { canManageCourse,getSession } from "@/lib/auth";
 import { ensureSchema, inTransaction } from "@/lib/db";
 import { errorResponse, jsonResponse } from "@/lib/http";
 import { rejectCrossOriginMutation } from "@/lib/request-security";
+import { withApiErrorBoundary } from "@/lib/api-error-boundary";
+
 
 const schema=z.object({answers:z.array(z.object({answerId:z.number().int().positive(),pointsAwarded:z.number().min(0).max(10000),feedback:z.string().max(2000).default("")})).min(1).max(200)});
 
-export async function PATCH(request:Request,{params}:{params:Promise<{attemptId:string}>}){
+ async function PATCH(request:Request,{params}:{params:Promise<{attemptId:string}>}){
   const originError=rejectCrossOriginMutation(request);if(originError)return originError;
   const admin=await getSession();if(!admin)return errorResponse("دسترسی غیرمجاز است.",403);
   const attemptId=Number((await params).attemptId);if(!Number.isSafeInteger(attemptId)||attemptId<1)return errorResponse("تلاش آزمون پیدا نشد.",404);
@@ -40,3 +42,7 @@ export async function PATCH(request:Request,{params}:{params:Promise<{attemptId:
   });if(!result)return errorResponse("این تلاش آزمون برای ارزیابی دستی در دسترس نیست.",409);if("forbidden" in result)return errorResponse("دسترسی ارزیابی این دوره را ندارید.",403);if("invalid" in result)return errorResponse("نمره یکی از پاسخ‌ها نامعتبر است.",400);return jsonResponse({result,message:"ارزیابی دستی ثبت شد."});
   }catch{return errorResponse("ثبت ارزیابی دستی انجام نشد.",503);}
 }
+
+
+const wrappedPATCH = withApiErrorBoundary(PATCH);
+export { wrappedPATCH as PATCH };

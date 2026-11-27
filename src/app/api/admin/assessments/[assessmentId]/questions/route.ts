@@ -3,12 +3,14 @@ import { canManageCourse,getSession } from "@/lib/auth";
 import { ensureSchema, inTransaction, pool } from "@/lib/db";
 import { errorResponse, jsonResponse } from "@/lib/http";
 import { rejectCrossOriginMutation } from "@/lib/request-security";
+import { withApiErrorBoundary } from "@/lib/api-error-boundary";
+
 
 const optionSchema=z.object({id:z.string().trim().min(1).max(40).regex(/^[a-zA-Z0-9_-]+$/),label:z.string().trim().min(1).max(500),label_en:z.string().trim().max(500).optional()});
 const schema=z.object({questionType:z.enum(["single_choice","multiple_choice","true_false","short_text"]),prompt:z.string().trim().min(3).max(5000),promptEn:z.string().trim().max(5000).optional(),options:z.array(optionSchema).max(20).default([]),answerKey:z.unknown().optional(),explanation:z.string().max(4000).default(""),explanationEn:z.string().max(4000).optional(),points:z.number().positive().max(10000).default(1),position:z.number().int().min(0).max(10000).optional()});
 const translationPatchSchema=z.object({promptEn:z.string().trim().max(5000).optional(),explanationEn:z.string().max(4000).optional(),optionTranslations:z.array(z.object({id:z.string().trim().min(1).max(40).regex(/^[a-zA-Z0-9_-]+$/),labelEn:z.string().trim().max(500)})).max(20).optional()}).refine((value)=>Object.keys(value).length>0);
 
-export async function GET(_request:Request,{params}:{params:Promise<{assessmentId:string}>}){
+ async function GET(_request:Request,{params}:{params:Promise<{assessmentId:string}>}){
   const admin=await getSession();if(!admin)return errorResponse("دسترسی غیرمجاز است.",403);
   const id=Number((await params).assessmentId);if(!Number.isSafeInteger(id)||id<1)return errorResponse("آزمون پیدا نشد.",404);
   try{await ensureSchema();const assessment=await pool.query("SELECT course_id FROM assessments WHERE id=$1",[id]);if(!assessment.rowCount)return errorResponse("آزمون پیدا نشد.",404);if(!(await canManageCourse(admin,Number(assessment.rows[0].course_id))))return errorResponse("دسترسی مدیریت دوره ندارید.",403);
@@ -16,7 +18,7 @@ export async function GET(_request:Request,{params}:{params:Promise<{assessmentI
   }catch{return errorResponse("دریافت سؤال‌های آزمون انجام نشد.",503);}
 }
 
-export async function POST(request:Request,{params}:{params:Promise<{assessmentId:string}>}){
+ async function POST(request:Request,{params}:{params:Promise<{assessmentId:string}>}){
   const originError=rejectCrossOriginMutation(request);if(originError)return originError;
   const admin=await getSession();if(!admin)return errorResponse("دسترسی غیرمجاز است.",403);
   const id=Number((await params).assessmentId);if(!Number.isSafeInteger(id)||id<1)return errorResponse("آزمون پیدا نشد.",404);
@@ -37,7 +39,7 @@ export async function POST(request:Request,{params}:{params:Promise<{assessmentI
   }catch{return errorResponse("افزودن سؤال انجام نشد.",503);}
 }
 
-export async function PATCH(request:Request,{params}:{params:Promise<{assessmentId:string}>}){
+ async function PATCH(request:Request,{params}:{params:Promise<{assessmentId:string}>}){
   const originError=rejectCrossOriginMutation(request);if(originError)return originError;
   const admin=await getSession();if(!admin)return errorResponse("دسترسی غیرمجاز است.",403);
   const id=Number((await params).assessmentId);if(!Number.isSafeInteger(id)||id<1)return errorResponse("سؤال پیدا نشد.",404);
@@ -66,3 +68,11 @@ export async function PATCH(request:Request,{params}:{params:Promise<{assessment
   });if(!result)return errorResponse("سؤال پیدا نشد.",404);if("forbidden" in result)return errorResponse("دسترسی مدیریت دوره ندارید.",403);return jsonResponse({question:result,message:"ترجمه سؤال ذخیره شد."});
   }catch{return errorResponse("ذخیره ترجمه سؤال انجام نشد.",503);}
 }
+
+
+const wrappedGET = withApiErrorBoundary(GET);
+export { wrappedGET as GET };
+const wrappedPOST = withApiErrorBoundary(POST);
+export { wrappedPOST as POST };
+const wrappedPATCH = withApiErrorBoundary(PATCH);
+export { wrappedPATCH as PATCH };

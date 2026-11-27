@@ -4,8 +4,10 @@ import { canManageCourse, getSession } from "@/lib/auth";
 import { ensureSchema, pool } from "@/lib/db";
 import { getStorageConfig } from "@/lib/storage";
 import { errorResponse, jsonResponse } from "@/lib/http";
+import { withApiErrorBoundary } from "@/lib/api-error-boundary";
 
-export async function GET(_request: Request, { params }: { params: Promise<{ lessonId: string }> }) {
+
+ async function GET(_request: Request, { params }: { params: Promise<{ lessonId: string }> }) {
   const lessonId = Number((await params).lessonId);
   if (!Number.isSafeInteger(lessonId) || lessonId < 1) return errorResponse("درس پیدا نشد.", 404);
 
@@ -44,3 +46,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ les
     return errorResponse("دریافت منابع درس انجام نشد.", 503);
   }
 }
+
+
+const wrappedGET = withApiErrorBoundary(GET);
+export { wrappedGET as GET };

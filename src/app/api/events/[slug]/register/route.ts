@@ -2,8 +2,10 @@ import { getSession } from "@/lib/auth";
 import { ensureSchema,inTransaction } from "@/lib/db";
 import { errorResponse,jsonResponse } from "@/lib/http";
 import { rejectCrossOriginMutation } from "@/lib/request-security";
+import { withApiErrorBoundary } from "@/lib/api-error-boundary";
 
-export async function POST(request:Request,{params}:{params:Promise<{slug:string}>}){const originError=rejectCrossOriginMutation(request);if(originError)return originError;const user=await getSession();if(!user)return errorResponse("برای ثبت‌نام در رویداد وارد شوید.",401);const {slug}=await params;try{await ensureSchema();const result=await inTransaction(async(client)=>{const event=await client.query("SELECT * FROM events WHERE slug=$1 AND status='published' FOR UPDATE",[slug]);if(!event.rowCount)return {missing:true as const};const row=event.rows[0];if(new Date(row.starts_at).getTime()<=Date.now())return {started:true as const};if(row.access_type==='paid')return {paid:true as const};if(row.access_type==='members'){const member=await client.query(`SELECT 1 FROM memberships m JOIN membership_plan_events pe ON pe.plan_id=m.plan_id
+
+ async function POST(request:Request,{params}:{params:Promise<{slug:string}>}){const originError=rejectCrossOriginMutation(request);if(originError)return originError;const user=await getSession();if(!user)return errorResponse("برای ثبت‌نام در رویداد وارد شوید.",401);const {slug}=await params;try{await ensureSchema();const result=await inTransaction(async(client)=>{const event=await client.query("SELECT * FROM events WHERE slug=$1 AND status='published' FOR UPDATE",[slug]);if(!event.rowCount)return {missing:true as const};const row=event.rows[0];if(new Date(row.starts_at).getTime()<=Date.now())return {started:true as const};if(row.access_type==='paid')return {paid:true as const};if(row.access_type==='members'){const member=await client.query(`SELECT 1 FROM memberships m JOIN membership_plan_events pe ON pe.plan_id=m.plan_id
   WHERE m.user_id=$1 AND pe.event_id=$2 AND m.status='active' AND (m.starts_at IS NULL OR m.starts_at<=NOW()) AND (m.ends_at IS NULL OR m.ends_at>NOW()) LIMIT 1`,[user.id,row.id]);if(!member.rowCount)return {membership:true as const};}
   const count=await client.query("SELECT COUNT(*)::int AS count FROM event_registrations WHERE event_id=$1 AND status='registered'",[row.id]);const status=row.capacity!==null&&count.rows[0].count>=row.capacity?'waitlisted':'registered';
   const existing=await client.query("SELECT id,status FROM event_registrations WHERE event_id=$1 AND user_id=$2 FOR UPDATE",[row.id,user.id]);let registration;
@@ -13,3 +15,7 @@ export async function POST(request:Request,{params}:{params:Promise<{slug:string
   await client.query("INSERT INTO audit_logs(actor_id,action,entity_type,entity_id,metadata) VALUES($1,$2,'event',$3,$4::jsonb)",[user.id,`event_${status}`,row.id,JSON.stringify({registrationId:registration.rows[0].id})]);return {registration:registration.rows[0]};});
   if('missing'in result)return errorResponse("رویداد پیدا نشد.",404);if('started'in result)return errorResponse("زمان ثبت‌نام این رویداد به پایان رسیده است.",409);if('paid'in result)return errorResponse("ثبت‌نام رویداد پولی تا فعال‌شدن درگاه پرداخت ممکن نیست.",409);if('membership'in result)return errorResponse("برای این رویداد به پلن عضویت واجد شرایط نیاز دارید.",403);if('existing'in result)return jsonResponse({registration:{status:result.status},message:"ثبت‌نام شما قبلاً ثبت شده است."});return jsonResponse({registration:result.registration,message:result.registration.status==='registered'?"ثبت‌نام رویداد انجام شد.":"ظرفیت تکمیل است؛ درخواست شما در فهرست انتظار قرار گرفت."},201);
 }catch{return errorResponse("ثبت‌نام رویداد انجام نشد.",503);}}
+
+
+const wrappedPOST = withApiErrorBoundary(POST);
+export { wrappedPOST as POST };

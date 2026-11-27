@@ -94,3 +94,29 @@ test("what-we-offer pages cover the official training, event, member-resource an
     assert.match(content, /not a business opportunity|keine Geschäftsmöglichkeit|ne constitue pas une opportunité commerciale|no es una oportunidad de negocio|nem üzleti lehetőség|nuk është mundësi biznesi|não é uma oportunidade de negócio/i);
   }
 });
+
+test("all eight localized homepage detail topics contain substantive sections in every official non-English locale", () => {
+  const locales = ["de", "fr", "es", "hu", "sq", "pt"] as const;
+  const homeDetailKeys = ["whatWeOffer", "memberBenefits", "successSystem", "events", "training", "membershipLevels", "whyJoin", "whoWeAre"] as const;
+
+  for (const locale of locales) {
+    for (const page of homeDetailKeys) {
+      const sections = getOfficialReferenceCopy(locale, page).sections;
+      assert.ok(sections.length >= 2, `${locale}/${page} must render at least two substantive source-based detail sections`);
+      assert.ok(sections.every((section) => section.title.trim().length > 8 && section.body.trim().length > 100), `${locale}/${page} has incomplete detail copy`);
+    }
+
+    const successSystem = getOfficialReferenceCopy(locale, "successSystem").sections.map((section) => section.body).join(" ");
+    const events = getOfficialReferenceCopy(locale, "events").sections.map((section) => section.body).join(" ");
+    const training = getOfficialReferenceCopy(locale, "training").sections.map((section) => section.body).join(" ");
+    const whyJoin = getOfficialReferenceCopy(locale, "whyJoin").sections.map((section) => section.body).join(" ");
+    const whoWeAre = getOfficialReferenceCopy(locale, "whoWeAre").sections.map((section) => section.body).join(" ");
+    assert.match(successSystem, /audio|áudio|hanganyag|trajnimeve audio/i);
+    assert.match(events, /Major.?Weekend/);
+    assert.match(training, /Success Mastery/);
+    assert.match(whyJoin, /private|privat|privée|privada|magán|privat/i);
+    assert.match(whoWeAre, /2003/);
+    assert.match(whoWeAre, /2009/);
+    assert.match(whoWeAre, /160/);
+  }
+});

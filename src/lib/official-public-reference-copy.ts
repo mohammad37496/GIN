@@ -29,6 +29,26 @@ export const officialPublicReferenceCopy: Record<Exclude<OfficialPublicLocaleCod
         { title: "Mitgliederressourcen und vertrauliche Leistungen", body: "Beschrieben werden Mitgliederzugang zur Website, Audio-/Video-Inhalte, Bücher, Manuskripte und Berichte, Live-Webinare, private E-Mails und Telefonate, Workshops und Seminare, Einzelmentoring und Roundtables. GIN nennt außerdem weltweite Kontakte, private Mitteilungen und Updates, Vergünstigungen, Mitgliederboni, VIP-Concierge und Empfehlungen für Bücher, Audio und Video. Viele Leistungen seien vertraulich und würden erst nach Annahme auf der jeweiligen Stufe offengelegt." },
         { title: "Finanz-, Geschäfts- und Gesundheitsinformationen", body: "Die Angebotsseite beschreibt Informationen zu Einkommensmethoden, möglichen geschäftlichen oder Anlagegelegenheiten (z. B. Börsengänge, Privatplatzierungen, neue Vorhaben, Immobilien, Edelmetalle, Währungen und Kryptowährungen), Krediten sowie gesundheitsbezogenen Themen. Dies sind Beschreibungen und Behauptungen von GIN. Die GIN-Seite zu Mitgliedschaftsstufen erklärt separat, dass GIN keine Finanz-, Steuer-, Rechts-, Anlage- oder medizinische Beratung bietet und keine Geschäftsmöglichkeit ist. Diese Inhalte sind keine Beratung oder Zusage eines Ergebnisses; prüfen Sie sie unabhängig und konsultieren Sie Fachleute." },
       ],
+      successSystem: [
+        { title: "Fünf Elemente des GIN-Erfolgssystems", body: "GIN beschreibt sein Erfolgssystem als Verbindung aus Audio-Training, Büchern, Veranstaltungen, Anerkennung und Beziehungen. Die fünf Elemente sollen Mitgliedern unterschiedliche Wege bieten, Wissen aufzunehmen, Erfahrungen auszutauschen und Kontakte innerhalb des Netzwerks zu pflegen." },
+        { title: "Lernen, anwenden und Ergebnisse selbst bewerten", body: "Die veröffentlichten Materialien umfassen Audio- und Videokurse, Lesestoff, Seminare und Begegnungen mit anderen Mitgliedern. GIN stellt diese Ressourcen als Unterstützung für persönliche Ziele dar; individuelle Ergebnisse sind nicht garantiert und sollten anhand eigener Erfahrungen beurteilt werden." },
+      ],
+      events: [
+        { title: "Major Weekends und lokale Treffen", body: "GIN nennt vier Major-Weekend-Veranstaltungen pro Jahr sowie Treffen lokaler Chapter. Die Veranstaltungen können persönliche und virtuelle Formate umfassen; Teilnahme, Tickets, Orte und Termine richten sich nach den jeweils aktuellen offiziellen Angaben." },
+        { title: "Seminare, Workshops und internationale Begegnungen", body: "Zum veröffentlichten Veranstaltungsspektrum gehören laut GIN Seminare, Konferenzen, Workshops, Preisverleihungen, Bankette, Retreats und GIN Adventures. Frühere Veranstaltungen oder Galeriebilder bestätigen keine zukünftige Durchführung oder Verfügbarkeit." },
+      ],
+      training: [
+        { title: "Success Mastery und Science of Personal Mastery", body: "GIN führt Success Mastery als Audio-/Videoprogramm mit zwölf Stufen und Science of Personal Mastery als schriftliche Reihe mit hundert Lektionen auf. Der Zugang zu diesen Materialien kann von Mitgliedschaft und jeweiliger Stufe abhängen." },
+        { title: "Themen und verantwortungsvolle Nutzung", body: "Die Trainingsübersicht umfasst persönliche Entwicklung, Beziehungen, Geschäftskompetenzen, Vermögensaufbau, Gesundheit und weitere Themen. Inhalte zu Gesundheit, Geld oder Investitionen sind keine professionelle Beratung und sollten mit qualifizierten unabhängigen Fachleuten geprüft werden." },
+      ],
+      whyJoin: [
+        { title: "Eine private, antragsbasierte Gemeinschaft", body: "GIN beschreibt die Mitgliedschaft als private Gemeinschaft für Wissensaustausch, Beziehungen, Mentoring und Lernangebote. Eine Bewerbung führt nicht automatisch zur Aufnahme; laut GIN können Anträge abgelehnt werden." },
+        { title: "Bedingungen vor einer Bewerbung prüfen", body: "Interessierte sollten aktuelle Gebühren, Kündigungsregeln, Leistungsumfang und Mitgliedschaftsbedingungen direkt in den offiziellen Unterlagen prüfen. Die beschriebenen Vorteile sind Aussagen von GIN und keine Garantie für finanzielle, gesundheitliche oder persönliche Ergebnisse." },
+      ],
+      whoWeAre: [
+        { title: "Ursprung und Gründung nach Darstellung von GIN", body: "Die offizielle Website gibt an, dass die Idee für GIN 2003 bei einem Treffen im Ritz-Carlton in Istanbul entstand und die Organisation 2009 formal gegründet wurde. Diese historischen Angaben geben die eigene Darstellung von GIN wieder." },
+        { title: "Internationales Netzwerk und vertrauliche Mitgliedschaft", body: "GIN erklärt, Mitglieder in mehr als 160 Ländern zu haben und die Mitgliederliste vertraulich zu behandeln. Größe, Struktur und Ziele des Netzwerks werden hier als Angaben der Organisation wiedergegeben und nicht unabhängig bestätigt." },
+      ],
     },
     summaries: {
       whatWeOffer: "GIN stellt Schulungen für Mitglieder, Veranstaltungen, Networking, Mentoring und weitere veröffentlichte Vorteile vor.",
@@ -68,6 +88,26 @@ export const officialPublicReferenceCopy: Record<Exclude<OfficialPublicLocaleCod
         { title: "Bibliothèque de formation et 14 domaines", body: "GIN cite Success Mastery, niveaux 1 à 12, sous forme audio/vidéo, et Science of Personal Mastery, leçons écrites 1 à 100. Les autres domaines de formation énumérés couvrent la richesse et l’argent, la santé dynamique, le bonheur, l’éveil, les sociétés secrètes, la motivation, les relations, les compétences de vie, les compétences commerciales, la vie internationale, des sujets spécialisés, la réussite des jeunes, la forme physique et l’autodéfense." },
         { title: "Ressources réservées aux membres et services confidentiels", body: "GIN décrit un accès membre au site, à des contenus audio/vidéo, livres, manuscrits et rapports, webinaires en direct, courriels et appels privés, ateliers et séminaires, mentorat individuel et tables rondes. La page cite aussi des contacts internationaux, des communications et mises à jour privées, des avantages, des bonus membres, un service de conciergerie VIP et des recommandations de livres, d’audio et de vidéo. De nombreux avantages seraient confidentiels et révélés après acceptation à chaque niveau." },
         { title: "Informations financières, commerciales et de santé", body: "La page des offres décrit des informations sur des méthodes de revenus, de possibles occasions commerciales ou d’investissement (introductions en bourse, placements privés, nouvelles entreprises, immobilier, métaux précieux, devises et cryptomonnaies), le crédit et des sujets liés à la santé. Ce sont des descriptions et affirmations de GIN. La page GIN sur les niveaux d’adhésion précise séparément que GIN ne fournit aucun conseil financier, fiscal, juridique, d’investissement ou médical et ne constitue pas une opportunité commerciale. Ces contenus ne sont ni des conseils ni une promesse de résultat; vérifiez-les indépendamment et consultez des professionnels." },
+      ],
+      successSystem: [
+        { title: "Les cinq éléments du système de réussite GIN", body: "GIN présente son système de réussite comme une combinaison de formations audio, de livres, d’événements, de reconnaissance et de relations. Ces cinq éléments sont décrits comme différentes façons d’apprendre, d’échanger des expériences et de développer des liens au sein du réseau." },
+        { title: "Apprendre, mettre en pratique et évaluer", body: "Les ressources publiées comprennent des cours audio et vidéo, des lectures, des séminaires et des rencontres entre membres. GIN présente ces ressources comme un soutien aux objectifs personnels; les résultats individuels ne sont pas garantis et doivent être évalués selon sa propre expérience." },
+      ],
+      events: [
+        { title: "Major Weekends et rencontres locales", body: "GIN mentionne quatre événements Major Weekend par an ainsi que des réunions de sections locales. Les formats peuvent être en personne ou virtuels; la participation, les billets, les lieux et les dates dépendent des informations officielles en vigueur." },
+        { title: "Séminaires, ateliers et rencontres internationales", body: "Selon GIN, le calendrier peut inclure des séminaires, conférences, ateliers, remises de prix, banquets, retraites et GIN Adventures. Les événements passés et les images de galerie ne confirment pas une future tenue ni une disponibilité." },
+      ],
+      training: [
+        { title: "Success Mastery et Science of Personal Mastery", body: "GIN présente Success Mastery comme un programme audio/vidéo en douze niveaux et Science of Personal Mastery comme une série écrite de cent leçons. L’accès à ces ressources peut dépendre de l’adhésion et du niveau concerné." },
+        { title: "Thèmes et utilisation responsable", body: "Le catalogue couvre le développement personnel, les relations, les compétences commerciales, la création de richesse, la santé et d’autres sujets. Les contenus liés à la santé, à l’argent ou aux investissements ne constituent pas un conseil professionnel et doivent être vérifiés auprès de spécialistes indépendants qualifiés." },
+      ],
+      whyJoin: [
+        { title: "Une communauté privée sur candidature", body: "GIN décrit l’adhésion comme une communauté privée axée sur le partage des connaissances, les relations, le mentorat et les ressources d’apprentissage. Une candidature ne garantit pas l’acceptation; GIN indique que certaines demandes peuvent être refusées." },
+        { title: "Vérifier les conditions avant de candidater", body: "Les personnes intéressées devraient vérifier directement les frais actuels, les règles d’annulation, les services inclus et les conditions d’adhésion dans les documents officiels. Les avantages décrits sont des déclarations de GIN et ne garantissent aucun résultat financier, médical ou personnel." },
+      ],
+      whoWeAre: [
+        { title: "Origines et création selon GIN", body: "Le site officiel indique que l’idée de GIN est née en 2003 lors d’une rencontre au Ritz-Carlton d’Istanbul et que l’organisation a été officiellement créée en 2009. Ces éléments historiques reprennent la présentation de GIN." },
+        { title: "Réseau international et confidentialité des membres", body: "GIN affirme compter des membres dans plus de 160 pays et garder confidentielle sa liste de membres. La taille, la structure et les objectifs du réseau sont présentés ici comme des informations communiquées par l’organisation, sans vérification indépendante." },
       ],
     },
     summaries: {
@@ -109,6 +149,26 @@ export const officialPublicReferenceCopy: Record<Exclude<OfficialPublicLocaleCod
         { title: "Recursos exclusivos y servicios confidenciales", body: "GIN describe acceso de miembros al sitio web, contenidos de audio y vídeo, libros, manuscritos e informes, seminarios web en directo, correos y llamadas privadas, talleres y seminarios, mentoría individual y mesas redondas. También menciona contactos internacionales, comunicaciones y actualizaciones privadas, ventajas, bonificaciones para miembros, conserjería VIP y recomendaciones de libros, audio y vídeo. Muchos beneficios serían confidenciales y se revelarían tras la aceptación en cada nivel." },
         { title: "Información financiera, empresarial y de salud", body: "La página de ofertas describe información sobre métodos de ingresos y posibles oportunidades empresariales o de inversión (salidas a bolsa, colocaciones privadas, nuevos proyectos, bienes raíces, metales preciosos, divisas y criptomonedas), crédito y temas relacionados con la salud. Son descripciones y afirmaciones de GIN. La página de niveles de membresía de GIN declara por separado que GIN no ofrece asesoramiento financiero, fiscal, legal, de inversión ni médico y que no es una oportunidad de negocio. Estos contenidos no son asesoramiento ni una promesa de resultados; verifíquelos de forma independiente y consulte a profesionales." },
       ],
+      successSystem: [
+        { title: "Los cinco elementos del sistema de éxito de GIN", body: "GIN describe su sistema de éxito como una combinación de formación en audio, libros, eventos, reconocimiento y relaciones. Estos cinco elementos se presentan como distintas formas de aprender, intercambiar experiencias y desarrollar conexiones dentro de la red." },
+        { title: "Aprender, aplicar y evaluar la experiencia", body: "Los recursos publicados incluyen cursos de audio y vídeo, lecturas, seminarios y encuentros entre miembros. GIN presenta estos recursos como apoyo para objetivos personales; los resultados individuales no están garantizados y deben evaluarse según la propia experiencia." },
+      ],
+      events: [
+        { title: "Major Weekends y reuniones locales", body: "GIN menciona cuatro eventos Major Weekend al año y reuniones de capítulos locales. Los formatos pueden ser presenciales o virtuales; la participación, las entradas, los lugares y las fechas dependen de la información oficial vigente." },
+        { title: "Seminarios, talleres y encuentros internacionales", body: "Según GIN, la oferta de eventos puede incluir seminarios, conferencias, talleres, entregas de premios, banquetes, retiros y GIN Adventures. Los eventos anteriores y las imágenes de galería no confirman futuras celebraciones ni disponibilidad." },
+      ],
+      training: [
+        { title: "Success Mastery y Science of Personal Mastery", body: "GIN presenta Success Mastery como un programa de audio y vídeo con doce niveles y Science of Personal Mastery como una serie escrita de cien lecciones. El acceso a estos materiales puede depender de la membresía y del nivel correspondiente." },
+        { title: "Temas y uso responsable", body: "El catálogo abarca desarrollo personal, relaciones, habilidades empresariales, creación de riqueza, salud y otros temas. Los contenidos relacionados con salud, dinero o inversiones no constituyen asesoramiento profesional y deben revisarse con especialistas independientes cualificados." },
+      ],
+      whyJoin: [
+        { title: "Una comunidad privada basada en solicitudes", body: "GIN describe la membresía como una comunidad privada centrada en compartir conocimientos, crear relaciones, recibir mentoría y acceder a recursos de aprendizaje. Presentar una solicitud no garantiza la aceptación; GIN indica que algunas solicitudes pueden rechazarse." },
+        { title: "Revisar las condiciones antes de solicitarla", body: "Las personas interesadas deben comprobar directamente las cuotas vigentes, las reglas de cancelación, los servicios incluidos y las condiciones de membresía en los documentos oficiales. Los beneficios descritos son afirmaciones de GIN y no garantizan resultados financieros, médicos ni personales." },
+      ],
+      whoWeAre: [
+        { title: "Orígenes y fundación según GIN", body: "El sitio oficial indica que la idea de GIN surgió en 2003 durante una reunión en el Ritz-Carlton de Estambul y que la organización se estableció formalmente en 2009. Estos datos históricos reproducen la presentación de la propia GIN." },
+        { title: "Red internacional y privacidad de los miembros", body: "GIN afirma tener miembros en más de 160 países y mantener confidencial su lista de miembros. El tamaño, la estructura y los objetivos de la red se presentan aquí como información comunicada por la organización, sin verificación independiente." },
+      ],
     },
     summaries: {
       whatWeOffer: "GIN presenta la formación para miembros, los eventos, la creación de redes, la mentoría y otros beneficios publicados.",
@@ -148,6 +208,26 @@ export const officialPublicReferenceCopy: Record<Exclude<OfficialPublicLocaleCod
         { title: "Képzési könyvtár és 14 tématerület", body: "A GIN a Success Mastery 1–12. szintjét audio-/videóanyagként, a Science of Personal Mastery 1–100. leckéjét írott anyagként sorolja fel. További képzési területek: vagyon és pénz, dinamikus egészség, boldogság, megvilágosodás, titkos társaságok, motiváció, kapcsolatok, életvezetési készségek, üzleti készségek, nemzetközi élet, speciális témák, fiatalok sikere, fitnesz és önvédelem." },
         { title: "Tagi források és bizalmas szolgáltatások", body: "A GIN tagi weboldal-hozzáférést, audio-/videótartalmakat, könyveket, kéziratokat és jelentéseket, élő webináriumokat, privát e-maileket és telefonhívásokat, műhelyeket és szemináriumokat, egyéni mentorálást és kerekasztal-beszélgetéseket ír le. Emellett nemzetközi kapcsolatokat, privát közleményeket és frissítéseket, kedvezményeket, tagi bónuszokat, VIP concierge szolgáltatást, valamint könyv-, audio- és videóajánlásokat említ. Sok előny bizalmas, és a GIN szerint csak az adott szintű felvétel után ismerhető meg." },
         { title: "Pénzügyi, üzleti és egészségügyi információk", body: "Az ajánlati oldal jövedelemszerzési módszerekről, lehetséges üzleti vagy befektetési lehetőségekről (tőzsdei bevezetések, zártkörű kibocsátások, új vállalkozások, ingatlanok, nemesfémek, devizák és kriptovaluták), hitelekről és egészségügyi témákról szóló információkat ismertet. Ezek a GIN leírásai és állításai. A GIN tagsági szintekről szóló oldala külön kijelenti, hogy a GIN nem nyújt pénzügyi, adózási, jogi, befektetési vagy orvosi tanácsadást, és nem üzleti lehetőség. Ezek a tartalmak nem tanácsok és nem eredményígéretek; ellenőrizze őket függetlenül, és kérjen szakértői tanácsot." },
+      ],
+      successSystem: [
+        { title: "A GIN siker rendszerének öt eleme", body: "A GIN a siker rendszerét hanganyagokra, könyvekre, rendezvényekre, elismerésre és kapcsolatokra épülő kombinációként mutatja be. Az öt elemet a tanulás, a tapasztalatcsere és a hálózaton belüli kapcsolatok fejlesztésének különböző lehetőségeiként ismerteti." },
+        { title: "Tanulás, alkalmazás és saját értékelés", body: "A közzétett források hang- és videókurzusokat, olvasnivalókat, szemináriumokat és tagi találkozókat tartalmaznak. A GIN ezeket a személyes célok támogatásaként mutatja be; az egyéni eredmények nem garantáltak, és saját tapasztalat alapján értékelendők." },
+      ],
+      events: [
+        { title: "Major Weekend és helyi találkozók", body: "A GIN évente négy Major Weekend eseményt és helyi fejezeti találkozókat említ. A formátum lehet személyes vagy virtuális; a részvétel, a jegyek, a helyszínek és az időpontok az aktuális hivatalos tájékoztatástól függenek." },
+        { title: "Szemináriumok, műhelyek és nemzetközi találkozók", body: "A GIN szerint a rendezvénykínálat szemináriumokat, konferenciákat, műhelyeket, díjátadókat, banketteket, elvonulásokat és GIN Adventures programokat is tartalmazhat. A korábbi események és galériaképek nem igazolják a jövőbeli megrendezést vagy elérhetőséget." },
+      ],
+      training: [
+        { title: "Success Mastery és Science of Personal Mastery", body: "A GIN a Success Mastery programot tizenkét szintű audio-/videóanyagként, a Science of Personal Mastery sorozatot pedig száz írott leckeként ismerteti. Az anyagokhoz való hozzáférés tagságtól és az adott szinttől függhet." },
+        { title: "Témakörök és felelős felhasználás", body: "A képzési katalógus személyes fejlődést, kapcsolatokat, üzleti készségeket, vagyonépítést, egészséget és más témákat sorol fel. Az egészséggel, pénzzel vagy befektetéssel kapcsolatos tartalom nem szakmai tanács; független, megfelelő képesítésű szakértővel ellenőrizendő." },
+      ],
+      whyJoin: [
+        { title: "Magánjellegű, jelentkezéshez kötött közösség", body: "A GIN a tagságot tudásmegosztásra, kapcsolatokra, mentorálásra és tanulási forrásokra épülő magánközösségként írja le. A jelentkezés nem garantálja a felvételt; a GIN szerint egyes kérelmeket elutasíthatnak." },
+        { title: "A feltételek ellenőrzése jelentkezés előtt", body: "Az érdeklődőknek közvetlenül a hivatalos dokumentumokban kell ellenőrizniük az aktuális díjakat, lemondási szabályokat, szolgáltatásokat és tagsági feltételeket. A leírt előnyök a GIN állításai, nem pénzügyi, egészségügyi vagy személyes eredmények garanciái." },
+      ],
+      whoWeAre: [
+        { title: "Eredet és alapítás a GIN bemutatása szerint", body: "A hivatalos weboldal szerint a GIN ötlete 2003-ban, az isztambuli Ritz-Carltonban tartott találkozón született, a szervezetet pedig 2009-ben alapították meg formálisan. Ezek a történeti adatok a GIN saját bemutatását tükrözik." },
+        { title: "Nemzetközi hálózat és bizalmas tagság", body: "A GIN azt állítja, hogy több mint 160 országban vannak tagjai, és a taglistát bizalmasan kezeli. A hálózat méretét, szerkezetét és céljait itt a szervezet által közölt információként mutatjuk be, független megerősítés nélkül." },
       ],
     },
     summaries: {
@@ -189,6 +269,26 @@ export const officialPublicReferenceCopy: Record<Exclude<OfficialPublicLocaleCod
         { title: "Burime për anëtarët dhe shërbime konfidenciale", body: "GIN përshkruan qasje të anëtarëve në faqen e internetit, përmbajtje audio/video, libra, dorëshkrime dhe raporte, webinare të drejtpërdrejta, email-e dhe telefonata private, punëtori e seminare, mentorim individual dhe tryeza diskutimi. Përmenden edhe kontakte ndërkombëtare, komunikime dhe përditësime private, përfitime, bonuse për anëtarët, shërbim VIP concierge dhe rekomandime librash, audioje e videosh. Shumë përfitime thuhet se janë konfidenciale dhe zbulohen vetëm pas pranimit në secilin nivel." },
         { title: "Informacion financiar, biznesi dhe shëndetësor", body: "Faqja e ofertave përshkruan informacion për mënyra të gjenerimit të të ardhurave, mundësi të mundshme biznesi ose investimi (dalje në bursë, vendosje private, sipërmarrje të reja, pasuri të paluajtshme, metale të çmuara, valuta dhe kriptovaluta), kredi dhe tema shëndetësore. Këto janë përshkrime dhe pretendime të GIN. Faqja e niveleve të anëtarësimit deklaron veçmas se GIN nuk jep këshilla financiare, tatimore, ligjore, investimi ose mjekësore dhe nuk është mundësi biznesi. Këto përmbajtje nuk janë këshilla ose garanci rezultatesh; verifikojini në mënyrë të pavarur dhe konsultoni profesionistë." },
       ],
+      successSystem: [
+        { title: "Pesë elementet e sistemit të suksesit GIN", body: "GIN e përshkruan sistemin e suksesit si një kombinim të trajnimeve audio, librave, ngjarjeve, njohjes dhe marrëdhënieve. Këto pesë elemente paraqiten si mënyra të ndryshme për të mësuar, shkëmbyer përvoja dhe zhvilluar lidhje brenda rrjetit." },
+        { title: "Të mësuarit, zbatimi dhe vlerësimi personal", body: "Burimet e publikuara përfshijnë kurse audio dhe video, materiale leximi, seminare dhe takime mes anëtarëve. GIN i paraqet këto burime si mbështetje për qëllimet personale; rezultatet individuale nuk garantohen dhe duhen vlerësuar nga përvoja juaj." },
+      ],
+      events: [
+        { title: "Major Weekends dhe takimet lokale", body: "GIN përmend katër ngjarje Major Weekend në vit dhe takime të kapitujve lokalë. Formati mund të jetë fizik ose virtual; pjesëmarrja, biletat, vendet dhe datat varen nga informacioni zyrtar aktual." },
+        { title: "Seminare, punëtori dhe takime ndërkombëtare", body: "Sipas GIN, programi i ngjarjeve mund të përfshijë seminare, konferenca, punëtori, ndarje çmimesh, bankete, tërheqje dhe GIN Adventures. Ngjarjet e kaluara dhe fotografitë në galeri nuk konfirmojnë zhvillimin ose disponueshmërinë e ardhshme." },
+      ],
+      training: [
+        { title: "Success Mastery dhe Science of Personal Mastery", body: "GIN e paraqet Success Mastery si program audio/video me dymbëdhjetë nivele dhe Science of Personal Mastery si seri të shkruar me njëqind mësime. Qasja në këto materiale mund të varet nga anëtarësimi dhe niveli përkatës." },
+        { title: "Temat dhe përdorimi i përgjegjshëm", body: "Katalogu përfshin zhvillimin personal, marrëdhëniet, aftësitë e biznesit, krijimin e pasurisë, shëndetin dhe tema të tjera. Përmbajtjet për shëndetin, paratë ose investimet nuk janë këshilla profesionale dhe duhen shqyrtuar me ekspertë të pavarur të kualifikuar." },
+      ],
+      whyJoin: [
+        { title: "Një komunitet privat me aplikim", body: "GIN e përshkruan anëtarësimin si komunitet privat të përqendruar te ndarja e njohurive, marrëdhëniet, mentorimi dhe burimet e të mësuarit. Aplikimi nuk garanton pranimin; GIN thotë se disa aplikime mund të refuzohen." },
+        { title: "Kontrolloni kushtet përpara aplikimit", body: "Personat e interesuar duhet të kontrollojnë drejtpërdrejt tarifat aktuale, rregullat e anulimit, shërbimet e përfshira dhe kushtet e anëtarësimit në dokumentet zyrtare. Përfitimet e përshkruara janë deklarata të GIN dhe nuk garantojnë rezultate financiare, shëndetësore ose personale." },
+      ],
+      whoWeAre: [
+        { title: "Origjina dhe themelimi sipas GIN", body: "Faqja zyrtare thotë se ideja e GIN lindi në vitin 2003 gjatë një takimi në Ritz-Carlton në Stamboll dhe se organizata u themelua zyrtarisht në vitin 2009. Këto të dhëna historike pasqyrojnë prezantimin e vetë GIN." },
+        { title: "Rrjeti ndërkombëtar dhe konfidencialiteti i anëtarëve", body: "GIN pretendon se ka anëtarë në më shumë se 160 vende dhe se lista e anëtarëve mbahet konfidenciale. Madhësia, struktura dhe synimet e rrjetit paraqiten këtu si informacion i dhënë nga organizata, pa verifikim të pavarur." },
+      ],
     },
     summaries: {
       whatWeOffer: "GIN paraqet trajnimet për anëtarët, ngjarjet, rrjetëzimin, mentorimin dhe përfitimet e tjera të publikuara.",
@@ -228,6 +328,26 @@ export const officialPublicReferenceCopy: Record<Exclude<OfficialPublicLocaleCod
         { title: "Biblioteca de formação e 14 áreas", body: "A GIN cita Success Mastery, níveis 1–12, em áudio/vídeo, e Science of Personal Mastery, lições escritas 1–100. As outras áreas de formação incluem riqueza e dinheiro, saúde dinâmica, felicidade, iluminação, sociedades secretas, motivação, relações, competências para a vida, competências empresariais, vida internacional, formação especializada, sucesso juvenil, condição física e autodefesa." },
         { title: "Recursos exclusivos e serviços confidenciais", body: "A GIN descreve acesso de membros ao site, conteúdos áudio/vídeo, livros, manuscritos e relatórios, webinars em direto, e-mails e chamadas privadas, workshops e seminários, mentoria individual e mesas-redondas. Também menciona contactos internacionais, comunicações e atualizações privadas, vantagens, bónus para membros, concierge VIP e recomendações de livros, áudio e vídeo. Muitos benefícios seriam confidenciais e revelados apenas após a aceitação em cada nível." },
         { title: "Informações financeiras, empresariais e de saúde", body: "A página de ofertas descreve informações sobre métodos de geração de rendimentos, possíveis oportunidades empresariais ou de investimento (entradas em bolsa, colocações privadas, novos empreendimentos, imobiliário, metais preciosos, moedas e criptomoedas), crédito e temas de saúde. Estas são descrições e afirmações da GIN. A página de níveis de adesão declara separadamente que a GIN não presta aconselhamento financeiro, fiscal, jurídico, de investimento ou médico e que não é uma oportunidade de negócio. Estes conteúdos não são aconselhamento nem promessa de resultados; verifique-os de forma independente e consulte profissionais." },
+      ],
+      successSystem: [
+        { title: "Os cinco elementos do sistema de sucesso GIN", body: "A GIN descreve o seu sistema de sucesso como uma combinação de formação áudio, livros, eventos, reconhecimento e relacionamentos. Estes cinco elementos são apresentados como formas diferentes de aprender, trocar experiências e desenvolver ligações dentro da rede." },
+        { title: "Aprender, aplicar e avaliar a experiência", body: "Os recursos publicados incluem cursos áudio e vídeo, leituras, seminários e encontros entre membros. A GIN apresenta estes recursos como apoio a objetivos pessoais; os resultados individuais não são garantidos e devem ser avaliados com base na própria experiência." },
+      ],
+      events: [
+        { title: "Major Weekends e encontros locais", body: "A GIN menciona quatro eventos Major Weekend por ano e reuniões de capítulos locais. Os formatos podem ser presenciais ou virtuais; a participação, os bilhetes, os locais e as datas dependem das informações oficiais em vigor." },
+        { title: "Seminários, workshops e encontros internacionais", body: "Segundo a GIN, a oferta de eventos pode incluir seminários, conferências, workshops, entregas de prémios, banquetes, retiros e GIN Adventures. Eventos anteriores e imagens de galeria não confirmam futuras realizações nem disponibilidade." },
+      ],
+      training: [
+        { title: "Success Mastery e Science of Personal Mastery", body: "A GIN apresenta Success Mastery como um programa áudio/vídeo com doze níveis e Science of Personal Mastery como uma série escrita de cem lições. O acesso a estes materiais pode depender da adesão e do nível correspondente." },
+        { title: "Temas e utilização responsável", body: "O catálogo abrange desenvolvimento pessoal, relacionamentos, competências empresariais, criação de riqueza, saúde e outros temas. Conteúdos relacionados com saúde, dinheiro ou investimentos não constituem aconselhamento profissional e devem ser verificados com especialistas independentes qualificados." },
+      ],
+      whyJoin: [
+        { title: "Uma comunidade privada baseada em candidatura", body: "A GIN descreve a adesão como uma comunidade privada centrada na partilha de conhecimentos, relacionamentos, mentoria e recursos de aprendizagem. A candidatura não garante aceitação; a GIN afirma que algumas candidaturas podem ser recusadas." },
+        { title: "Verificar as condições antes de se candidatar", body: "As pessoas interessadas devem confirmar diretamente as taxas atuais, as regras de cancelamento, os serviços incluídos e as condições de adesão nos documentos oficiais. Os benefícios descritos são afirmações da GIN e não garantem resultados financeiros, médicos ou pessoais." },
+      ],
+      whoWeAre: [
+        { title: "Origens e fundação segundo a GIN", body: "O site oficial indica que a ideia da GIN surgiu em 2003, durante uma reunião no Ritz-Carlton em Istambul, e que a organização foi formalmente estabelecida em 2009. Estes dados históricos reproduzem a apresentação da própria GIN." },
+        { title: "Rede internacional e confidencialidade dos membros", body: "A GIN afirma ter membros em mais de 160 países e manter confidencial a lista de membros. A dimensão, a estrutura e os objetivos da rede são apresentados aqui como informações comunicadas pela organização, sem confirmação independente." },
       ],
     },
     summaries: {

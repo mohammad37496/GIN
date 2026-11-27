@@ -4,10 +4,12 @@ import { ensureSchema, inTransaction } from "@/lib/db";
 import { errorResponse, jsonResponse } from "@/lib/http";
 import { isValidCompletionPosition } from "@/lib/domain";
 import { rejectCrossOriginMutation } from "@/lib/request-security";
+import { withApiErrorBoundary } from "@/lib/api-error-boundary";
+
 
 const schema = z.object({ status: z.enum(["in_progress", "completed"]), watchedSeconds: z.number().int().min(0).max(24 * 60 * 60), lastPositionSeconds: z.number().int().min(0).max(24 * 60 * 60) });
 
-export async function POST(request: Request, { params }: { params: Promise<{ lessonId: string }> }) {
+ async function POST(request: Request, { params }: { params: Promise<{ lessonId: string }> }) {
   const originError = rejectCrossOriginMutation(request);
   if (originError) return originError;
   const user = await getSession();
@@ -88,3 +90,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ les
     return errorResponse("ذخیره پیشرفت درس ممکن نشد.", 503);
   }
 }
+
+
+const wrappedPOST = withApiErrorBoundary(POST);
+export { wrappedPOST as POST };

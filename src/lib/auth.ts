@@ -10,6 +10,10 @@ function secret() {
   return new TextEncoder().encode(value);
 }
 
+export function isSessionSecretConfigurationError(error: unknown): boolean {
+  return error instanceof Error && error.message === "SESSION_SECRET must contain at least 32 characters";
+}
+
 export type SessionUser = { id: number; username: string; role: "user" | "admin" };
 
 export async function createSession(user: SessionUser, tokenVersion = 0, remember = true) {
@@ -58,16 +62,19 @@ export async function getSession(): Promise<SessionUser | null> {
   const token = (await cookies()).get(COOKIE)?.value;
   if (!token) return null;
   const signingKey = secret();
+  let payload;
   try {
-    const { payload } = await jwtVerify(token, signingKey);
-    const id = Number(payload.sub);
-    if (!Number.isSafeInteger(id)) return null;
-    await ensureSchema();
-    const result = await pool.query("SELECT id, username, role, status, token_version FROM users WHERE id = $1", [id]);
-    const user = result.rows[0];
-    if (!user || user.status !== "approved" || Number(payload.ver ?? 0) !== Number(user.token_version)) return null;
-    return { id: Number(user.id), username: user.username, role: user.role };
+    ({ payload } = await jwtVerify(token, signingKey));
   } catch { return null; }
+  const id = Number(payload.sub);
+  if (!Number.isSafeInteger(id)) return null;
+  // Database outages must not masquerade as an anonymous/invalid session.
+  // Callers can now surface an operational failure instead of returning a misleading 401.
+  await ensureSchema();
+  const result = await pool.query("SELECT id, username, role, status, token_version FROM users WHERE id = $1", [id]);
+  const user = result.rows[0];
+  if (!user || user.status !== "approved" || Number(payload.ver ?? 0) !== Number(user.token_version)) return null;
+  return { id: Number(user.id), username: user.username, role: user.role };
 }
 
 export async function requireAdmin() {

@@ -1,6 +1,6 @@
 import bcrypt from "bcryptjs";
 import { z } from "zod";
-import { ensureSchema,inTransaction } from "@/lib/db";
+import { ensureSchema,inTransaction,isDatabaseUnavailableError } from "@/lib/db";
 import { errorResponse, jsonResponse } from "@/lib/http";
 import { enforceRateLimit, rejectCrossOriginMutation } from "@/lib/request-security";
 
@@ -33,6 +33,6 @@ export async function POST(request: Request) {
   } catch (error: unknown) {
     if (typeof error === "object" && error !== null && "code" in error && error.code === "23505") return errorResponse("این نام کاربری قبلاً ثبت شده است.", 409);
     if (error instanceof Error && "code" in error && (error.code === "INVALID_REFERRAL" || error.code === "SELF_REFERRAL")) return errorResponse(error.message || "کد معرف معتبر نیست.", 400);
-    return errorResponse("ثبت‌نام در حال حاضر انجام نشد.", 500);
+    return errorResponse("ثبت‌نام در حال حاضر انجام نشد.", isDatabaseUnavailableError(error) ? 503 : 500);
   }
 }

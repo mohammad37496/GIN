@@ -3,10 +3,12 @@ import { getSession } from "@/lib/auth";
 import { ensureSchema,inTransaction } from "@/lib/db";
 import { errorResponse,jsonResponse } from "@/lib/http";
 import { rejectCrossOriginMutation } from "@/lib/request-security";
+import { withApiErrorBoundary } from "@/lib/api-error-boundary";
+
 
 const schema=z.object({planId:z.number().int().positive(),message:z.string().trim().max(1000).default("")});
 
-export async function POST(request:Request){
+ async function POST(request:Request){
   const originError=rejectCrossOriginMutation(request);if(originError)return originError;
   const user=await getSession();if(!user)return errorResponse("برای درخواست عضویت وارد شوید.",401);
   const parsed=schema.safeParse(await request.json().catch(()=>null));if(!parsed.success)return errorResponse("اطلاعات درخواست عضویت معتبر نیست.");
@@ -27,3 +29,7 @@ export async function POST(request:Request){
   return jsonResponse({request:result.request,message:"درخواست عضویت برای بررسی مدیر ثبت شد."},201);
   }catch{return errorResponse("ثبت درخواست عضویت انجام نشد.",503);}
 }
+
+
+const wrappedPOST = withApiErrorBoundary(POST);
+export { wrappedPOST as POST };

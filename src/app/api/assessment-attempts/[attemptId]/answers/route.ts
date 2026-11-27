@@ -3,10 +3,12 @@ import { getSession } from "@/lib/auth";
 import { ensureSchema, inTransaction } from "@/lib/db";
 import { errorResponse, jsonResponse } from "@/lib/http";
 import { rejectCrossOriginMutation } from "@/lib/request-security";
+import { withApiErrorBoundary } from "@/lib/api-error-boundary";
+
 
 const schema = z.object({ answers: z.array(z.object({ questionId: z.number().int().positive(), answer: z.unknown() })).min(1).max(200) });
 
-export async function POST(request: Request, { params }: { params: Promise<{ attemptId: string }> }) {
+ async function POST(request: Request, { params }: { params: Promise<{ attemptId: string }> }) {
   const originError = rejectCrossOriginMutation(request);
   if (originError) return originError;
   const user = await getSession();
@@ -60,3 +62,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ att
     return errorResponse("ذخیره پاسخ‌های آزمون انجام نشد.", 503);
   }
 }
+
+
+const wrappedPOST = withApiErrorBoundary(POST);
+export { wrappedPOST as POST };

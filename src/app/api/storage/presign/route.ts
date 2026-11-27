@@ -2,21 +2,28 @@ import { randomUUID } from "node:crypto";
 import { PutObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { z } from "zod";
-import { getSession } from "@/lib/auth";
+import { getSession, hasRole, isSessionSecretConfigurationError } from "@/lib/auth";
 import { errorResponse, jsonResponse } from "@/lib/http";
-import { hasRole } from "@/lib/auth";
-import { ensureSchema, pool } from "@/lib/db";
+import { ensureSchema, isDatabaseUnavailableError, pool } from "@/lib/db";
 import { enforceRateLimit,rejectCrossOriginMutation } from "@/lib/request-security";
 import { getStorageConfig } from "@/lib/storage";
+import { withApiErrorBoundary } from "@/lib/api-error-boundary";
+
 
 const schema = z.object({ filename: z.string().min(1).max(180), contentType: z.string().regex(/^(image\/(jpeg|png|webp|gif)|application\/pdf|video\/mp4)$/), size: z.number().int().positive().max(25 * 1024 * 1024) });
 
-export async function POST(request: Request) {
+ async function POST(request: Request) {
   const originError = rejectCrossOriginMutation(request);
   if (originError) return originError;
-  const user = await getSession();
-  if (!user) return errorResponse("برای بارگذاری فایل ابتدا وارد شوید.", 401);
-  if (!(await hasRole(user, "instructor"))) return errorResponse("فقط مدیر یا مدرس مجاز به بارگذاری فایل آموزشی است.", 403);
+  let user;
+  try {
+    user = await getSession();
+    if (!user) return errorResponse("برای بارگذاری فایل ابتدا وارد شوید.", 401);
+    if (!(await hasRole(user, "instructor"))) return errorResponse("فقط مدیر یا مدرس مجاز به بارگذاری فایل آموزشی است.", 403);
+  } catch (error) {
+    console.error("GIN storage presign authorization failed", error);
+    return errorResponse("احراز هویت برای بارگذاری فایل انجام نشد.", isDatabaseUnavailableError(error) || isSessionSecretConfigurationError(error) ? 503 : 500);
+  }
   const limited=await enforceRateLimit(request,"storage-presign",20,3600);if(limited)return limited;
   const parsed = schema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return errorResponse("نوع یا اندازه فایل مجاز نیست.");
@@ -38,3 +45,7 @@ export async function POST(request: Request) {
     return errorResponse("ساخت پیوند بارگذاری ممکن نشد.", 503);
   }
 }
+
+
+const wrappedPOST = withApiErrorBoundary(POST);
+export { wrappedPOST as POST };

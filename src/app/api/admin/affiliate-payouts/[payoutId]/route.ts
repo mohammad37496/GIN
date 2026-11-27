@@ -3,10 +3,12 @@ import { canManageFinance,getSession } from "@/lib/auth";
 import { ensureSchema,inTransaction } from "@/lib/db";
 import { errorResponse,jsonResponse } from "@/lib/http";
 import { rejectCrossOriginMutation } from "@/lib/request-security";
+import { withApiErrorBoundary } from "@/lib/api-error-boundary";
+
 
 const schema=z.object({status:z.enum(["approved","rejected","paid"]),paidReference:z.string().trim().min(3).max(180).optional()});
 
-export async function PATCH(request:Request,{params}:{params:Promise<{payoutId:string}>}){
+ async function PATCH(request:Request,{params}:{params:Promise<{payoutId:string}>}){
   const originError=rejectCrossOriginMutation(request);if(originError)return originError;
   const admin=await getSession();if(!admin||!(await canManageFinance(admin)))return errorResponse("دسترسی مالی ندارید.",403);
   const id=Number((await params).payoutId);if(!Number.isSafeInteger(id)||id<1)return errorResponse("درخواست تسویه پیدا نشد.",404);
@@ -44,3 +46,7 @@ export async function PATCH(request:Request,{params}:{params:Promise<{payoutId:s
     return errorResponse("بررسی درخواست تسویه انجام نشد.",503);
   }
 }
+
+
+const wrappedPATCH = withApiErrorBoundary(PATCH);
+export { wrappedPATCH as PATCH };

@@ -3,8 +3,10 @@ import { getSession } from "@/lib/auth";
 import { ensureSchema,inTransaction } from "@/lib/db";
 import { errorResponse,jsonResponse } from "@/lib/http";
 import { rejectCrossOriginMutation } from "@/lib/request-security";
+import { withApiErrorBoundary } from "@/lib/api-error-boundary";
 
-export async function POST(request:Request,{params}:{params:Promise<{slug:string}>}){
+
+ async function POST(request:Request,{params}:{params:Promise<{slug:string}>}){
   const originError=rejectCrossOriginMutation(request);if(originError)return originError;
   const user=await getSession();if(!user)return errorResponse("برای دریافت گواهی وارد شوید.",401);
   const {slug}=await params;
@@ -29,3 +31,7 @@ export async function POST(request:Request,{params}:{params:Promise<{slug:string
   return jsonResponse({certificate:{...result.certificate,verificationUrl:`/certificates/${result.certificate.public_id}`},message:"گواهی پایان دوره آماده است."},201);
   }catch{return errorResponse("صدور گواهی انجام نشد.",503);}
 }
+
+
+const wrappedPOST = withApiErrorBoundary(POST);
+export { wrappedPOST as POST };

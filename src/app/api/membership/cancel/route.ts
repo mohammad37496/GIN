@@ -4,10 +4,12 @@ import { ensureSchema,inTransaction } from "@/lib/db";
 import { errorResponse,jsonResponse } from "@/lib/http";
 import { rejectCrossOriginMutation } from "@/lib/request-security";
 import { lockMembershipUser,reconcileMembershipEntitlements,syncMembershipState } from "@/lib/membership";
+import { withApiErrorBoundary } from "@/lib/api-error-boundary";
+
 
 const schema=z.object({membershipId:z.number().int().positive()});
 
-export async function POST(request:Request){
+ async function POST(request:Request){
   const originError=rejectCrossOriginMutation(request);if(originError)return originError;
   const user=await getSession();if(!user)return errorResponse("ابتدا وارد شوید.",401);
   const parsed=schema.safeParse(await request.json().catch(()=>null));if(!parsed.success)return errorResponse("شناسه عضویت معتبر نیست.");
@@ -33,3 +35,7 @@ export async function POST(request:Request){
     return jsonResponse({result,message:result.status==='scheduled'?"لغو عضویت در پایان دوره جاری زمان‌بندی شد.":"عضویت لغو و دسترسی‌های وابسته بازبینی شد."});
   }catch{return errorResponse("لغو عضویت انجام نشد.",503);}
 }
+
+
+const wrappedPOST = withApiErrorBoundary(POST);
+export { wrappedPOST as POST };

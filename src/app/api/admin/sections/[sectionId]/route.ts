@@ -3,11 +3,13 @@ import { canManageCourse, getSession } from "@/lib/auth";
 import { ensureSchema, inTransaction } from "@/lib/db";
 import { errorResponse, jsonResponse } from "@/lib/http";
 import { rejectCrossOriginMutation } from "@/lib/request-security";
+import { withApiErrorBoundary } from "@/lib/api-error-boundary";
+
 
 const schema = z.object({ titleEn: z.string().trim().max(180).nullable().optional(), descriptionEn: z.string().trim().max(4000).nullable().optional() })
   .refine((data) => Object.keys(data).length > 0);
 
-export async function PATCH(request: Request, { params }: { params: Promise<{ sectionId: string }> }) {
+ async function PATCH(request: Request, { params }: { params: Promise<{ sectionId: string }> }) {
   const originError = rejectCrossOriginMutation(request);
   if (originError) return originError;
   const user = await getSession();
@@ -32,3 +34,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ se
     return jsonResponse({ section: result, message: "ترجمه انگلیسی بخش ذخیره شد." });
   } catch { return errorResponse("ذخیره ترجمه بخش انجام نشد.", 503); }
 }
+
+
+const wrappedPATCH = withApiErrorBoundary(PATCH);
+export { wrappedPATCH as PATCH };

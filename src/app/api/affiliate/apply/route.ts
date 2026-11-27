@@ -3,8 +3,10 @@ import { getSession } from "@/lib/auth";
 import { ensureSchema,inTransaction } from "@/lib/db";
 import { errorResponse,jsonResponse } from "@/lib/http";
 import { rejectCrossOriginMutation } from "@/lib/request-security";
+import { withApiErrorBoundary } from "@/lib/api-error-boundary";
 
-export async function POST(request:Request){
+
+ async function POST(request:Request){
   const originError=rejectCrossOriginMutation(request);if(originError)return originError;
   const user=await getSession();if(!user)return errorResponse("برای درخواست همکاری در فروش وارد شوید.",401);
   try{
@@ -21,3 +23,7 @@ export async function POST(request:Request){
     return jsonResponse({affiliate:result.affiliate,message:result.created?"درخواست همکاری در فروش برای بررسی ثبت شد.":"درخواست همکاری شما قبلاً ثبت شده است."},result.created?201:200);
   }catch{return errorResponse("ثبت درخواست همکاری انجام نشد.",503);}
 }
+
+
+const wrappedPOST = withApiErrorBoundary(POST);
+export { wrappedPOST as POST };

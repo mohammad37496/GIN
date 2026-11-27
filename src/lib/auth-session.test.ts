@@ -33,6 +33,25 @@ test("session secret configuration errors are not swallowed as invalid-token cle
   assert.match(session, /jwtVerify\(token, signingKey\)/);
 });
 
+test("session lookup distinguishes invalid JWTs from database outages", () => {
+  const auth = readFileSync(new URL("./auth.ts", import.meta.url), "utf8");
+  const start = auth.indexOf("export async function getSession");
+  const end = auth.indexOf("export async function requireAdmin", start);
+  const session = auth.slice(start, end);
+  const verifyCatchEnd = session.indexOf("catch { return null; }");
+  const schemaCall = session.indexOf("await ensureSchema()");
+  const queryCall = session.indexOf("await pool.query(");
+  assert.ok(verifyCatchEnd >= 0 && schemaCall > verifyCatchEnd, "database initialization runs outside the invalid-token catch");
+  assert.ok(queryCall > schemaCall, "database lookup errors are allowed to propagate to callers");
+});
+
+test("login maps missing session-secret configuration to service unavailable", () => {
+  const route = readFileSync(new URL("../app/api/auth/login/route.ts", import.meta.url), "utf8");
+  assert.match(route, /isDatabaseUnavailableError\(error\) \|\| isSessionSecretConfigurationError\(error\) \? 503 : 500/);
+  const auth = readFileSync(new URL("./auth.ts", import.meta.url), "utf8");
+  assert.match(auth, /export function isSessionSecretConfigurationError/);
+});
+
 test("logout rejects cross-origin requests and preserves the English return locale", () => {
   const route = readFileSync(new URL("../app/api/auth/logout/route.ts", import.meta.url), "utf8");
   const staffHeader = readFileSync(new URL("../components/staff-header.tsx", import.meta.url), "utf8");

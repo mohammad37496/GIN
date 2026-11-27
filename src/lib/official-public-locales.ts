@@ -10,6 +10,10 @@ export type OfficialPublicHomeCopy = {
   speak: string;
   book: string;
   stories: string;
+  founderInterview: string;
+  galleryTitle: string;
+  galleryAlt: { training: string; community: string; reunion: string; cruise: string };
+  levelPinsAlt: string;
   memberIntro: string;
   sections: { title: string; body: string; items?: string[] }[];
 };
@@ -32,7 +36,7 @@ export const officialPublicLocales: Record<OfficialPublicLocaleCode, {
       intro: "is a private, exclusive, “Members Only” worldwide association of individuals dedicated to achieving success in the key areas of life including:",
       pillars: ["Financial Independence and Wealth Creation", "Dynamic Vibrant Health & Longevity", "Emotional Well-being and Inner Joy"],
       join: "Become a Member Today", questions: "Have questions?", speak: "Speak with an active high-level Member", book: "Book a Call",
-      stories: "Members Share Their Success Stories",
+      stories: "Members Share Their Success Stories", founderInterview: "Exclusive Interview With the Founder of the Global Information Network", galleryTitle: "Explore GIN", galleryAlt: { training: "Training presentation at a GIN event", community: "GIN members at a 2025 GIN event", reunion: "GIN members at the Dream Weekend group event", cruise: "Cruise ship featured in GIN group travel information" }, levelPinsAlt: "GIN membership levels I through XII",
       memberIntro: "The GIN Membership includes individuals who strongly desire to improve the quality of their life and standard of living, attain higher states of consciousness, as well as experience inner peace, joy and bliss.",
       sections: [],
     },
@@ -45,7 +49,7 @@ export const officialPublicLocales: Record<OfficialPublicLocaleCode, {
       intro: "ist eine private, exklusive weltweite Vereinigung von Einzelpersonen, die sich dem Ziel verschrieben haben, Erfolg in den Schlüsselbereichen des Lebens, darunter:",
       pillars: ["Finanzielle Unabhängigkeit und Vermögensaufbau", "Dynamische, lebendige Gesundheit und Langlebigkeit", "Emotionales Wohlbefinden und innere Freude"],
       join: "Werden Sie noch heute Mitglied", questions: "Haben Sie Fragen?", speak: "Sprechen Sie mit einem aktiven hochrangigen Mitglied", book: "Termin buchen",
-      stories: "Mitglieder teilen ihre Erfolgsgeschichten",
+      stories: "Mitglieder teilen ihre Erfolgsgeschichten", founderInterview: "Exklusives Interview mit dem Gründer des Global Information Network", galleryTitle: "GIN entdecken", galleryAlt: { training: "Weiterbildung bei einer GIN-Veranstaltung", community: "GIN-Mitglieder bei einer GIN-Veranstaltung im Jahr 2025", reunion: "GIN-Mitglieder beim Dream-Weekend-Gruppenereignis", cruise: "Kreuzfahrtschiff aus den GIN-Reiseinformationen" }, levelPinsAlt: "GIN-Mitgliedschaftsstufen I bis XII",
       memberIntro: "Die GIN-Mitgliedschaft umfasst Personen, die den starken Wunsch haben, ihre Lebensqualität und ihren Lebensstandard zu verbessern, höhere Bewusstseinszustände zu erreichen sowie inneren Frieden, Freude und Glückseligkeit zu erfahren.",
       sections: [
         { title: "Ein weltweites Netzwerk gegenseitiger Unterstützung", body: "GIN beschreibt sich als private, nur Mitgliedern zugängliche Gemeinschaft. Mitglieder tauschen Wissen und Erfahrungen aus, knüpfen Kontakte und unterstützen sich durch Mentoring bei persönlichen und beruflichen Zielen. Die Mitgliederliste ist vertraulich." },
@@ -72,7 +76,7 @@ export const officialPublicLocales: Record<OfficialPublicLocaleCode, {
       intro: "est une association mondiale privée, exclusive et réservée aux membres, composée d’individus qui se consacrent à la réussite dans les domaines clés de la vie, notamment :",
       pillars: ["Indépendance financière et création de richesse", "Santé et longévité dynamiques et vibrantes", "Bien-être émotionnel et joie intérieure"],
       join: "Devenez membre aujourd’hui", questions: "Vous avez des questions ?", speak: "Parlez avec un membre actif de haut niveau", book: "Réserver un appel",
-      stories: "Les membres partagent leurs réussites",
+      stories: "Les membres partagent leurs réussites", founderInterview: "Entretien exclusif avec le fondateur du Global Information Network", galleryTitle: "Découvrir le GIN", galleryAlt: { training: "Présentation de formation lors d’un événement GIN", community: "Des membres du GIN lors d’un événement GIN en 2025", reunion: "Des membres du GIN lors de l’événement collectif Dream Weekend", cruise: "Navire de croisière présenté dans les informations de voyage du GIN" }, levelPinsAlt: "Niveaux d’adhésion GIN de I à XII",
       memberIntro: "Les membres du GIN sont des personnes qui souhaitent vivement améliorer leur qualité de vie et leur niveau de vie, atteindre des états de conscience supérieurs et faire l’expérience de la paix intérieure, de la joie et de la félicité.",
       sections: [
         { title: "Un réseau mondial fondé sur l’entraide", body: "GIN se présente comme une communauté privée réservée aux membres. Les membres échangent connaissances et expériences, créent des liens et se soutiennent par le mentorat dans leurs objectifs personnels et professionnels. La liste des membres est confidentielle." },
@@ -99,7 +103,7 @@ export const officialPublicLocales: Record<OfficialPublicLocaleCode, {
       intro: "es una asociación mundial privada, exclusiva y «solo para miembros» de personas dedicadas a lograr el éxito en las áreas clave de la vida, que incluyen:",
       pillars: ["Independencia financiera y creación de riqueza", "Salud y longevidad dinámicas y vibrantes", "Bienestar emocional y alegría interior"],
       join: "Conviértase en miembro hoy", questions: "¿Tiene preguntas?", speak: "Hable con un miembro activo de alto nivel", book: "Reservar una llamada",
-      stories: "Los miembros comparten sus historias de éxito",
+      stories: "Los miembros comparten sus historias de éxito", founderInterview: "Entrevista exclusiva con el fundador de la Global Information Network", galleryTitle: "Descubra GIN", galleryAlt: { training: "Presentación de formación en un evento de GIN", community: "Miembros de GIN en un evento de GIN de 2025", reunion: "Miembros de GIN en el evento grupal Dream Weekend", cruise: "Crucero presentado en la información de viajes de GIN" }, levelPinsAlt: "Niveles de membresía GIN del I al XII",
       memberIntro: "La membresía de GIN incluye a personas que desean fervientemente mejorar su calidad de vida y su nivel de vida, alcanzar estados superiores de conciencia y experimentar paz interior, alegría y dicha.",
       sections: [
         { title: "Una red mundial basada en el apoyo mutuo", body: "GIN se presenta como una comunidad privada y exclusiva para miembros. Sus miembros comparten conocimientos y experiencia, crean conexiones y se apoyan mediante mentoría para avanzar en sus objetivos personales y profesionales. La lista de miembros es confidencial." },
@@ -126,7 +130,7 @@ export const officialPublicLocales: Record<OfficialPublicLocaleCode, {
       intro: "egy privát, exkluzív, kizárólag tagoknak szóló, világméretű szervezet, amelynek tagjai az élet kulcsfontosságú területein – többek között – a siker elérésére törekednek:",
       pillars: ["Pénzügyi függetlenség és vagyonteremtés", "Dinamikus, élénk egészség és hosszú élettartam", "Érzelmi jólét és belső öröm"],
       join: "Legyen Ön is tag még ma", questions: "Van kérdése?", speak: "Beszéljen egy aktív, magas szintű taggal", book: "Időpontfoglalás",
-      stories: "A tagok megosztják sikertörténeteiket",
+      stories: "A tagok megosztják sikertörténeteiket", founderInterview: "Exkluzív interjú a Global Information Network alapítójával", galleryTitle: "Ismerje meg a GIN-t", galleryAlt: { training: "Képzési előadás egy GIN-rendezvényen", community: "A GIN tagjai egy 2025-ös GIN-rendezvényen", reunion: "A GIN tagjai a Dream Weekend csoportos eseményén", cruise: "A GIN utazási tájékoztatójában bemutatott tengerjáró hajó" }, levelPinsAlt: "A GIN tagsági szintjei I-től XII-ig",
       memberIntro: "A GIN tagság olyan személyeket foglal magában, akik erősen vágynak életminőségük és életszínvonaluk javítására, magasabb tudatállapotok elérésére, valamint belső béke, öröm és boldogság megtapasztalására.",
       sections: [
         { title: "Kölcsönös támogatásra épülő globális hálózat", body: "A GIN saját bemutatása szerint zárt, kizárólag tagok számára elérhető közösség. A tagok tudást és tapasztalatot osztanak meg, kapcsolatokat építenek, és mentorálással támogatják egymást személyes és szakmai céljaikban. A tagsági névsor bizalmas." },
@@ -153,7 +157,7 @@ export const officialPublicLocales: Record<OfficialPublicLocaleCode, {
       intro: "është një shoqatë private, ekskluzive, “Vetëm për Anëtarë” në mbarë botën, e individëve të përkushtuar për të arritur sukses në fushat kryesore të jetës, duke përfshirë:",
       pillars: ["Pavarësia Financiare dhe Krijimi i Pasurisë", "Shëndet dhe Jetëgjatësi Dinamike dhe e Gjallë", "Mirëqenia Emocionale dhe Gëzimi i Brendshëm"],
       join: "Bëhuni anëtar sot", questions: "Keni pyetje?", speak: "Bisedoni me një anëtar aktiv të nivelit të lartë", book: "Rezervoni një telefonatë",
-      stories: "Anëtarët ndajnë historitë e tyre të suksesit",
+      stories: "Anëtarët ndajnë historitë e tyre të suksesit", founderInterview: "Intervistë ekskluzive me themeluesin e Rrjetit Global të Informacionit", galleryTitle: "Zbuloni GIN", galleryAlt: { training: "Prezantim trajnimi në një aktivitet të GIN", community: "Anëtarë të GIN në një aktivitet të GIN në vitin 2025", reunion: "Anëtarë të GIN në aktivitetin grupor Dream Weekend", cruise: "Anije turistike e paraqitur në informacionin e udhëtimeve të GIN" }, levelPinsAlt: "Nivelet e anëtarësimit GIN nga I deri në XII",
       memberIntro: "Anëtarësia e GIN përfshin individë që dëshirojnë fuqimisht të përmirësojnë cilësinë e jetës dhe standardin e tyre të jetesës, të arrijnë gjendje më të larta vetëdijeje, si dhe të përjetojnë paqe të brendshme, gëzim dhe lumturi.",
       sections: [
         { title: "Një rrjet global i ndërtuar mbi mbështetjen e ndërsjellë", body: "GIN e përshkruan veten si një komunitet privat vetëm për anëtarët. Anëtarët shkëmbejnë njohuri dhe përvojë, krijojnë lidhje dhe mbështesin njëri-tjetrin përmes mentorimit në synimet personale dhe profesionale. Lista e anëtarëve është konfidenciale." },
@@ -180,7 +184,7 @@ export const officialPublicLocales: Record<OfficialPublicLocaleCode, {
       intro: "é uma associação mundial privada e exclusiva, “só para membros”, de indivíduos dedicados a alcançar sucesso nas principais áreas da vida, incluindo:",
       pillars: ["Independência financeira e criação de riqueza", "Saúde dinâmica e longevidade", "Bem-estar emocional e alegria interior"],
       join: "Torne-se membro hoje mesmo", questions: "Tem dúvidas?", speak: "Converse com um membro ativo de alto nível", book: "Agendar uma Chamada",
-      stories: "Os membros partilham as suas histórias de sucesso",
+      stories: "Os membros partilham as suas histórias de sucesso", founderInterview: "Entrevista exclusiva com o fundador da Global Information Network", galleryTitle: "Conheça a GIN", galleryAlt: { training: "Apresentação de formação num evento da GIN", community: "Membros da GIN num evento da GIN em 2025", reunion: "Membros da GIN no evento de grupo Dream Weekend", cruise: "Navio de cruzeiro apresentado nas informações de viagens da GIN" }, levelPinsAlt: "Níveis de adesão GIN de I a XII",
       memberIntro: "Os membros do GIN incluem indivíduos que desejam fortemente melhorar a qualidade e o padrão de vida, alcançar estados mais elevados de consciência, bem como experimentar paz interior, alegria e felicidade.",
       sections: [
         { title: "Uma rede global baseada no apoio mútuo", body: "A GIN apresenta-se como uma comunidade privada, exclusiva para membros. Os membros partilham conhecimentos e experiência, criam ligações e apoiam-se através de mentoria para alcançar objetivos pessoais e profissionais. A lista de membros é confidencial." },

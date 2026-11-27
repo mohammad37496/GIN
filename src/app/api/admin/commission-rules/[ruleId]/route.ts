@@ -3,10 +3,12 @@ import { canManageAffiliates,getSession } from "@/lib/auth";
 import { ensureSchema,inTransaction } from "@/lib/db";
 import { errorResponse,jsonResponse } from "@/lib/http";
 import { rejectCrossOriginMutation } from "@/lib/request-security";
+import { withApiErrorBoundary } from "@/lib/api-error-boundary";
+
 
 const schema=z.object({isActive:z.boolean()});
 
-export async function PATCH(request:Request,{params}:{params:Promise<{ruleId:string}>}){
+ async function PATCH(request:Request,{params}:{params:Promise<{ruleId:string}>}){
   const originError=rejectCrossOriginMutation(request);if(originError)return originError;
   const admin=await getSession();if(!admin||!(await canManageAffiliates(admin)))return errorResponse("دسترسی مدیریت همکاری در فروش ندارید.",403);
   const id=Number((await params).ruleId);if(!Number.isSafeInteger(id)||id<1)return errorResponse("قانون پیدا نشد.",404);
@@ -23,3 +25,7 @@ export async function PATCH(request:Request,{params}:{params:Promise<{ruleId:str
     return jsonResponse({rule,message:"وضعیت قانون تغییر کرد."});
   }catch{return errorResponse("تغییر قانون کمیسیون انجام نشد.",503);}
 }
+
+
+const wrappedPATCH = withApiErrorBoundary(PATCH);
+export { wrappedPATCH as PATCH };
