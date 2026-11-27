@@ -1,4 +1,4 @@
-export const DEFAULT_SITE_URL = "https://globalinformationnetwork.liara.run";
+export const DEFAULT_SITE_URL = "https://globalinformationnetworkliara.vercel.app";
 export const ORGANIZATION_NAME = "Global Information Network";
 
 export function getSiteUrl() {

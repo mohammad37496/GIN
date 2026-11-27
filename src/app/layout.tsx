@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { headers } from "next/headers";
+import { getSiteUrl } from "@/lib/structured-data";
 import "./globals.css";
 import "./public-site.css";
 import "./courses.css";
@@ -17,10 +18,8 @@ import "./brand.css";
 import "./english-site.css";
 import "./official-public-locales.css";
 
-const siteUrl = process.env.APP_URL?.trim() || "https://globalinformationnetwork.liara.run";
-
 export const metadata: Metadata = {
-  metadataBase: new URL(siteUrl),
+  metadataBase: new URL(getSiteUrl()),
   title: { default: "GIN | Global Information Network", template: "%s | GIN" },
   description: "Global Information Network — شبکه جهانی اطلاعات، یادگیری و ارتباط اعضا.",
   applicationName: "Global Information Network",

@@ -8,8 +8,8 @@
   color: var(--gin-en-text);
   background: #acacac;
   direction: ltr;
-  font-family: "Times New Roman", Times, serif;
-  font-size: 20px;
+  font-family: -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+  font-size: 17px;
   line-height: 1.5;
   min-height: 100vh;
   width: 100%;
@@ -51,8 +51,8 @@
 .gin-en-sidebar a:hover, .gin-en-sidebar a:focus-visible { color: #fff; background: #666; text-decoration: none; outline-offset: -3px; }
 .gin-en-main { width: 100%; max-width: 100%; min-width: 0; padding: 30px clamp(18px, 2.1vw, 30px) 54px; background: #fff; }
 .gin-en-home, .gin-en-page { width: 100%; max-width: 1080px; min-width: 0; margin: 0 auto; }
-.gin-en-home h1, .gin-en-page h1 { margin: 0 0 20px; text-align: center; color: #050505; font-size: 40px; line-height: 1.2; font-weight: 700; }
-.gin-en-home h2, .gin-en-page h2 { margin: 24px 0 12px; text-align: center; color: #080808; font-size: 35px; line-height: 1.2; font-weight: 400; }
+.gin-en-home h1, .gin-en-page h1 { margin: 0 0 20px; text-align: center; color: #050505; font-size: clamp(30px, 3vw, 42px); line-height: 1.2; font-weight: 400; }
+.gin-en-home h2, .gin-en-page h2 { margin: 24px 0 12px; text-align: center; color: #080808; font-size: clamp(25px, 2.6vw, 35px); line-height: 1.2; font-weight: 400; }
 .gin-en-home p, .gin-en-page p { color: var(--gin-en-text); line-height: 1.5; }
 .gin-en-hero-image { display: block; width: 100%; height: auto; max-height: 460px; object-fit: cover; margin: 0 auto 28px; }
 .gin-en-intro { max-width: 800px; margin: 0 auto 28px; text-align: center; }
