@@ -64,3 +64,33 @@ test("member benefits and membership levels render source-grounded decision deta
     assert.doesNotMatch(officialPublicReferenceCopy[code].sections.memberBenefits?.[0].body ?? "", /20[ .]000/);
   }
 });
+
+test("what-we-offer pages cover the official training, event, member-resource and risk disclosures in all six non-English locales", () => {
+  const locales = ["de", "fr", "es", "hu", "sq", "pt"] as const;
+  const eventCountPatterns = {
+    de: /vier Major-Weekend-Veranstaltungen pro Jahr/,
+    fr: /quatre événements Major Weekend par an/,
+    es: /cuatro eventos Major Weekend al año/,
+    hu: /évente négy Major Weekend rendezvényt/,
+    sq: /katër ngjarje Major Weekend në vit/,
+    pt: /quatro eventos Major Weekend por ano/,
+  };
+
+  for (const code of locales) {
+    const sections = officialPublicReferenceCopy[code].sections.whatWeOffer ?? [];
+    assert.equal(sections.length, 4, `${code} must render four substantive offer sections`);
+    assert.deepEqual(getOfficialReferenceCopy(code, "whatWeOffer").sections, sections);
+    const content = sections.map((section) => section.body).join(" ");
+    assert.match(content, eventCountPatterns[code], `${code} must state the source's four Major Weekend events per year`);
+    assert.match(content, /Success Mastery/);
+    assert.match(content, /Science of Personal Mastery/);
+    assert.match(content, /1–12|1-12|1 à 12/);
+    assert.match(content, /1–100|1-100|1 à 100/);
+    assert.match(content, /VIP/);
+    assert.match(content, /confidential|confidentiel|confidencial|confidenciais|vertraulich|bizalmas|konfidenciale/i);
+    assert.match(content, /business|Geschäft|commercial|empresarial|üzleti|biznes|empresariais/i);
+    assert.match(content, /investment|Anlage|investissement|inversión|befektet|investimi|investimento/i);
+    assert.match(content, /health|Gesundheit|santé|salud|egészség|shëndet|saúde/i);
+    assert.match(content, /not a business opportunity|keine Geschäftsmöglichkeit|ne constitue pas une opportunité commerciale|no es una oportunidad de negocio|nem üzleti lehetőség|nuk është mundësi biznesi|não é uma oportunidade de negócio/i);
+  }
+});
