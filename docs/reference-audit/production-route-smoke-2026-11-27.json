@@ -1,0 +1,1133 @@
+﻿{
+    "origin":  "https://globalinformationnetworkliara.vercel.app",
+    "checkedAt":  "2026-11-27T13:57:10.1736932+03:30",
+    "routeCount":  139,
+    "passed":  139,
+    "failed":  [
+
+               ],
+    "localeCounts":  {
+                         "es":  20,
+                         "hu":  20,
+                         "unprefixed":  1,
+                         "de":  20,
+                         "en":  18,
+                         "pt":  20,
+                         "sq":  20,
+                         "fr":  20
+                     },
+    "results":  [
+                    {
+                        "path":  "/de/clubhaeuser-und-lodges",
+                        "status":  200,
+                        "title":  "ClubhÃ¤user und Lodges | GIN",
+                        "h1":  "ClubhÃ¤user und Lodges",
+                        "hasMain":  true,
+                        "finalUrl":  "https://globalinformationnetworkliara.vercel.app/de/clubhaeuser-und-lodges"
+                    },
+                    {
+                        "path":  "/de/das-gin-erfolgssystem",
+                        "status":  200,
+                        "title":  "Das GIN-Erfolgssystem | GIN",
+                        "h1":  "Das GIN-Erfolgssystem",
+                        "hasMain":  true,
+                        "finalUrl":  "https://globalinformationnetworkliara.vercel.app/de/das-gin-erfolgssystem"
+                    },
+                    {
+                        "path":  "/de/das-gin-kreuzfahrtschiff",
+                        "status":  200,
+                        "title":  "Das GIN-Kreuzfahrtschiff | GIN",
+                        "h1":  "Das GIN-Kreuzfahrtschiff",
+                        "hasMain":  true,
+                        "finalUrl":  "https://globalinformationnetworkliara.vercel.app/de/das-gin-kreuzfahrtschiff"
+                    },
+                    {
+                        "path":  "/de/datenschutz-bestimmungen",
+                        "status":  200,
+                        "title":  "Datenschutzbestimmungen | GIN",
+                        "h1":  "Datenschutzbestimmungen",
+                        "hasMain":  true,
+                        "finalUrl":  "https://globalinformationnetworkliara.vercel.app/de/datenschutz-bestimmungen"
+                    },
+                    {
+                        "path":  "/de/die-vision-des-clubs",
+                        "status":  200,
+                        "title":  "Die Vision des Clubs | GIN",
+                        "h1":  "Die Vision des Clubs",
+                        "hasMain":  true,
+                        "finalUrl":  "https://globalinformationnetworkliara.vercel.app/de/die-vision-des-clubs"
+                    },
+                    {
+                        "path":  "/de/faq-german",
+                        "status":  200,
+                        "title":  "HÃ¤ufige Fragen | GIN",
+                        "h1":  "HÃ¤ufige Fragen",
+                        "hasMain":  true,
+                        "finalUrl":  "https://globalinformationnetworkliara.vercel.app/de/faq-german"
+                    },
+                    {
+                        "path":  "/de/gin-hotel-kollektion",
+                        "status":  200,
+                        "title":  "GIN Hotel Kollektion | GIN",
+                        "h1":  "GIN Hotel Kollektion",
+                        "hasMain":  true,
+                        "finalUrl":  "https://globalinformationnetworkliara.vercel.app/de/gin-hotel-kollektion"
+                    },
+                    {
+                        "path":  "/de/home-public",
+                        "status":  200,
+                        "title":  "Willkommen im globalen Informationsnetzwerk | GIN",
+                        "h1":  "Willkommen im globalen Informationsnetzwerk",
+                        "hasMain":  true,
+                        "finalUrl":  "https://globalinformationnetworkliara.vercel.app/de/home-public"
+                    },
+                    {
+                        "path":  "/de/kontaktieren-uns",
+                        "status":  200,
+                        "title":  "Kontaktieren Uns | GIN",
+                        "h1":  "Kontaktieren Uns",
+                        "hasMain":  true,
+                        "finalUrl":  "https://globalinformationnetworkliara.vercel.app/de/kontaktieren-uns"
+                    },
+                    {
+                        "path":  "/de/mitglieder-vereinbarung",
+                        "status":  200,
+                        "title":  "Mitgliedervereinbarung | GIN",
+                        "h1":  "Mitgliedervereinbarung",
+                        "hasMain":  true,
+                        "finalUrl":  "https://globalinformationnetworkliara.vercel.app/de/mitglieder-vereinbarung"
+                    },
+                    {
+                        "path":  "/de/mitgliederbereich",
+                        "status":  200,
+                        "title":  "Mitgliederbereich | Global Information Network | GIN",
+                        "h1":  "Anmelden",
+                        "hasMain":  true,
+                        "finalUrl":  "https://globalinformationnetworkliara.vercel.app/de/mitgliederbereich"
+                    },
+                    {
+                        "path":  "/de/mitgliedschaftsstufen",
+                        "status":  200,
+                        "title":  "Mitgliedschaftsstufen | GIN",
+                        "h1":  "Mitgliedschaftsstufen",
+                        "hasMain":  true,
+                        "finalUrl":  "https://globalinformationnetworkliara.vercel.app/de/mitgliedschaftsstufen"
+                    },
+                    {
+                        "path":  "/de/nutzungsbedingungen",
+                        "status":  200,
+                        "title":  "Nutzungsbedingungen | GIN",
+                        "h1":  "Nutzungsbedingungen",
+                        "hasMain":  true,
+                        "finalUrl":  "https://globalinformationnetworkliara.vercel.app/de/nutzungsbedingungen"
+                    },
+                    {
+                        "path":  "/de/ueber-uns",
+                        "status":  200,
+                        "title":  "Ãœber uns | GIN",
+                        "h1":  "Ãœber uns",
+                        "hasMain":  true,
+                        "finalUrl":  "https://globalinformationnetworkliara.vercel.app/de/ueber-uns"
+                    },
+                    {
+                        "path":  "/de/unser-training",
+                        "status":  200,
+                        "title":  "Unser Training | GIN",
+                        "h1":  "Unser Training",
+                        "hasMain":  true,
+                        "finalUrl":  "https://globalinformationnetworkliara.vercel.app/de/unser-training"
+                    },
+                    {
+                        "path":  "/de/unsere-veranstaltungen",
+                        "status":  200,
+                        "title":  "Unsere Veranstaltungen | GIN",
+                        "h1":  "Unsere Veranstaltungen",
+                        "hasMain":  true,
+                        "finalUrl":  "https://globalinformationnetworkliara.vercel.app/de/unsere-veranstaltungen"
+                    },
+                    {
+                        "path":  "/de/vorteile-fuer-mitglieder",
+                        "status":  200,
+                        "title":  "Vorteile fÃ¼r Mitglieder | GIN",
+                        "h1":  "Vorteile fÃ¼r Mitglieder",
+                        "hasMain":  true,
+                        "finalUrl":  "https://globalinformationnetworkliara.vercel.app/de/vorteile-fuer-mitglieder"
+                    },
+                    {
+                        "path":  "/de/warum-beitreten",
+                        "status":  200,
+                        "title":  "Warum Beitreten | GIN",
+                        "h1":  "Warum Beitreten",
+                        "hasMain":  true,
+                        "finalUrl":  "https://globalinformationnetworkliara.vercel.app/de/warum-beitreten"
+                    },
+                    {
+                        "path":  "/de/was-wir-bieten",
+                        "status":  200,
+                        "title":  "Was Wir Bieten | GIN",
+                        "h1":  "Was Wir Bieten",
+                        "hasMain":  true,
+                        "finalUrl":  "https://globalinformationnetworkliara.vercel.app/de/was-wir-bieten"
+                    },
+                    {
+                        "path":  "/de/wer-wir-sind",
+                        "status":  200,
+                        "title":  "Wer Wir Sind | GIN",
+                        "h1":  "Wer Wir Sind",
+                        "hasMain":  true,
+                        "finalUrl":  "https://globalinformationnetworkliara.vercel.app/de/wer-wir-sind"
+                    },
+                    {
+                        "path":  "/en",
+                        "status":  200,
+                        "title":  "The Global Information Network | GIN",
+                        "h1":  "Welcome To The Global Information Network",
+                        "hasMain":  true,
+                        "finalUrl":  "https://globalinformationnetworkliara.vercel.app/en"
+                    },
+                    {
+                        "path":  "/en/about-us",
+                        "status":  200,
+                        "title":  "About Us | GIN",
+                        "h1":  "About Us",
+                        "hasMain":  true,
+                        "finalUrl":  "https://globalinformationnetworkliara.vercel.app/en/about-us"
+                    },
+                    {
+                        "path":  "/en/clubhouses-and-lodges",
+                        "status":  200,
+                        "title":  "GIN Clubhouses",
+                        "h1":  "GIN Clubhouses",
+                        "hasMain":  true,
+                        "finalUrl":  "https://globalinformationnetworkliara.vercel.app/en/clubhouses-and-lodges"
+                    },
+                    {
+                        "path":  "/en/contact-us",
+                        "status":  200,
+                        "title":  "Contact Us | GIN",
+                        "h1":  "Contact Us",
+                        "hasMain":  true,
+                        "finalUrl":  "https://globalinformationnetworkliara.vercel.app/en/contact-us"
+                    },
+                    {
+                        "path":  "/en/faq",
+                        "status":  200,
+                        "title":  "Frequently Asked Questions | GIN",
+                        "h1":  "Frequently Asked Questions",
+                        "hasMain":  true,
+                        "finalUrl":  "https://globalinformationnetworkliara.vercel.app/en/faq"
+                    },
+                    {
+                        "path":  "/en/gin-hotels",
+                        "status":  200,
+                        "title":  "GIN Hotel Collection",
+                        "h1":  "GIN Hotel Collection",
+                        "hasMain":  true,
+                        "finalUrl":  "https://globalinformationnetworkliara.vercel.app/en/gin-hotels"
+                    },
+                    {
+                        "path":  "/en/member-agreement",
+                        "status":  200,
+                        "title":  "Member Agreement | GIN",
+                        "h1":  "Member Agreement",
+                        "hasMain":  true,
+                        "finalUrl":  "https://globalinformationnetworkliara.vercel.app/en/member-agreement"
+                    },
+                    {
+                        "path":  "/en/member-benefits",
+                        "status":  200,
+                        "title":  "Member Benefits | GIN",
+                        "h1":  "Member Benefits",
+                        "hasMain":  true,
+                        "finalUrl":  "https://globalinformationnetworkliara.vercel.app/en/member-benefits"
+                    },
+                    {
+                        "path":  "/en/membership-levels",
+                        "status":  200,
+                        "title":  "Membership Levels | GIN",
+                        "h1":  "Membership Levels",
+                        "hasMain":  true,
+                        "finalUrl":  "https://globalinformationnetworkliara.vercel.app/en/membership-levels"
+                    },
+                    {
+                        "path":  "/en/our-events",
+                        "status":  200,
+                        "title":  "GIN Events",
+                        "h1":  "GIN Events",
+                        "hasMain":  true,
+                        "finalUrl":  "https://globalinformationnetworkliara.vercel.app/en/our-events"
+                    },
+                    {
+                        "path":  "/en/our-training",
+                        "status":  200,
+                        "title":  "Our Training | GIN",
+                        "h1":  "Our Training",
+                        "hasMain":  true,
+                        "finalUrl":  "https://globalinformationnetworkliara.vercel.app/en/our-training"
+                    },
+                    {
+                        "path":  "/en/privacy-policy-2",
+                        "status":  200,
+                        "title":  "Privacy Policy | GIN",
+                        "h1":  "Privacy Policy",
+                        "hasMain":  true,
+                        "finalUrl":  "https://globalinformationnetworkliara.vercel.app/en/privacy-policy-2"
+                    },
+                    {
+                        "path":  "/en/terms-of-use",
+                        "status":  200,
+                        "title":  "Terms of Service | GIN",
+                        "h1":  "Terms of Service",
+                        "hasMain":  true,
+                        "finalUrl":  "https://globalinformationnetworkliara.vercel.app/en/terms-of-use"
+                    },
+                    {
+                        "path":  "/en/the-club-vision",
+                        "status":  200,
+                        "title":  "Club Vision | GIN",
+                        "h1":  "Club Vision",
+                        "hasMain":  true,
+                        "finalUrl":  "https://globalinformationnetworkliara.vercel.app/en/the-club-vision"
+                    },
+                    {
+                        "path":  "/en/the-gin-cruise-ship",
+                        "status":  200,
+                        "title":  "The GIN Cruise Ship",
+                        "h1":  "The GIN Cruise Ship",
+                        "hasMain":  true,
+                        "finalUrl":  "https://globalinformationnetworkliara.vercel.app/en/the-gin-cruise-ship"
+                    },
+                    {
+                        "path":  "/en/the-gin-success-system",
+                        "status":  200,
+                        "title":  "The GIN Success System",
+                        "h1":  "The GIN Success System",
+                        "hasMain":  true,
+                        "finalUrl":  "https://globalinformationnetworkliara.vercel.app/en/the-gin-success-system"
+                    },
+                    {
+                        "path":  "/en/what-we-offer",
+                        "status":  200,
+                        "title":  "What We Offer | GIN",
+                        "h1":  "What We Offer",
+                        "hasMain":  true,
+                        "finalUrl":  "https://globalinformationnetworkliara.vercel.app/en/what-we-offer"
+                    },
+                    {
+                        "path":  "/en/who-we-are",
+                        "status":  200,
+                        "title":  "Who We Are | GIN",
+                        "h1":  "Who We Are",
+                        "hasMain":  true,
+                        "finalUrl":  "https://globalinformationnetworkliara.vercel.app/en/who-we-are"
+                    },
+                    {
+                        "path":  "/es/acerca-de-nosotros",
+                        "status":  200,
+                        "title":  "Acerca de Nosotros | GIN",
+                        "h1":  "Acerca de Nosotros",
+                        "hasMain":  true,
+                        "finalUrl":  "https://globalinformationnetworkliara.vercel.app/es/acerca-de-nosotros"
+                    },
+                    {
+                        "path":  "/es/acuerdo-de-miembro",
+                        "status":  200,
+                        "title":  "Acuerdo de Miembro | GIN",
+                        "h1":  "Acuerdo de Miembro",
+                        "hasMain":  true,
+                        "finalUrl":  "https://globalinformationnetworkliara.vercel.app/es/acuerdo-de-miembro"
+                    },
+                    {
+                        "path":  "/es/beneficios-para-miembros",
+                        "status":  200,
+                        "title":  "Beneficios para Miembros | GIN",
+                        "h1":  "Beneficios para Miembros",
+                        "hasMain":  true,
+                        "finalUrl":  "https://globalinformationnetworkliara.vercel.app/es/beneficios-para-miembros"
+                    },
+                    {
+                        "path":  "/es/bienvenidos",
+                        "status":  200,
+                        "title":  "Bienvenidos | Global Information Network | GIN",
+                        "h1":  "Acceder",
+                        "hasMain":  true,
+                        "finalUrl":  "https://globalinformationnetworkliara.vercel.app/es/bienvenidos"
+                    },
+                    {
+                        "path":  "/es/casas-club-y-lodges",
+                        "status":  200,
+                        "title":  "Casas Club y Lodges | GIN",
+                        "h1":  "Casas Club y Lodges",
+                        "hasMain":  true,
+                        "finalUrl":  "https://globalinformationnetworkliara.vercel.app/es/casas-club-y-lodges"
+                    },
+                    {
+                        "path":  "/es/coleccion-gin-hotel",
+                        "status":  200,
+                        "title":  "ColecciÃ³n de Hoteles GIN | GIN",
+                        "h1":  "ColecciÃ³n de Hoteles GIN",
+                        "hasMain":  true,
+                        "finalUrl":  "https://globalinformationnetworkliara.vercel.app/es/coleccion-gin-hotel"
+                    },
+                    {
+                        "path":  "/es/contactanos",
+                        "status":  200,
+                        "title":  "ContÃ¡ctanos | GIN",
+                        "h1":  "ContÃ¡ctanos",
+                        "hasMain":  true,
+                        "finalUrl":  "https://globalinformationnetworkliara.vercel.app/es/contactanos"
+                    },
+                    {
+                        "path":  "/es/el-crucero-gin",
+                        "status":  200,
+                        "title":  "El Crucero GIN | GIN",
+                        "h1":  "El Crucero GIN",
+                        "hasMain":  true,
+                        "finalUrl":  "https://globalinformationnetworkliara.vercel.app/es/el-crucero-gin"
+                    },
+                    {
+                        "path":  "/es/el-sistema-de-exito-de-gin",
+                        "status":  200,
+                        "title":  "El Sistema de Ã‰xito de GIN | GIN",
+                        "h1":  "El Sistema de Ã‰xito de GIN",
+                        "hasMain":  true,
+                        "finalUrl":  "https://globalinformationnetworkliara.vercel.app/es/el-sistema-de-exito-de-gin"
+                    },
+                    {
+                        "path":  "/es/home-public-spanish",
+                        "status":  200,
+                        "title":  "Bienvenido a la Red Mundial de InformaciÃ³n | GIN",
+                        "h1":  "Bienvenido a la Red Mundial de InformaciÃ³n",
+                        "hasMain":  true,
+                        "finalUrl":  "https://globalinformationnetworkliara.vercel.app/es/home-public-spanish"
+                    },
+                    {
+                        "path":  "/es/la-vision-del-club",
+                        "status":  200,
+                        "title":  "La VisiÃ³n del Club | GIN",
+                        "h1":  "La VisiÃ³n del Club",
+                        "hasMain":  true,
+                        "finalUrl":  "https://globalinformationnetworkliara.vercel.app/es/la-vision-del-club"
+                    },
+                    {
+                        "path":  "/es/lo-que-ofrecemos",
+                        "status":  200,
+                        "title":  "Lo Que Ofrecemos | GIN",
+                        "h1":  "Lo Que Ofrecemos",
+                        "hasMain":  true,
+                        "finalUrl":  "https://globalinformationnetworkliara.vercel.app/es/lo-que-ofrecemos"
+                    },
+                    {
+                        "path":  "/es/niveles-de-afiliacion",
+                        "status":  200,
+                        "title":  "Niveles de AfiliaciÃ³n | GIN",
+                        "h1":  "Niveles de AfiliaciÃ³n",
+                        "hasMain":  true,
+                        "finalUrl":  "https://globalinformationnetworkliara.vercel.app/es/niveles-de-afiliacion"
+                    },
+                    {
+                        "path":  "/es/nuestra-formacion",
+                        "status":  200,
+                        "title":  "Nuestra FormaciÃ³n | GIN",
+                        "h1":  "Nuestra FormaciÃ³n",
+                        "hasMain":  true,
+                        "finalUrl":  "https://globalinformationnetworkliara.vercel.app/es/nuestra-formacion"
+                    },
+                    {
+                        "path":  "/es/nuestros-eventos",
+                        "status":  200,
+                        "title":  "Nuestros Eventos | GIN",
+                        "h1":  "Nuestros Eventos",
+                        "hasMain":  true,
+                        "finalUrl":  "https://globalinformationnetworkliara.vercel.app/es/nuestros-eventos"
+                    },
+                    {
+                        "path":  "/es/politica-de-privacidad",
+                        "status":  200,
+                        "title":  "PolÃ­tica de Privacidad | GIN",
+                        "h1":  "PolÃ­tica de Privacidad",
+                        "hasMain":  true,
+                        "finalUrl":  "https://globalinformationnetworkliara.vercel.app/es/politica-de-privacidad"
+                    },
+                    {
+                        "path":  "/es/por-que-unirse",
+                        "status":  200,
+                        "title":  "Por QuÃ© Unirse | GIN",
+                        "h1":  "Por QuÃ© Unirse",
+                        "hasMain":  true,
+                        "finalUrl":  "https://globalinformationnetworkliara.vercel.app/es/por-que-unirse"
+                    },
+                    {
+                        "path":  "/es/preguntas-frecuentes",
+                        "status":  200,
+                        "title":  "Preguntas Frecuentes | GIN",
+                        "h1":  "Preguntas Frecuentes",
+                        "hasMain":  true,
+                        "finalUrl":  "https://globalinformationnetworkliara.vercel.app/es/preguntas-frecuentes"
+                    },
+                    {
+                        "path":  "/es/quienes-somos",
+                        "status":  200,
+                        "title":  "QuiÃ©nes Somos | GIN",
+                        "h1":  "QuiÃ©nes Somos",
+                        "hasMain":  true,
+                        "finalUrl":  "https://globalinformationnetworkliara.vercel.app/es/quienes-somos"
+                    },
+                    {
+                        "path":  "/es/terminos-de-uso",
+                        "status":  200,
+                        "title":  "TÃ©rminos de Uso | GIN",
+                        "h1":  "TÃ©rminos de Uso",
+                        "hasMain":  true,
+                        "finalUrl":  "https://globalinformationnetworkliara.vercel.app/es/terminos-de-uso"
+                    },
+                    {
+                        "path":  "/fr/a-propos-de-nous",
+                        "status":  200,
+                        "title":  "Ã€ Propos de Nous | GIN",
+                        "h1":  "Ã€ Propos de Nous",
+                        "hasMain":  true,
+                        "finalUrl":  "https://globalinformationnetworkliara.vercel.app/fr/a-propos-de-nous"
+                    },
+                    {
+                        "path":  "/fr/accueil-des-membres",
+                        "status":  200,
+                        "title":  "Accueil des membres | Global Information Network | GIN",
+                        "h1":  "Se connecter",
+                        "hasMain":  true,
+                        "finalUrl":  "https://globalinformationnetworkliara.vercel.app/fr/accueil-des-membres"
+                    },
+                    {
+                        "path":  "/fr/avantages-pour-les-membres",
+                        "status":  200,
+                        "title":  "Avantages pour les Membres | GIN",
+                        "h1":  "Avantages pour les Membres",
+                        "hasMain":  true,
+                        "finalUrl":  "https://globalinformationnetworkliara.vercel.app/fr/avantages-pour-les-membres"
+                    },
+                    {
+                        "path":  "/fr/ce-que-nous-offrons",
+                        "status":  200,
+                        "title":  "Ce Que Nous Offrons | GIN",
+                        "h1":  "Ce Que Nous Offrons",
+                        "hasMain":  true,
+                        "finalUrl":  "https://globalinformationnetworkliara.vercel.app/fr/ce-que-nous-offrons"
+                    },
+                    {
+                        "path":  "/fr/clubhouses-et-lodges",
+                        "status":  200,
+                        "title":  "Clubhouses et Lodges | GIN",
+                        "h1":  "Clubhouses et Lodges",
+                        "hasMain":  true,
+                        "finalUrl":  "https://globalinformationnetworkliara.vercel.app/fr/clubhouses-et-lodges"
+                    },
+                    {
+                        "path":  "/fr/conditions-dutilisation",
+                        "status":  200,
+                        "title":  "Conditions dâ€™Utilisation | GIN",
+                        "h1":  "Conditions dâ€™Utilisation",
+                        "hasMain":  true,
+                        "finalUrl":  "https://globalinformationnetworkliara.vercel.app/fr/conditions-dutilisation"
+                    },
+                    {
+                        "path":  "/fr/entente-de-membre",
+                        "status":  200,
+                        "title":  "Entente de Membre | GIN",
+                        "h1":  "Entente de Membre",
+                        "hasMain":  true,
+                        "finalUrl":  "https://globalinformationnetworkliara.vercel.app/fr/entente-de-membre"
+                    },
+                    {
+                        "path":  "/fr/faq-french",
+                        "status":  200,
+                        "title":  "FAQ | GIN",
+                        "h1":  "FAQ",
+                        "hasMain":  true,
+                        "finalUrl":  "https://globalinformationnetworkliara.vercel.app/fr/faq-french"
+                    },
+                    {
+                        "path":  "/fr/gin-hotel-collection",
+                        "status":  200,
+                        "title":  "Collection dâ€™HÃ´tels GIN | GIN",
+                        "h1":  "Collection dâ€™HÃ´tels GIN",
+                        "hasMain":  true,
+                        "finalUrl":  "https://globalinformationnetworkliara.vercel.app/fr/gin-hotel-collection"
+                    },
+                    {
+                        "path":  "/fr/home-public",
+                        "status":  200,
+                        "title":  "Bienvenue sur le rÃ©seau mondial dâ€™information | GIN",
+                        "h1":  "Bienvenue sur le rÃ©seau mondial dâ€™information",
+                        "hasMain":  true,
+                        "finalUrl":  "https://globalinformationnetworkliara.vercel.app/fr/home-public"
+                    },
+                    {
+                        "path":  "/fr/la-vision-du-club",
+                        "status":  200,
+                        "title":  "La Vision du Club | GIN",
+                        "h1":  "La Vision du Club",
+                        "hasMain":  true,
+                        "finalUrl":  "https://globalinformationnetworkliara.vercel.app/fr/la-vision-du-club"
+                    },
+                    {
+                        "path":  "/fr/le-navire-de-croisiere-gin",
+                        "status":  200,
+                        "title":  "Le Navire de CroisiÃ¨re GIN | GIN",
+                        "h1":  "Le Navire de CroisiÃ¨re GIN",
+                        "hasMain":  true,
+                        "finalUrl":  "https://globalinformationnetworkliara.vercel.app/fr/le-navire-de-croisiere-gin"
+                    },
+                    {
+                        "path":  "/fr/le-systeme-de-succes-gin",
+                        "status":  200,
+                        "title":  "Le SystÃ¨me GIN Success | GIN",
+                        "h1":  "Le SystÃ¨me GIN Success",
+                        "hasMain":  true,
+                        "finalUrl":  "https://globalinformationnetworkliara.vercel.app/fr/le-systeme-de-succes-gin"
+                    },
+                    {
+                        "path":  "/fr/niveaux-dadhesion",
+                        "status":  200,
+                        "title":  "Niveaux dâ€™AdhÃ©sion | GIN",
+                        "h1":  "Niveaux dâ€™AdhÃ©sion",
+                        "hasMain":  true,
+                        "finalUrl":  "https://globalinformationnetworkliara.vercel.app/fr/niveaux-dadhesion"
+                    },
+                    {
+                        "path":  "/fr/nos-evenements",
+                        "status":  200,
+                        "title":  "Nos Ã‰vÃ©nements | GIN",
+                        "h1":  "Nos Ã‰vÃ©nements",
+                        "hasMain":  true,
+                        "finalUrl":  "https://globalinformationnetworkliara.vercel.app/fr/nos-evenements"
+                    },
+                    {
+                        "path":  "/fr/notre-formation",
+                        "status":  200,
+                        "title":  "Notre Formation | GIN",
+                        "h1":  "Notre Formation",
+                        "hasMain":  true,
+                        "finalUrl":  "https://globalinformationnetworkliara.vercel.app/fr/notre-formation"
+                    },
+                    {
+                        "path":  "/fr/nous-contacter",
+                        "status":  200,
+                        "title":  "Contactez-Nous | GIN",
+                        "h1":  "Contactez-Nous",
+                        "hasMain":  true,
+                        "finalUrl":  "https://globalinformationnetworkliara.vercel.app/fr/nous-contacter"
+                    },
+                    {
+                        "path":  "/fr/politique-de-confidentialite",
+                        "status":  200,
+                        "title":  "Politique de ConfidentialitÃ© | GIN",
+                        "h1":  "Politique de ConfidentialitÃ©",
+                        "hasMain":  true,
+                        "finalUrl":  "https://globalinformationnetworkliara.vercel.app/fr/politique-de-confidentialite"
+                    },
+                    {
+                        "path":  "/fr/pourquoi-devriez-vous-envisager-de-faire-une-demande-dadhesion",
+                        "status":  200,
+                        "title":  "Pourquoi AdhÃ©rer | GIN",
+                        "h1":  "Pourquoi AdhÃ©rer",
+                        "hasMain":  true,
+                        "finalUrl":  "https://globalinformationnetworkliara.vercel.app/fr/pourquoi-devriez-vous-envisager-de-faire-une-demande-dadhesion"
+                    },
+                    {
+                        "path":  "/fr/qui-sommes-nous",
+                        "status":  200,
+                        "title":  "Qui Sommes-Nous | GIN",
+                        "h1":  "Qui Sommes-Nous",
+                        "hasMain":  true,
+                        "finalUrl":  "https://globalinformationnetworkliara.vercel.app/fr/qui-sommes-nous"
+                    },
+                    {
+                        "path":  "/hu/a-club-vision",
+                        "status":  200,
+                        "title":  "A Club Vision | GIN",
+                        "h1":  "A Club Vision",
+                        "hasMain":  true,
+                        "finalUrl":  "https://globalinformationnetworkliara.vercel.app/hu/a-club-vision"
+                    },
+                    {
+                        "path":  "/hu/a-gin-cruise-ship-hu",
+                        "status":  200,
+                        "title":  "A GIN Cruise Ship | GIN",
+                        "h1":  "A GIN Cruise Ship",
+                        "hasMain":  true,
+                        "finalUrl":  "https://globalinformationnetworkliara.vercel.app/hu/a-gin-cruise-ship-hu"
+                    },
+                    {
+                        "path":  "/hu/a-gin-success-system-hu",
+                        "status":  200,
+                        "title":  "A GIN Siker Rendszere | GIN",
+                        "h1":  "A GIN Siker Rendszere",
+                        "hasMain":  true,
+                        "finalUrl":  "https://globalinformationnetworkliara.vercel.app/hu/a-gin-success-system-hu"
+                    },
+                    {
+                        "path":  "/hu/adatvedelmi-iranyelvek",
+                        "status":  200,
+                        "title":  "AdatvÃ©delmi IrÃ¡nyelvek | GIN",
+                        "h1":  "AdatvÃ©delmi IrÃ¡nyelvek",
+                        "hasMain":  true,
+                        "finalUrl":  "https://globalinformationnetworkliara.vercel.app/hu/adatvedelmi-iranyelvek"
+                    },
+                    {
+                        "path":  "/hu/amit-ajanlunk",
+                        "status":  200,
+                        "title":  "Amit AjÃ¡nlunk | GIN",
+                        "h1":  "Amit AjÃ¡nlunk",
+                        "hasMain":  true,
+                        "finalUrl":  "https://globalinformationnetworkliara.vercel.app/hu/amit-ajanlunk"
+                    },
+                    {
+                        "path":  "/hu/faq-hungarian",
+                        "status":  200,
+                        "title":  "Gyakori KÃ©rdÃ©sek | GIN",
+                        "h1":  "Gyakori KÃ©rdÃ©sek",
+                        "hasMain":  true,
+                        "finalUrl":  "https://globalinformationnetworkliara.vercel.app/hu/faq-hungarian"
+                    },
+                    {
+                        "path":  "/hu/felhasznalasi-feltetelek",
+                        "status":  200,
+                        "title":  "FelhasznÃ¡lÃ¡si FeltÃ©telek | GIN",
+                        "h1":  "FelhasznÃ¡lÃ¡si FeltÃ©telek",
+                        "hasMain":  true,
+                        "finalUrl":  "https://globalinformationnetworkliara.vercel.app/hu/felhasznalasi-feltetelek"
+                    },
+                    {
+                        "path":  "/hu/gin-hotel-collection-hu",
+                        "status":  200,
+                        "title":  "GIN Hotel Collection | GIN",
+                        "h1":  "GIN Hotel Collection",
+                        "hasMain":  true,
+                        "finalUrl":  "https://globalinformationnetworkliara.vercel.app/hu/gin-hotel-collection-hu"
+                    },
+                    {
+                        "path":  "/hu/home-public",
+                        "status":  200,
+                        "title":  "ÃœdvÃ¶zÃ¶ljÃ¼k a GlobÃ¡lis InformÃ¡ciÃ³s HÃ¡lÃ³zatban | GIN",
+                        "h1":  "ÃœdvÃ¶zÃ¶ljÃ¼k a GlobÃ¡lis InformÃ¡ciÃ³s HÃ¡lÃ³zatban",
+                        "hasMain":  true,
+                        "finalUrl":  "https://globalinformationnetworkliara.vercel.app/hu/home-public"
+                    },
+                    {
+                        "path":  "/hu/kepzesunk",
+                        "status":  200,
+                        "title":  "KÃ©pzÃ©sÃ¼nk | GIN",
+                        "h1":  "KÃ©pzÃ©sÃ¼nk",
+                        "hasMain":  true,
+                        "finalUrl":  "https://globalinformationnetworkliara.vercel.app/hu/kepzesunk"
+                    },
+                    {
+                        "path":  "/hu/kik-vagyunk",
+                        "status":  200,
+                        "title":  "Kik Vagyunk | GIN",
+                        "h1":  "Kik Vagyunk",
+                        "hasMain":  true,
+                        "finalUrl":  "https://globalinformationnetworkliara.vercel.app/hu/kik-vagyunk"
+                    },
+                    {
+                        "path":  "/hu/klubhazak-es-kunyhok",
+                        "status":  200,
+                        "title":  "KlubhÃ¡zak Ã©s KunyhÃ³k | GIN",
+                        "h1":  "KlubhÃ¡zak Ã©s KunyhÃ³k",
+                        "hasMain":  true,
+                        "finalUrl":  "https://globalinformationnetworkliara.vercel.app/hu/klubhazak-es-kunyhok"
+                    },
+                    {
+                        "path":  "/hu/lepjen-kapcsolatba-velunk",
+                        "status":  200,
+                        "title":  "LÃ©pjen kapcsolatba velÃ¼nk | GIN",
+                        "h1":  "LÃ©pjen kapcsolatba velÃ¼nk",
+                        "hasMain":  true,
+                        "finalUrl":  "https://globalinformationnetworkliara.vercel.app/hu/lepjen-kapcsolatba-velunk"
+                    },
+                    {
+                        "path":  "/hu/miert-csatlakozzon",
+                        "status":  200,
+                        "title":  "MiÃ©rt Csatlakozzon | GIN",
+                        "h1":  "MiÃ©rt Csatlakozzon",
+                        "hasMain":  true,
+                        "finalUrl":  "https://globalinformationnetworkliara.vercel.app/hu/miert-csatlakozzon"
+                    },
+                    {
+                        "path":  "/hu/rendezvenyeink",
+                        "status":  200,
+                        "title":  "RendezvÃ©nyeink | GIN",
+                        "h1":  "RendezvÃ©nyeink",
+                        "hasMain":  true,
+                        "finalUrl":  "https://globalinformationnetworkliara.vercel.app/hu/rendezvenyeink"
+                    },
+                    {
+                        "path":  "/hu/rolunk",
+                        "status":  200,
+                        "title":  "RÃ³lunk | GIN",
+                        "h1":  "RÃ³lunk",
+                        "hasMain":  true,
+                        "finalUrl":  "https://globalinformationnetworkliara.vercel.app/hu/rolunk"
+                    },
+                    {
+                        "path":  "/hu/tag-home",
+                        "status":  200,
+                        "title":  "Tag Home | Global Information Network | GIN",
+                        "h1":  "BelÃ©pÃ©s",
+                        "hasMain":  true,
+                        "finalUrl":  "https://globalinformationnetworkliara.vercel.app/hu/tag-home"
+                    },
+                    {
+                        "path":  "/hu/tagi-elonyok",
+                        "status":  200,
+                        "title":  "Tagi ElÅ‘nyÃ¶k | GIN",
+                        "h1":  "Tagi ElÅ‘nyÃ¶k",
+                        "hasMain":  true,
+                        "finalUrl":  "https://globalinformationnetworkliara.vercel.app/hu/tagi-elonyok"
+                    },
+                    {
+                        "path":  "/hu/tagsagi-megallapodas",
+                        "status":  200,
+                        "title":  "TagsÃ¡gi MegÃ¡llapodÃ¡s | GIN",
+                        "h1":  "TagsÃ¡gi MegÃ¡llapodÃ¡s",
+                        "hasMain":  true,
+                        "finalUrl":  "https://globalinformationnetworkliara.vercel.app/hu/tagsagi-megallapodas"
+                    },
+                    {
+                        "path":  "/hu/tagsagi-szintek",
+                        "status":  200,
+                        "title":  "TagsÃ¡gi Szintek | GIN",
+                        "h1":  "TagsÃ¡gi Szintek",
+                        "hasMain":  true,
+                        "finalUrl":  "https://globalinformationnetworkliara.vercel.app/hu/tagsagi-szintek"
+                    },
+                    {
+                        "path":  "/member-home",
+                        "status":  200,
+                        "title":  "Member Home | Global Information Network | GIN",
+                        "h1":  "Login",
+                        "hasMain":  true,
+                        "finalUrl":  "https://globalinformationnetworkliara.vercel.app/member-home"
+                    },
+                    {
+                        "path":  "/pt/a-visao-do-clube",
+                        "status":  200,
+                        "title":  "A VisÃ£o do Clube | GIN",
+                        "h1":  "A VisÃ£o do Clube",
+                        "hasMain":  true,
+                        "finalUrl":  "https://globalinformationnetworkliara.vercel.app/pt/a-visao-do-clube"
+                    },
+                    {
+                        "path":  "/pt/acordo-de-membro",
+                        "status":  200,
+                        "title":  "Acordo de Membro | GIN",
+                        "h1":  "Acordo de Membro",
+                        "hasMain":  true,
+                        "finalUrl":  "https://globalinformationnetworkliara.vercel.app/pt/acordo-de-membro"
+                    },
+                    {
+                        "path":  "/pt/beneficios-para-membros",
+                        "status":  200,
+                        "title":  "BenefÃ­cios para Membros | GIN",
+                        "h1":  "BenefÃ­cios para Membros",
+                        "hasMain":  true,
+                        "finalUrl":  "https://globalinformationnetworkliara.vercel.app/pt/beneficios-para-membros"
+                    },
+                    {
+                        "path":  "/pt/clubhouses-e-lodges",
+                        "status":  200,
+                        "title":  "Clubhouses e Lodges | GIN",
+                        "h1":  "Clubhouses e Lodges",
+                        "hasMain":  true,
+                        "finalUrl":  "https://globalinformationnetworkliara.vercel.app/pt/clubhouses-e-lodges"
+                    },
+                    {
+                        "path":  "/pt/colecao-gin-hotel",
+                        "status":  200,
+                        "title":  "ColeÃ§Ã£o GIN Hotel | GIN",
+                        "h1":  "ColeÃ§Ã£o GIN Hotel",
+                        "hasMain":  true,
+                        "finalUrl":  "https://globalinformationnetworkliara.vercel.app/pt/colecao-gin-hotel"
+                    },
+                    {
+                        "path":  "/pt/fale-conosco",
+                        "status":  200,
+                        "title":  "Fale Conosco | GIN",
+                        "h1":  "Fale Conosco",
+                        "hasMain":  true,
+                        "finalUrl":  "https://globalinformationnetworkliara.vercel.app/pt/fale-conosco"
+                    },
+                    {
+                        "path":  "/pt/faq-portuguese",
+                        "status":  200,
+                        "title":  "Perguntas Frequentes | GIN",
+                        "h1":  "Perguntas Frequentes",
+                        "hasMain":  true,
+                        "finalUrl":  "https://globalinformationnetworkliara.vercel.app/pt/faq-portuguese"
+                    },
+                    {
+                        "path":  "/pt/home-public",
+                        "status":  200,
+                        "title":  "Bem-vindo Ã  Rede Global de InformaÃ§Ã£o | GIN",
+                        "h1":  "Bem-vindo Ã  Rede Global de InformaÃ§Ã£o",
+                        "hasMain":  true,
+                        "finalUrl":  "https://globalinformationnetworkliara.vercel.app/pt/home-public"
+                    },
+                    {
+                        "path":  "/pt/niveis-de-adesao",
+                        "status":  200,
+                        "title":  "NÃ­veis de AdesÃ£o | GIN",
+                        "h1":  "NÃ­veis de AdesÃ£o",
+                        "hasMain":  true,
+                        "finalUrl":  "https://globalinformationnetworkliara.vercel.app/pt/niveis-de-adesao"
+                    },
+                    {
+                        "path":  "/pt/nosso-treinamento",
+                        "status":  200,
+                        "title":  "Nosso Treinamento | GIN",
+                        "h1":  "Nosso Treinamento",
+                        "hasMain":  true,
+                        "finalUrl":  "https://globalinformationnetworkliara.vercel.app/pt/nosso-treinamento"
+                    },
+                    {
+                        "path":  "/pt/nossos-eventos",
+                        "status":  200,
+                        "title":  "Nossos Eventos | GIN",
+                        "h1":  "Nossos Eventos",
+                        "hasMain":  true,
+                        "finalUrl":  "https://globalinformationnetworkliara.vercel.app/pt/nossos-eventos"
+                    },
+                    {
+                        "path":  "/pt/o-navio-de-cruzeiro-gin",
+                        "status":  200,
+                        "title":  "O Navio de Cruzeiro GIN | GIN",
+                        "h1":  "O Navio de Cruzeiro GIN",
+                        "hasMain":  true,
+                        "finalUrl":  "https://globalinformationnetworkliara.vercel.app/pt/o-navio-de-cruzeiro-gin"
+                    },
+                    {
+                        "path":  "/pt/o-que-oferecemos",
+                        "status":  200,
+                        "title":  "O Que Oferecemos | GIN",
+                        "h1":  "O Que Oferecemos",
+                        "hasMain":  true,
+                        "finalUrl":  "https://globalinformationnetworkliara.vercel.app/pt/o-que-oferecemos"
+                    },
+                    {
+                        "path":  "/pt/o-sistema-de-sucesso-gin",
+                        "status":  200,
+                        "title":  "O Sistema de Sucesso GIN | GIN",
+                        "h1":  "O Sistema de Sucesso GIN",
+                        "hasMain":  true,
+                        "finalUrl":  "https://globalinformationnetworkliara.vercel.app/pt/o-sistema-de-sucesso-gin"
+                    },
+                    {
+                        "path":  "/pt/pagina-inicial-do-membro",
+                        "status":  200,
+                        "title":  "PÃ¡gina inicial do membro | Global Information Network | GIN",
+                        "h1":  "Iniciar sessÃ£o",
+                        "hasMain":  true,
+                        "finalUrl":  "https://globalinformationnetworkliara.vercel.app/pt/pagina-inicial-do-membro"
+                    },
+                    {
+                        "path":  "/pt/politica-de-privacidade",
+                        "status":  200,
+                        "title":  "PolÃ­tica de Privacidade | GIN",
+                        "h1":  "PolÃ­tica de Privacidade",
+                        "hasMain":  true,
+                        "finalUrl":  "https://globalinformationnetworkliara.vercel.app/pt/politica-de-privacidade"
+                    },
+                    {
+                        "path":  "/pt/porque-aderir",
+                        "status":  200,
+                        "title":  "PorquÃª Aderir | GIN",
+                        "h1":  "PorquÃª Aderir",
+                        "hasMain":  true,
+                        "finalUrl":  "https://globalinformationnetworkliara.vercel.app/pt/porque-aderir"
+                    },
+                    {
+                        "path":  "/pt/quem-nos-somos",
+                        "status":  200,
+                        "title":  "Quem NÃ³s Somos | GIN",
+                        "h1":  "Quem NÃ³s Somos",
+                        "hasMain":  true,
+                        "finalUrl":  "https://globalinformationnetworkliara.vercel.app/pt/quem-nos-somos"
+                    },
+                    {
+                        "path":  "/pt/quem-somos",
+                        "status":  200,
+                        "title":  "Quem Somos | GIN",
+                        "h1":  "Quem Somos",
+                        "hasMain":  true,
+                        "finalUrl":  "https://globalinformationnetworkliara.vercel.app/pt/quem-somos"
+                    },
+                    {
+                        "path":  "/pt/termos-de-uso",
+                        "status":  200,
+                        "title":  "Termos de Uso | GIN",
+                        "h1":  "Termos de Uso",
+                        "hasMain":  true,
+                        "finalUrl":  "https://globalinformationnetworkliara.vercel.app/pt/termos-de-uso"
+                    },
+                    {
+                        "path":  "/sq/anija-e-lundrimit-gin",
+                        "status":  200,
+                        "title":  "Anija e Lundrimit GIN | GIN",
+                        "h1":  "Anija e Lundrimit GIN",
+                        "hasMain":  true,
+                        "finalUrl":  "https://globalinformationnetworkliara.vercel.app/sq/anija-e-lundrimit-gin"
+                    },
+                    {
+                        "path":  "/sq/cfare-ofrojme",
+                        "status":  200,
+                        "title":  "Ã‡farÃ« OfrojmÃ« | GIN",
+                        "h1":  "Ã‡farÃ« OfrojmÃ«",
+                        "hasMain":  true,
+                        "finalUrl":  "https://globalinformationnetworkliara.vercel.app/sq/cfare-ofrojme"
+                    },
+                    {
+                        "path":  "/sq/faq-shqip",
+                        "status":  200,
+                        "title":  "Pyetje tÃ« Shpeshta | GIN",
+                        "h1":  "Pyetje tÃ« Shpeshta",
+                        "hasMain":  true,
+                        "finalUrl":  "https://globalinformationnetworkliara.vercel.app/sq/faq-shqip"
+                    },
+                    {
+                        "path":  "/sq/home-public",
+                        "status":  200,
+                        "title":  "MirÃ« se vini nÃ« Rrjetin Global tÃ« Informacionit | GIN",
+                        "h1":  "MirÃ« se vini nÃ« Rrjetin Global tÃ« Informacionit",
+                        "hasMain":  true,
+                        "finalUrl":  "https://globalinformationnetworkliara.vercel.app/sq/home-public"
+                    },
+                    {
+                        "path":  "/sq/klube-dhe-shtepiza",
+                        "status":  200,
+                        "title":  "Klube dhe ShtÃ«piza | GIN",
+                        "h1":  "Klube dhe ShtÃ«piza",
+                        "hasMain":  true,
+                        "finalUrl":  "https://globalinformationnetworkliara.vercel.app/sq/klube-dhe-shtepiza"
+                    },
+                    {
+                        "path":  "/sq/koleksioni-gin-hotel",
+                        "status":  200,
+                        "title":  "Koleksioni i Hoteleve GIN | GIN",
+                        "h1":  "Koleksioni i Hoteleve GIN",
+                        "hasMain":  true,
+                        "finalUrl":  "https://globalinformationnetworkliara.vercel.app/sq/koleksioni-gin-hotel"
+                    },
+                    {
+                        "path":  "/sq/kush-jemi",
+                        "status":  200,
+                        "title":  "Kush Jemi | GIN",
+                        "h1":  "Kush Jemi",
+                        "hasMain":  true,
+                        "finalUrl":  "https://globalinformationnetworkliara.vercel.app/sq/kush-jemi"
+                    },
+                    {
+                        "path":  "/sq/kushtet-e-perdorimit",
+                        "status":  200,
+                        "title":  "Kushtet e PÃ«rdorimit | GIN",
+                        "h1":  "Kushtet e PÃ«rdorimit",
+                        "hasMain":  true,
+                        "finalUrl":  "https://globalinformationnetworkliara.vercel.app/sq/kushtet-e-perdorimit"
+                    },
+                    {
+                        "path":  "/sq/marreveshja-e-anetarit",
+                        "status":  200,
+                        "title":  "MarrÃ«veshja e AnÃ«tarit | GIN",
+                        "h1":  "MarrÃ«veshja e AnÃ«tarit",
+                        "hasMain":  true,
+                        "finalUrl":  "https://globalinformationnetworkliara.vercel.app/sq/marreveshja-e-anetarit"
+                    },
+                    {
+                        "path":  "/sq/na-kontakt",
+                        "status":  200,
+                        "title":  "Na kontaktoni | GIN",
+                        "h1":  "Na kontaktoni",
+                        "hasMain":  true,
+                        "finalUrl":  "https://globalinformationnetworkliara.vercel.app/sq/na-kontakt"
+                    },
+                    {
+                        "path":  "/sq/ngjarjet-tona",
+                        "status":  200,
+                        "title":  "Ngjarjet Tona | GIN",
+                        "h1":  "Ngjarjet Tona",
+                        "hasMain":  true,
+                        "finalUrl":  "https://globalinformationnetworkliara.vercel.app/sq/ngjarjet-tona"
+                    },
+                    {
+                        "path":  "/sq/nivelet-e-anetaresimit",
+                        "status":  200,
+                        "title":  "Nivelet e AnÃ«tarÃ«simit | GIN",
+                        "h1":  "Nivelet e AnÃ«tarÃ«simit",
+                        "hasMain":  true,
+                        "finalUrl":  "https://globalinformationnetworkliara.vercel.app/sq/nivelet-e-anetaresimit"
+                    },
+                    {
+                        "path":  "/sq/perfitimet-e-anetarit",
+                        "status":  200,
+                        "title":  "PÃ«rfitimet e AnÃ«tarit | GIN",
+                        "h1":  "PÃ«rfitimet e AnÃ«tarit",
+                        "hasMain":  true,
+                        "finalUrl":  "https://globalinformationnetworkliara.vercel.app/sq/perfitimet-e-anetarit"
+                    },
+                    {
+                        "path":  "/sq/politika-e-privatesise",
+                        "status":  200,
+                        "title":  "Politika e PrivatÃ«sisÃ« | GIN",
+                        "h1":  "Politika e PrivatÃ«sisÃ«",
+                        "hasMain":  true,
+                        "finalUrl":  "https://globalinformationnetworkliara.vercel.app/sq/politika-e-privatesise"
+                    },
+                    {
+                        "path":  "/sq/pse-duhet-te-konsideroni-aplikimin-per-anetaresim",
+                        "status":  200,
+                        "title":  "Pse tÃ« Bashkoheni | GIN",
+                        "h1":  "Pse tÃ« Bashkoheni",
+                        "hasMain":  true,
+                        "finalUrl":  "https://globalinformationnetworkliara.vercel.app/sq/pse-duhet-te-konsideroni-aplikimin-per-anetaresim"
+                    },
+                    {
+                        "path":  "/sq/rreth-nesh",
+                        "status":  200,
+                        "title":  "Rreth nesh | GIN",
+                        "h1":  "Rreth nesh",
+                        "hasMain":  true,
+                        "finalUrl":  "https://globalinformationnetworkliara.vercel.app/sq/rreth-nesh"
+                    },
+                    {
+                        "path":  "/sq/shtepia-e-anetarit",
+                        "status":  200,
+                        "title":  "ShtÃ«pia e anÃ«tarit | Global Information Network | GIN",
+                        "h1":  "Hyrje",
+                        "hasMain":  true,
+                        "finalUrl":  "https://globalinformationnetworkliara.vercel.app/sq/shtepia-e-anetarit"
+                    },
+                    {
+                        "path":  "/sq/sistemi-i-suksesit-gin",
+                        "status":  200,
+                        "title":  "Sistemi i Suksesit GIN | GIN",
+                        "h1":  "Sistemi i Suksesit GIN",
+                        "hasMain":  true,
+                        "finalUrl":  "https://globalinformationnetworkliara.vercel.app/sq/sistemi-i-suksesit-gin"
+                    },
+                    {
+                        "path":  "/sq/trajnimi-yne",
+                        "status":  200,
+                        "title":  "Trajnimi YnÃ« | GIN",
+                        "h1":  "Trajnimi YnÃ«",
+                        "hasMain":  true,
+                        "finalUrl":  "https://globalinformationnetworkliara.vercel.app/sq/trajnimi-yne"
+                    },
+                    {
+                        "path":  "/sq/vizioni-i-klubit",
+                        "status":  200,
+                        "title":  "Vizioni i Klubit | GIN",
+                        "h1":  "Vizioni i Klubit",
+                        "hasMain":  true,
+                        "finalUrl":  "https://globalinformationnetworkliara.vercel.app/sq/vizioni-i-klubit"
+                    }
+                ]
+}
