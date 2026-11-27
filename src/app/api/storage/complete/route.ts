@@ -7,6 +7,7 @@ import { getStorageConfig } from "@/lib/storage";
 import { errorResponse, jsonResponse } from "@/lib/http";
 import { enforceRateLimit, rejectCrossOriginMutation } from "@/lib/request-security";
 import { withApiErrorBoundary } from "@/lib/api-error-boundary";
+import { logStorageFailure, mapStorageProviderError } from "@/lib/storage-errors";
 
 
 const schema = z.object({ assetId: z.number().int().positive() });
@@ -62,7 +63,9 @@ async function readFinalObject(storage: NonNullable<ReturnType<typeof getStorage
 
 async function removeStagingObject(storage: NonNullable<ReturnType<typeof getStorageConfig>>, asset: StoredAsset): Promise<void> {
   if (asset.upload_key === asset.object_key) return;
-  await storage.client.send(new DeleteObjectCommand({ Bucket: storage.bucket, Key: asset.upload_key })).catch(() => undefined);
+  await storage.client.send(new DeleteObjectCommand({ Bucket: storage.bucket, Key: asset.upload_key })).catch((error) => {
+    logStorageFailure("staging_cleanup", error);
+  });
 }
 
  async function POST(request: Request) {
@@ -200,8 +203,11 @@ async function removeStagingObject(storage: NonNullable<ReturnType<typeof getSto
       if (latest.rows[0]?.status !== "ready") return errorResponse("وضعیت فایل هم‌زمان تغییر کرده است.", 409);
     }
     return jsonResponse({ assetId: Number(asset.id), status: "ready", message: "فایل با موفقیت کپی، بررسی و تأیید شد." });
-  } catch {
-    return errorResponse("تأیید فایل در فضای ذخیره‌سازی انجام نشد.", 503);
+  } catch (error) {
+    const response = mapStorageProviderError("completion", error);
+    if (response) return response;
+    logStorageFailure("completion", error);
+    throw error;
   }
 }
 
