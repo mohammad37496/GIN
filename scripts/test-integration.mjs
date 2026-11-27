@@ -10,6 +10,8 @@ import pg from "pg";
 import { applyFullRefundEffects } from "../src/lib/payments/refunds.ts";
 import { processVerifiedPaymentWebhook } from "../src/lib/payments/webhooks.ts";
 import { runMigrations } from "../src/lib/migrations.ts";
+import { consumePasswordResetToken, createPasswordResetToken, hashPasswordResetToken, issuePasswordResetToken } from "../src/lib/auth/password-reset.ts";
+import bcrypt from "bcryptjs";
 
 const { Pool } = pg;
 const root = process.cwd();
@@ -236,9 +238,9 @@ try {
   await waitForApp();
 
   const migrationFiles = (await readdir(`${root}/migrations`)).filter((name) => /^\d{4}_[a-z0-9_-]+\.sql$/i.test(name)).sort();
-  const lastMigration = migrationFiles.at(-1);
+  const lastMigration = "0020_payment_webhook_retryable.sql";
   assert(migrationFiles.includes("0015_immutable_asset_uploads.sql"), "The immutable asset migration is present");
-  assert(lastMigration === "0020_payment_webhook_retryable.sql", "The payment webhook retry migration follows the existing bilingual assessment migrations");
+  assert(migrationFiles.includes(lastMigration) && migrationFiles.at(-1) === "0021_password_reset_tokens.sql", "The password-reset migration follows the existing payment webhook and bilingual assessment migrations");
   const lastMigrationSql = (await readFile(`${root}/migrations/${lastMigration}`, "utf8")).replace(/\r\n?/g, "\n");
   const lastMigrationChecksum = createHash("sha256").update(lastMigrationSql).digest("hex");
   const baselineMigration = "0001_core.sql";
@@ -490,7 +492,7 @@ try {
   result = await api("/api/courses");
   assert(result.response.status === 200 && result.data.courses.some((course) => course.slug === "integration-course"), "Published course appears in public catalog");
 
-  result = await api("/api/auth/register", { method: "POST", body: { username: "integration-member", password: "IntegrationMember!Password2026" } });
+  result = await api("/api/auth/register", { method: "POST", body: { username: "integration-member", email: "integration-member@example.test", password: "IntegrationMember!Password2026" } });
   assert(result.response.status === 201, "Member can request an account");
   const member = await pool.query("SELECT id FROM users WHERE username_normalized='integration-member'");
   const memberId = Number(member.rows[0].id);
@@ -814,7 +816,7 @@ try {
   assert(!untranslatedEnglishEventHtml.includes("رویداد بدون ترجمه") && !untranslatedEnglishEventHtml.includes("خلاصه فارسی") && !untranslatedEnglishEventHtml.includes("تهران"), "English event detail never falls back to Persian source content");
   result = await api("/api/events/integration-event/register", { method: "POST", cookie: memberCookie });
   assert(result.response.status === 201 && result.data.registration.status === "registered", "First member receives the final event seat");
-  result = await api("/api/auth/register", { method: "POST", body: { username: "integration-member-two", password: "IntegrationMemberTwo!Password2026" } });
+  result = await api("/api/auth/register", { method: "POST", body: { username: "integration-member-two", email: "integration-member-two@example.test", password: "IntegrationMemberTwo!Password2026" } });
   assert(result.response.status === 201, "Second member can request an account");
   const memberTwo = await pool.query("SELECT id FROM users WHERE username_normalized='integration-member-two'");
   const memberTwoId = Number(memberTwo.rows[0].id);
@@ -942,11 +944,84 @@ try {
   assert(result.response.status === 200, "Admin can approve an affiliate account");
   result = await api("/api/referrals/visit", { method: "POST", body: { referralCode: affiliate.rows[0].referral_code, path: "/register" } });
   assert(result.response.status === 200 && result.data.tracked, "Affiliate referral visits are tracked");
-  result = await api("/api/auth/register", { method: "POST", body: { username: "integration-referred", password: "IntegrationReferred!Password2026", referralCode: affiliate.rows[0].referral_code } });
+  result = await api("/api/auth/register", { method: "POST", body: { username: "integration-referred", email: "integration-referred@example.test", password: "IntegrationReferred!Password2026", referralCode: affiliate.rows[0].referral_code } });
   assert(result.response.status === 201, "New member can register with a valid referral code");
   const referred = await pool.query("SELECT id FROM users WHERE username_normalized='integration-referred'");
   const attribution = await pool.query("SELECT affiliate_id FROM referral_attributions WHERE referred_user_id=$1", [referred.rows[0].id]);
   assert(Number(attribution.rows[0].affiliate_id) === affiliateId, "Referral attribution is persisted for the new member");
+
+  result = await api("/api/auth/register", { method: "POST", body: { username: "integration-reset", email: "integration-reset@example.test", password: "IntegrationReset!Password2026" } });
+  assert(result.response.status === 201, "A password-recovery account can register with a unique email address");
+  const resetAccount = await pool.query("SELECT u.id,p.email,p.email_verified_at FROM users u JOIN user_profiles p ON p.user_id=u.id WHERE u.username_normalized='integration-reset'");
+  const resetUserId = Number(resetAccount.rows[0].id);
+  assert(resetAccount.rows[0].email === "integration-reset@example.test" && resetAccount.rows[0].email_verified_at === null, "Registration stores a normalized email as unverified until an actual verification message is delivered");
+  result = await api("/api/admin/users", { method: "PATCH", cookie: adminCookie, body: { id: resetUserId, status: "approved" } });
+  assert(result.response.status === 200, "Admin can approve the password-recovery test account");
+  result = await api("/api/auth/login", { method: "POST", body: { username: "integration-reset@example.test", password: "IntegrationReset!Password2026" } });
+  assert(result.response.status === 200 && result.cookie, "A member can sign in using the email collected during registration");
+  const preResetCookie = result.cookie;
+  result = await api("/api/auth/password-reset/request", { method: "POST", body: { email: "integration-reset@example.test", locale: "en" } });
+  const unconfiguredResetTokens = await pool.query("SELECT COUNT(*)::int AS count FROM user_password_reset_tokens WHERE user_id=$1", [resetUserId]);
+  assert(result.response.status === 503 && Number(unconfiguredResetTokens.rows[0].count) === 0, "Password reset never claims to send mail or creates a usable token when no real email provider is configured");
+
+  const issueResetToken = async () => {
+    const client = await pool.connect();
+    try {
+      await client.query("BEGIN");
+      const token = await issuePasswordResetToken(client, resetUserId);
+      await client.query("COMMIT");
+      return token;
+    } catch (error) {
+      await client.query("ROLLBACK").catch(() => undefined);
+      throw error;
+    } finally {
+      client.release();
+    }
+  };
+  const issuedResetTokens = await Promise.all([issueResetToken(), issueResetToken()]);
+  assert(issuedResetTokens.every(Boolean), "Only an approved account can receive a password-reset token");
+  const activeResetTokenRows = await pool.query("SELECT token_hash FROM user_password_reset_tokens WHERE user_id=$1 AND consumed_at IS NULL", [resetUserId]);
+  assert(activeResetTokenRows.rowCount === 1, "Concurrent reset requests serialize on the account row and leave only one active token");
+  const resetToken = issuedResetTokens.find((token) => hashPasswordResetToken(token) === activeResetTokenRows.rows[0].token_hash.trim());
+  assert(Boolean(resetToken), "The sole active reset token corresponds to one completed issuance");
+  const resetVersionBefore = Number((await pool.query("SELECT token_version FROM users WHERE id=$1", [resetUserId])).rows[0].token_version);
+  const consumeResetToken = async () => {
+    const client = await pool.connect();
+    try {
+      await client.query("BEGIN");
+      const consumed = await consumePasswordResetToken(client, resetToken, await bcrypt.hash("IntegrationReset!NewPassword2026", 4));
+      await client.query("COMMIT");
+      return consumed;
+    } catch (error) {
+      await client.query("ROLLBACK").catch(() => undefined);
+      throw error;
+    } finally {
+      client.release();
+    }
+  };
+  const concurrentResetResults = await Promise.all([consumeResetToken(), consumeResetToken()]);
+  const resetVersionAfter = Number((await pool.query("SELECT token_version FROM users WHERE id=$1", [resetUserId])).rows[0].token_version);
+  assert(concurrentResetResults.filter(Boolean).length === 1 && resetVersionAfter === resetVersionBefore + 1, "Concurrent password-reset submissions consume a token once and rotate the account token version exactly once");
+  const replayReset = await consumeResetToken();
+  assert(replayReset === false, "A consumed password-reset token cannot be replayed");
+  const expiredToken = createPasswordResetToken();
+  await pool.query("INSERT INTO user_password_reset_tokens(user_id,token_hash,expires_at) VALUES($1,$2,NOW()-INTERVAL '1 minute')", [resetUserId, expiredToken.tokenHash]);
+  const expiredClient = await pool.connect();
+  let expiredConsumed;
+  try {
+    await expiredClient.query("BEGIN");
+    expiredConsumed = await consumePasswordResetToken(expiredClient, expiredToken.token, await bcrypt.hash("IntegrationReset!ExpiredPassword2026", 4));
+    await expiredClient.query("COMMIT");
+  } catch (error) {
+    await expiredClient.query("ROLLBACK").catch(() => undefined);
+    throw error;
+  } finally {
+    expiredClient.release();
+  }
+  assert(expiredConsumed === false, "An expired password-reset token cannot change the password");
+  result = await api("/api/profile", { cookie: preResetCookie });
+  assert(result.response.status === 401, "Changing a password invalidates previously issued account sessions");
+
   let selfReferralBlocked = false;
   try { await pool.query("INSERT INTO referral_attributions(affiliate_id,referred_user_id,referral_code) SELECT id,user_id,referral_code FROM affiliate_accounts WHERE id=$1", [affiliateId]); }
   catch (error) { selfReferralBlocked = error.code === "23514"; }
@@ -1189,7 +1264,7 @@ try {
     assert(result.response.status === 401, "A copied session token cannot be replayed after logout");
   }
 
-  console.log(JSON.stringify({ status: "passed", database: "PGlite PostgreSQL-compatible integration server", migrations: counts.rows[0].migrations, flows: ["legacy reference route redirects", "admin bootstrap/login", "atomic admin password-change rate limiting", "authenticated bilingual staff/member HTML routes with opposing locale cookies", "course/section/lesson management", "course publication", "immutable staging-to-final S3 uploads and replay resistance", "conditional copy rejects ETag races", "course-wide assessments with answer-key privacy, autosave/resume, deterministic shuffle, manual grading, enrollment revocation/expiry guards, lock-wait deadline enforcement and concurrent start/save/submit idempotency", "public catalog", "member registration and admin approval", "member login", "free enrollment", "lesson progress", "course completion", "certificate issuance and public verification", "membership plan entitlements", "membership request and admin approval", "scheduled membership activation and expiry reconciliation", "membership upgrade and cancellation", "event publication and registration", "capacity waitlist and automatic promotion", "support inbox and staff reply", "contact submission, consent persistence, support review and honeypot", "instructor RBAC and course isolation", "finance versus affiliate-manager role separation", "affiliate payout reservation and maker-checker settlement", "affiliate application and referral attribution", "self-referral database guard", "affiliate click tracking and wallet balance guard", "full refund reconciliation and idempotent commission reversal", "payment webhook retry after provider reference persistence", "webhook event payload immutability and terminal amount-mismatch handling", "checkout disabled without provider", "notification delivery", "profile updates", "authenticated CSRF rejection", "cross-origin logout rejection", "concurrent server-side logout revocation and locale-preserving redirect"] }, null, 2));
+  console.log(JSON.stringify({ status: "passed", database: "PGlite PostgreSQL-compatible integration server", migrations: counts.rows[0].migrations, flows: ["legacy reference route redirects", "admin bootstrap/login", "atomic admin password-change rate limiting", "authenticated bilingual staff/member HTML routes with opposing locale cookies", "course/section/lesson management", "course publication", "immutable staging-to-final S3 uploads and replay resistance", "conditional copy rejects ETag races", "course-wide assessments with answer-key privacy, autosave/resume, deterministic shuffle, manual grading, enrollment revocation/expiry guards, lock-wait deadline enforcement and concurrent start/save/submit idempotency", "public catalog", "member registration with normalized unverified email and admin approval", "member login by username and email", "free enrollment", "lesson progress", "course completion", "certificate issuance and public verification", "membership plan entitlements", "membership request and admin approval", "scheduled membership activation and expiry reconciliation", "membership upgrade and cancellation", "event publication and registration", "capacity waitlist and automatic promotion", "support inbox and staff reply", "contact submission, consent persistence, support review and honeypot", "instructor RBAC and course isolation", "finance versus affiliate-manager role separation", "affiliate payout reservation and maker-checker settlement", "affiliate application and referral attribution", "self-referral database guard", "affiliate click tracking and wallet balance guard", "full refund reconciliation and idempotent commission reversal", "payment webhook retry after provider reference persistence", "webhook event payload immutability and terminal amount-mismatch handling", "checkout disabled without provider", "password reset stays disabled without real email provider", "serialized token issuance, expiry enforcement, one-time concurrent consumption and account-wide session revocation", "notification delivery", "profile updates", "authenticated CSRF rejection", "cross-origin logout rejection", "concurrent server-side logout revocation and locale-preserving redirect"] }, null, 2));
   if (process.env.KEEP_INTEGRATION_SERVER === "1") {
     console.log(`Integration server retained for browser QA at ${baseUrl}; press Ctrl+C when finished.`);
     await new Promise((resolve) => process.once("SIGINT", resolve));

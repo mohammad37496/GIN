@@ -86,6 +86,39 @@ test("contact form exposes required fields and conditional Telegram details", as
   await expect(page.getByPlaceholder("@username")).toHaveCount(0);
 });
 
+test("Persian and English account recovery pages expose localized email and token forms", async ({ page }) => {
+  for (const [path, heading, emailLabel] of [
+    ["/forgot-password", "بازیابی رمز عبور", "نشانی ایمیل"],
+    ["/en/forgot-password", "Reset your password", "Email address"],
+  ]) {
+    const response = await page.goto(path, { waitUntil: "domcontentloaded" });
+    expect(response?.status()).toBe(200);
+    await expect(page.getByRole("heading", { name: heading })).toBeVisible();
+    await expect(page.getByLabel(emailLabel)).toHaveAttribute("type", "email");
+  }
+
+  for (const [path, heading] of [
+    ["/reset-password", "انتخاب رمز عبور جدید"],
+    ["/en/reset-password", "Choose a new password"],
+  ]) {
+    const response = await page.goto(path, { waitUntil: "domcontentloaded" });
+    expect(response?.status()).toBe(200);
+    await expect(page.getByRole("heading", { name: heading })).toBeVisible();
+    await expect(page.locator('input[autocomplete="new-password"]')).toHaveCount(2);
+    await expect(page.getByRole("button", { name: /تغییر رمز عبور|Update password/ })).toBeDisabled();
+  }
+});
+
+test("Persian and English local registration require an email address", async ({ page }) => {
+  for (const path of ["/register", "/en/register"]) {
+    const response = await page.goto(path, { waitUntil: "domcontentloaded" });
+    expect(response?.status()).toBe(200);
+    const email = page.locator('input[type="email"][autocomplete="email"]');
+    await expect(email).toBeVisible();
+    await expect(email).toHaveAttribute("required", "");
+  }
+});
+
 test("sitemap and robots publish the same canonical site origin", async ({ request }) => {
   const sitemap = await request.get("/sitemap.xml");
   expect(sitemap.status()).toBe(200);
@@ -111,7 +144,7 @@ for (const viewport of [
 ]) {
   test(`English, localized and login layouts stay within ${viewport.width}px`, async ({ page }) => {
     await page.setViewportSize(viewport);
-    for (const path of ["/en", "/de/home-public", "/member-home"]) {
+    for (const path of ["/en", "/de/home-public", "/member-home", "/forgot-password", "/reset-password", "/en/forgot-password", "/en/reset-password"]) {
       const response = await page.goto(path, { waitUntil: "domcontentloaded" });
       expect(response?.status(), path).toBe(200);
       const dimensions = await page.evaluate(() => ({

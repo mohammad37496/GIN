@@ -38,8 +38,9 @@ export function EnglishLoginForm() {
       <h1>Member Login</h1>
       <p>Sign in to access your GIN portal account.</p>
       <form onSubmit={submit}>
-        <label>Username<input autoComplete="username" value={username} onChange={(event) => setUsername(event.target.value)} required minLength={3} maxLength={32} /></label>
+        <label>Username or email<input autoComplete="username" value={username} onChange={(event) => setUsername(event.target.value)} required minLength={3} maxLength={254} /></label>
         <label>Password<input type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} required maxLength={72} /></label>
+        <div className="gin-en-auth-foot"><Link href="/en/forgot-password">Forgot your password?</Link></div>
         {error && <p className="gin-en-form-error" role="alert">{error}</p>}
         <button className="gin-en-button" disabled={busy}>{busy ? "Signing in…" : "Sign in"}</button>
       </form>
@@ -51,6 +52,7 @@ export function EnglishLoginForm() {
 export function EnglishRegistrationForm({ headingLevel = "h1" }: { headingLevel?: "h1" | "h2" }) {
   const Heading = headingLevel;
   const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [error, setError] = useState("");
@@ -70,7 +72,7 @@ export function EnglishRegistrationForm({ headingLevel = "h1" }: { headingLevel?
       const response = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password, ...(referralCode ? { referralCode } : {}) }),
+        body: JSON.stringify({ username, email, password, ...(referralCode ? { referralCode } : {}) }),
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Your request could not be submitted.");
@@ -90,6 +92,7 @@ export function EnglishRegistrationForm({ headingLevel = "h1" }: { headingLevel?
       <p>This creates an account for this learning portal. It is separate from an official GIN membership application.</p>
       <form onSubmit={submit}>
         <label>Username<input autoComplete="username" value={username} onChange={(event) => setUsername(event.target.value)} required minLength={3} maxLength={32} pattern="[A-Za-z0-9_.-]+" /></label>
+        <label>Email address<input type="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} required maxLength={254} /><small>Email recovery will be available after address verification is enabled.</small></label>
         <label>Password<input type="password" autoComplete="new-password" value={password} onChange={(event) => setPassword(event.target.value)} required minLength={10} maxLength={72} /><small>Use at least 10 characters.</small></label>
         <label>Confirm password<input type="password" autoComplete="new-password" value={confirm} onChange={(event) => setConfirm(event.target.value)} required minLength={10} maxLength={72} /></label>
         {error && <p className="gin-en-form-error" role="alert">{error}</p>}
