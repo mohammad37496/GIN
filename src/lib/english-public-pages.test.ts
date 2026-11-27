@@ -190,22 +190,22 @@ test("English mobile masthead crop keeps the reference seal and excludes the des
   assert.match(mobile, /\.gin-en-masthead::after\s*\{\s*display:\s*none;\s*\}/);
 });
 
-test("English public typography matches the measured reference Times New Roman scale", () => {
+test("English public typography follows the official GeneratePress system-font scale", () => {
   const css = readFileSync(new URL("../app/english-site.css", import.meta.url), "utf8");
   const root = css.match(/\.gin-en-site\s*\{([^}]*)\}/)?.[1] ?? "";
   const heading = css.match(/\.gin-en-home h1, \.gin-en-page h1\s*\{([^}]*)\}/)?.[1] ?? "";
   const bodyCopy = css.match(/\.gin-en-home p, \.gin-en-page p\s*\{([^}]*)\}/)?.[1] ?? "";
   const referenceCopy = css.match(/\.gin-en-reference-copy\s*\{([^}]*)\}/)?.[1] ?? "";
-  assert.match(root, /font-family:\s*"Times New Roman",\s*Times,\s*serif/);
-  assert.match(root, /font-size:\s*20px/);
+  assert.match(root, /font-family:\s*-apple-system,\s*system-ui,\s*BlinkMacSystemFont,\s*"Segoe UI",\s*Helvetica,\s*Arial,\s*sans-serif/);
+  assert.match(root, /font-size:\s*17px/);
   assert.match(root, /background:\s*#acacac/);
   assert.match(root, /line-height:\s*1\.5/);
-  assert.match(heading, /font-size:\s*40px/);
-  assert.match(heading, /font-weight:\s*700/);
+  assert.match(heading, /font-size:\s*clamp\(30px,\s*3vw,\s*42px\)/);
+  assert.match(heading, /font-weight:\s*400/);
   assert.match(bodyCopy, /line-height:\s*1\.5/);
   assert.match(referenceCopy, /font-size:\s*17px/);
   assert.match(referenceCopy, /line-height:\s*1\.5/);
-  assert.match(css, /\.gin-en-home h2, \.gin-en-page h2\s*\{[^}]*font-size:\s*35px[^}]*font-weight:\s*400/);
+  assert.match(css, /\.gin-en-home h2, \.gin-en-page h2\s*\{[^}]*font-size:\s*clamp\(25px,\s*2\.6vw,\s*35px\)[^}]*font-weight:\s*400/);
   assert.match(css, /\.gin-en-site\s*\{[^}]*font-size:\s*17px[^}]*line-height:\s*1\.3/);
   assert.match(css, /\.gin-en-reference-copy \{ font-size: 17px; line-height: 1\.3; \}/);
 });
