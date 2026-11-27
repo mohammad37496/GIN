@@ -22,6 +22,16 @@ type RateLimitStore = {
   consume: (digest: string, windowSeconds: number) => Promise<number>;
 };
 
+export function getTrustedClientIp(request: Request): string {
+  // Vercel provides this header separately so a proxy in front of Vercel cannot
+  // replace the client identity. Its x-forwarded-for fallback is sanitized by
+  // Vercel as well. Other ingress platforms must overwrite/sanitize XFF before
+  // forwarding requests; never trust x-real-ip as an alternate client input.
+  return request.headers.get("x-vercel-forwarded-for")?.trim()
+    || request.headers.get("x-forwarded-for")?.trim()
+    || "unknown";
+}
+
 const databaseRateLimitStore: RateLimitStore = {
   ensureSchema,
   async consume(digest, windowSeconds) {
@@ -45,14 +55,7 @@ export async function enforceRateLimit(
 ) {
   try {
     await store.ensureSchema();
-    // This identity is trustworthy only behind Vercel's managed ingress, which
-    // overwrites x-forwarded-for and exposes x-vercel-forwarded-for when another
-    // proxy sits in front. Non-Vercel ingress must sanitize these headers itself
-    // or provide a trusted client-IP adapter; never use cf-connecting-ip or
-    // x-real-ip as a client-controlled substitute.
-    const address = request.headers.get("x-vercel-forwarded-for")?.trim()
-      || request.headers.get("x-forwarded-for")?.trim()
-      || "unknown";
+    const address = getTrustedClientIp(request);
     const digest = createHash("sha256").update(`${bucket}\0${address}`).digest("hex");
     const hits = await store.consume(digest, windowSeconds);
     if (hits > limit) return errorResponse("تعداد درخواست‌ها بیش از حد مجاز است. کمی بعد دوباره تلاش کنید.", 429);
