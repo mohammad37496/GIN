@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import test from "node:test";
-import { enforceRateLimit, rejectCrossOriginMutation, sameOriginRequest } from "./request-security";
+import { enforceRateLimit, getTrustedClientIp, rejectCrossOriginMutation, sameOriginRequest } from "./request-security";
 import { DatabaseInitializationError, isDatabaseUnavailableError } from "./db";
 import { getConfiguredPaymentProvider, InvalidWebhookSignatureError, PaymentProviderUnavailableError } from "./payments/provider";
 
@@ -78,6 +78,33 @@ test("rate limiting uses Vercel's overwritten client-IP header instead of spoofa
   const expected = createHash("sha256").update("login" + "\0" + "203.0.113.11").digest("hex");
   assert.equal(response, null);
   assert.equal(observedDigest, expected);
+});
+
+test("trusted client IP extraction ignores x-real-ip and consistently prefers Vercel's protected header", () => {
+  const vercelRequest = new Request("https://gin.example/api/referrals/visit", {
+    headers: {
+      "x-vercel-forwarded-for": "203.0.113.21",
+      "x-forwarded-for": "198.51.100.21",
+      "x-real-ip": "192.0.2.21",
+    },
+  });
+  assert.equal(getTrustedClientIp(vercelRequest), "203.0.113.21");
+
+  const sanitizedFallback = new Request("https://gin.example/api/referrals/visit", {
+    headers: { "x-forwarded-for": "203.0.113.22, 10.0.0.2", "x-real-ip": "192.0.2.22" },
+  });
+  assert.equal(getTrustedClientIp(sanitizedFallback), "203.0.113.22, 10.0.0.2");
+
+  const spoofedOnly = new Request("https://gin.example/api/referrals/visit", {
+    headers: { "x-real-ip": "192.0.2.23" },
+  });
+  assert.equal(getTrustedClientIp(spoofedOnly), "unknown");
+});
+
+test("referral visit deduplication uses the same trusted client IP source as rate limiting", () => {
+  const route = readFileSync(new URL("../app/api/referrals/visit/route.ts", import.meta.url), "utf8");
+  assert.match(route, /getTrustedClientIp\(request\)/);
+  assert.doesNotMatch(route, /headers\.get\("x-real-ip"\)/);
 });
 
 test("rate limiting falls back to the Vercel-sanitized forwarded-for chain and uses a stable unknown bucket when absent", async () => {
