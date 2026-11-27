@@ -31,6 +31,7 @@ export default function OfficialPublicInfo({ locale, page, referencePageKey }: {
         <nav className="gin-official-locale-breadcrumb"><Link href={localeData.homePath}>{localeData.navigation.home}</Link><span aria-hidden="true">/</span><span>{title}</span></nav>
         <h1>{title}</h1><p className="gin-official-locale-info-intro">{intro}</p>
         {page === "about" && infoCopy && "sections" in infoCopy ? <div className="gin-official-locale-info-sections">{infoCopy.sections.map((section) => <section key={section.title}><h2>{section.title}</h2><p>{section.body}</p></section>)}</div> : null}
+        {referenceCopy?.sections.length ? <div className="gin-official-locale-info-sections">{referenceCopy.sections.map((section) => <section key={section.title}><h2>{section.title}</h2><p>{section.body}</p></section>)}</div> : null}
         {referenceCopy ? <p className="gin-official-locale-reference-notice">{referenceCopy.legalNotice}</p> : null}
         <aside className="gin-official-locale-source-note"><p>{sourceNote}</p><a href={sourceUrl} target="_blank" rel="noopener noreferrer">{sourceAction}</a></aside>
       </main>
