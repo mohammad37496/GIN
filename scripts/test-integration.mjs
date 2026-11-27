@@ -852,6 +852,25 @@ try {
   const cancellationEvents = await pool.query("SELECT COUNT(*)::int AS count FROM course_enrollment_events WHERE enrollment_id=(SELECT id FROM course_enrollments WHERE course_id=$1 AND user_id=$2) AND event_type='revoked'", [membersCourseId,memberId]);
   assert(cancellationEvents.rows[0].count === 1, "Membership cancellation records an enrollment revocation event");
 
+  const overlappingAdminMemberships = await pool.query(`INSERT INTO memberships(user_id,plan_id,status,starts_at,ends_at,source,created_by)
+    VALUES($1,$2,'active',NOW(),NULL,'admin',$3),($1,$2,'active',NULL,NULL,'admin',$3) RETURNING id,starts_at`, [memberId,higherPlanId,adminId]);
+  assert(overlappingAdminMemberships.rowCount === 2 && overlappingAdminMemberships.rows[1].starts_at === null, "Overlapping membership fixture includes an active NULL-start membership");
+  result = await api("/api/membership/me", { cookie: memberCookie });
+  assert(result.response.status === 200, "Membership reconciliation activates the overlapping NULL-start entitlement");
+  const overlapEnrollmentBeforeAdminCancel = await pool.query("SELECT status FROM course_enrollments WHERE course_id=$1 AND user_id=$2", [membersCourseId,memberId]);
+  const overlapRevocationsBeforeAdminCancel = await pool.query("SELECT COUNT(*)::int AS count FROM course_enrollment_events WHERE enrollment_id=(SELECT id FROM course_enrollments WHERE course_id=$1 AND user_id=$2) AND event_type='revoked'", [membersCourseId,memberId]);
+  assert(overlapEnrollmentBeforeAdminCancel.rows[0]?.status === "active", "An active membership with NULL starts_at grants its mapped course");
+  result = await api(`/api/admin/memberships/${Number(overlappingAdminMemberships.rows[0].id)}`, { method: "PATCH", cookie: adminCookie, body: { status: "canceled", reason: "Keep overlapping NULL-start entitlement" } });
+  assert(result.response.status === 200 && result.data.membership.status === "canceled", "Admin can cancel one of two overlapping memberships");
+  const overlapEnrollmentAfterAdminCancel = await pool.query("SELECT status FROM course_enrollments WHERE course_id=$1 AND user_id=$2", [membersCourseId,memberId]);
+  const overlapRevocationsAfterAdminCancel = await pool.query("SELECT COUNT(*)::int AS count FROM course_enrollment_events WHERE enrollment_id=(SELECT id FROM course_enrollments WHERE course_id=$1 AND user_id=$2) AND event_type='revoked'", [membersCourseId,memberId]);
+  assert(overlapEnrollmentAfterAdminCancel.rows[0]?.status === "active" && overlapRevocationsAfterAdminCancel.rows[0].count === overlapRevocationsBeforeAdminCancel.rows[0].count, "Admin cancellation preserves the entitlement supplied by another active NULL-start membership and records no false revocation");
+  result = await api(`/api/admin/memberships/${Number(overlappingAdminMemberships.rows[1].id)}`, { method: "PATCH", cookie: adminCookie, body: { status: "canceled", reason: "Finish overlapping NULL-start entitlement regression" } });
+  assert(result.response.status === 200 && result.data.membership.status === "canceled", "Admin can cancel the remaining overlapping NULL-start membership");
+  const overlapEnrollmentAfterFinalCancel = await pool.query("SELECT status FROM course_enrollments WHERE course_id=$1 AND user_id=$2", [membersCourseId,memberId]);
+  const overlapRevocationsAfterFinalCancel = await pool.query("SELECT COUNT(*)::int AS count FROM course_enrollment_events WHERE enrollment_id=(SELECT id FROM course_enrollments WHERE course_id=$1 AND user_id=$2) AND event_type='revoked'", [membersCourseId,memberId]);
+  assert(overlapEnrollmentAfterFinalCancel.rows[0]?.status === "revoked" && overlapRevocationsAfterFinalCancel.rows[0].count === overlapRevocationsAfterAdminCancel.rows[0].count + 1, "The final active entitlement revokes its course access exactly once");
+
   result = await api("/api/profile", { method: "PUT", cookie: memberCookie, body: { displayName: "Integration Member", email: "integration-member@example.test", phone: "+49123456789", locale: "fa", timezone: "Europe/Berlin" } });
   assert(result.response.status === 200, "Member can update profile and locale preferences");
   result = await api("/api/profile", { cookie: memberCookie });
@@ -1137,7 +1156,7 @@ try {
   assert(counts.rows[0].migrations === migrationFiles.length, "Exactly all versioned SQL migrations are recorded once");
   assert(counts.rows[0].completed_enrollments === 1 && counts.rows[0].completed_lessons === 1, "Enrollment and progress persisted in PostgreSQL-compatible database");
   assert(counts.rows[0].certificates === 1 && counts.rows[0].passed_assessments === 3, "The original objective, concurrent-submission and manually graded assessments are persisted as passed");
-  assert(counts.rows[0].active_memberships === 0 && counts.rows[0].canceled_memberships === 2, "Membership upgrade and cancellation history persisted");
+  assert(counts.rows[0].active_memberships === 0 && counts.rows[0].canceled_memberships === 4, `Membership upgrade, overlapping grants and cancellations leave no active membership behind (${JSON.stringify({ active: counts.rows[0].active_memberships, canceled: counts.rows[0].canceled_memberships })})`);
   assert(counts.rows[0].referral_attributions === 1 && counts.rows[0].affiliate_clicks === 1, "Affiliate attribution and click tracking persisted");
   assert(counts.rows[0].support_replies === 1, "Support reply persisted");
   assert(counts.rows[0].contact_submissions === 1, "Valid contact request persisted while the honeypot was not");
