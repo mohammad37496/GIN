@@ -78,14 +78,19 @@ Remove-Item Env:ADMIN_PASSWORD
 | `DATABASE_URL` | Connection string داخلی PostgreSQL در Private Network |
 | `SESSION_SECRET` | حداقل ۳۲ بایت تصادفی؛ برای نمونه خروجی `openssl rand -base64 48` |
 | `APP_URL` | دامنه نهایی HTTPS برنامه |
-| `S3_ENDPOINT` | Endpoint نمایش‌داده‌شده در تنظیمات Bucket |
-| `S3_REGION` | Region اعلام‌شده برای Bucket |
-| `S3_BUCKET` | نام دقیق Bucket |
-| `S3_ACCESS_KEY_ID` | کلید دسترسی S3 |
-| `S3_SECRET_ACCESS_KEY` | کلید محرمانه S3 |
+| `S3_ENDPOINT` | Endpoint برای S3-compatible؛ در AWS خالی بماند |
+| `S3_REGION` | Region برای S3-compatible؛ در AWS از `AWS_REGION` استفاده می‌شود |
+| `S3_BUCKET` | نام Bucket در تنظیمات S3-compatible؛ در AWS از `S3_BUCKET_NAME` استفاده می‌شود |
+| `S3_ACCESS_KEY_ID` | کلید ثابت S3-compatible؛ در Vercel AWS OIDC لازم نیست |
+| `S3_SECRET_ACCESS_KEY` | کلید محرمانه ثابت S3-compatible؛ در Vercel AWS OIDC لازم نیست |
 | `S3_PUBLIC_URL` | اختیاری؛ دامنه عمومی/CDN فایل‌ها، بدون اسلش انتهایی |
+| `AWS_ROLE_ARN` | نقش IAM برای اتصال OIDC در Vercel |
+| `AWS_REGION` | Region مربوط به Bucket در AWS |
+| `S3_BUCKET_NAME` | نام Bucket ساخته‌شده توسط AWS Integration در Vercel |
 
-مقادیر واقعی و کلیدها را در Git یا فایل‌های قابل انتشار قرار ندهید. در صورت فعال بودن SSL برای دیتابیس، پارامترهای SSL را مطابق connection string ارائه‌شده Liara تنظیم کنید.
+مقادیر واقعی و کلیدها را در Git یا فایل‌های قابل انتشار قرار ندهید. در صورت فعال بودن SSL برای PostgreSQL، پارامترهای SSL را مطابق connection string ارائه‌شده سرویس‌دهنده تنظیم کنید.
+
+برای Vercel دو روش ذخیره‌سازی پشتیبانی می‌شود: اتصال S3-compatible با چهار متغیر `S3_ENDPOINT`، `S3_BUCKET`، `S3_ACCESS_KEY_ID` و `S3_SECRET_ACCESS_KEY`؛ یا AWS Integration با `AWS_ROLE_ARN`، `AWS_REGION` و `S3_BUCKET_NAME`. در روش دوم، برنامه از OIDC و اعتبارنامه‌های کوتاه‌مدت AWS استفاده می‌کند و به Access Key و Secret Key دائمی نیاز ندارد. اگر AWS Integration متصل است، نام متغیرهای آن را تغییر ندهید.
 
 ### ۳. استقرار کد
 
@@ -97,12 +102,16 @@ liara deploy
 
 فرمان‌های build و start در `package.json` تعریف شده‌اند. `liara.json` پورت ۳۰۰۰ و Node 22 را مشخص می‌کند. مستندات Liara برای استقرار برنامه‌های Node اجرای خودکار install، build و start را بر اساس `package.json` شرح می‌دهد؛ پلتفرم Next.js را هنگام ساخت اپ انتخاب کنید.
 
-### ۴. ایجاد مدیر روی دیتابیس Liara
+### استقرار روی Vercel
+
+مخزن `mohammad37496/GIN` را به پروژه Vercel متصل کنید و Root Directory را روی ریشه مخزن نگه دارید. Vercel با `npm ci` و `npm run build` برنامه Next.js را می‌سازد. در محیط‌های Preview و Production، `DATABASE_URL` و `SESSION_SECRET` باید تنظیم شوند؛ اگر دامنه سفارشی دارید، `APP_URL` را برابر همان دامنه قرار دهید. دامنه پیش‌فرض Vercel به‌صورت خودکار در کد تنظیم شده است. برای فضای ذخیره‌سازی AWS، AWS Integration را متصل کنید تا `AWS_ROLE_ARN`، `AWS_REGION` و `S3_BUCKET_NAME` در اختیار برنامه قرار بگیرند. برای ساخت مدیر اولیه می‌توانید `BOOTSTRAP_ADMIN_USERNAME` و `BOOTSTRAP_ADMIN_PASSWORD` را نیز در محیط Production تعریف کنید. آزمون مرورگر با `npm run test:e2e` در CI اجرا می‌شود.
+
+### ۴. ایجاد مدیر اولیه روی PostgreSQL
 
 روش ساده‌تر، تنظیم `BOOTSTRAP_ADMIN_USERNAME` و `BOOTSTRAP_ADMIN_PASSWORD` در محیط اپ پیش از اولین درخواست است؛ برنامه مدیر اولیه را خودکار می‌سازد. اگر دیتابیس قبلاً راه‌اندازی شده، می‌توانید از یک محیط امن دارای دسترسی شبکه‌ای به دیتابیس، فرمان دستی زیر را اجرا کنید:
 
 ```powershell
-$env:DATABASE_URL = "<Liara internal PostgreSQL connection string>"
+$env:DATABASE_URL = "<PostgreSQL connection string>"
 $env:SESSION_SECRET = "<same session secret configured for the app>"
 $env:ADMIN_USERNAME = "your-admin"
 $env:ADMIN_PASSWORD = "<unique password with at least 14 characters>"
@@ -124,16 +133,17 @@ npm.cmd run typecheck        # بررسی TypeScript
 npm.cmd run lint             # ESLint
 npm.cmd run build            # build تولیدی Next.js
 npm.cmd run test:integration # آزمون انتهابه‌انتها با PostgreSQL سازگار PGlite
+npm.cmd run test:e2e         # آزمون مرورگر Playwright
 ```
 
 آزمون یکپارچه مسیرهای اصلی زیر را با دیتابیس موقت اجرا می‌کند: bootstrap مدیر، ورود و تأیید عضو، مدیریت و انتشار دوره، آزمون و گواهی، عضویت و مجوز دوره، چرخه عمر عضویت، رویداد و فهرست انتظار، پشتیبانی، نقش مدرس، تفکیک مجوز مالی و همکاری در فروش، انتساب ارجاع، تسویه دو مرحله‌ای، بازپرداخت و برگشت کمیسیون، اعلان‌ها و محافظت CSRF.
 
-۱۵ مهاجرت SQL شماره‌گذاری‌شده در شروع برنامه به‌صورت idempotent اجرا می‌شوند. checksum مهاجرت‌ها پس از یکسان‌سازی پایان‌خط به LF محاسبه می‌شود تا اجرای `db:migrate` در Windows و اجرای برنامه در Linux checksum متفاوت نسازد؛ checksumهای قدیمی CRLF نیز در همان تراکنش به مقدار canonical تبدیل می‌شوند. برای اجرای عملیاتی، PostgreSQL و Object Storage باید در Liara متصل و متغیرهای محیطی مطابق بخش استقرار تنظیم شده باشند.
+۲۰ مهاجرت SQL شماره‌گذاری‌شده در شروع برنامه به‌صورت idempotent اجرا می‌شوند. checksum مهاجرت‌ها پس از یکسان‌سازی پایان‌خط به LF محاسبه می‌شود تا اجرای `db:migrate` در Windows و اجرای برنامه در Linux checksum متفاوت نسازد؛ checksumهای قدیمی CRLF نیز در همان تراکنش به مقدار canonical تبدیل می‌شوند. برای اجرای عملیاتی، PostgreSQL و Object Storage باید در Liara یا Vercel متصل و متغیرهای محیطی مطابق بخش استقرار تنظیم شده باشند.
 
 **موارد نیازمند اطلاعات/حساب بیرونی:**
 
 - درگاه پرداخت هنوز به ارائه‌دهنده مشخصی متصل نشده است. آداپتر باید بر اساس ارائه‌دهنده منتخب و کلید/شناسه پذیرنده واقعی فعال شود؛ تا آن زمان checkout با پاسخ صریح `503` متوقف می‌شود و سفارش یا تراکنش ساختگی ایجاد نمی‌کند.
 - صفحات اطلاعاتی سفر و معرفی، محتوای پایه هستند. انتشار رویداد، مزیت، مکان، تخفیف یا رزرو واقعی نیازمند داده و تأیید برگزارکننده/ارائه‌دهنده است.
-- دامنه سفارشی باید متعلق به مالک پروژه باشد و پس از ارائه نام دامنه، DNS و دامنه Liara تنظیم شوند.
+- دامنه سفارشی باید متعلق به مالک پروژه باشد و پس از ارائه نام دامنه، DNS و دامنه Vercel یا Liara تنظیم شوند.
 
 مسیرهای عمومی شامل `/who-we-are`، `/why-join`، `/about`، `/what-we-offer`، `/member-benefits`، `/success-system`، `/events`، `/hotels`، `/clubhouses`، `/cruise`، `/membership`، `/faq` و `/contact` است. مسیرهای آموزشی `/courses`، `/courses/[slug]` و `/courses/[slug]/lessons/[lessonId]` هستند. پنل‌های عضو، مدیر، مدرس، مالی، پشتیبانی، رویداد و همکاری در فروش از مسیرهای اختصاصی خود در دسترس‌اند.
