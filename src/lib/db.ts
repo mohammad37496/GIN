@@ -4,6 +4,27 @@ import { runMigrations } from "@/lib/migrations";
 
 const globalForPg = globalThis as unknown as { pool?: Pool; schemaReady?: Promise<void> };
 
+function normalizeDatabaseSslMode(connectionString: string | undefined): string | undefined {
+  if (!connectionString) return connectionString;
+
+  try {
+    const sslMode = new URL(connectionString).searchParams.get("sslmode");
+    if (sslMode?.toLowerCase() !== "require") return connectionString;
+    return connectionString.replace(/([?&]sslmode=)[^&]*/i, "$1verify-full");
+  } catch {
+    return connectionString.replace(/(^|\s)sslmode=(?:"require"|'require'|require)(?=\s|$)/i, "$1sslmode=verify-full");
+  }
+}
+
+export function getDatabasePoolConfig(connectionString: string | undefined) {
+  return {
+    connectionString: normalizeDatabaseSslMode(connectionString),
+    max: 5,
+    idleTimeoutMillis: 20_000,
+    connectionTimeoutMillis: 8_000,
+  };
+}
+
 export class DatabaseInitializationError extends Error {
   readonly originalError: unknown;
   constructor(originalError: unknown) {
@@ -13,13 +34,7 @@ export class DatabaseInitializationError extends Error {
   }
 }
 
-export const pool = globalForPg.pool ?? new Pool({
-  connectionString: process.env.DATABASE_URL,
-  max: 5,
-  idleTimeoutMillis: 20_000,
-  connectionTimeoutMillis: 8_000,
-  ...(process.env.DATABASE_URL?.includes("sslmode=require") ? { ssl: { rejectUnauthorized: false } } : {}),
-});
+export const pool = globalForPg.pool ?? new Pool(getDatabasePoolConfig(process.env.DATABASE_URL));
 
 export function isDatabaseUnavailableError(error: unknown): boolean {
   if (!error || typeof error !== "object") return false;
