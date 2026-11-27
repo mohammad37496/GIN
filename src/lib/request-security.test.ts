@@ -133,5 +133,6 @@ test("payment provider distinguishes invalid signatures from retryable infrastru
   const route = readFileSync(new URL("../app/api/webhooks/payments/[provider]/route.ts", import.meta.url), "utf8");
   assert.match(route, /error instanceof InvalidWebhookSignatureError\)[\s\S]*?401/);
   assert.match(route, /error instanceof PaymentProviderUnavailableError\)[\s\S]*?503/);
-  assert.match(route, /payment provider webhook verification is unavailable[\s\S]*?503/);
+  assert.match(route, /if \(error instanceof PaymentProviderUnavailableError\) \{[\s\S]*?logWebhookFailure\("verification", error\)[\s\S]*?503/);
+  assert.match(route, /logWebhookFailure\("verification", error\);\s*throw error;/);
 });
