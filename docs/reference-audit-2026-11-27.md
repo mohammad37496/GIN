@@ -1,4 +1,4 @@
-﻿# GIN reference and production audit — 27 November 2026
+# GIN reference and production audit ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â 27 November 2026
 
 This is a dated baseline for the continuing rebuild. It records the public reference inventory, the current main revision, direct production observations, and verified local checks. It is not a completion certificate: the complete 315-page WordPress collection and its 674 page URLs have not all received individual visual and interaction review.
 
@@ -20,8 +20,8 @@ The live WordPress sitemap index returned HTTP 200 and listed nine sitemaps. The
 
 | Sitemap family | URLs |
 | --- | ---: |
-| Page sitemap 1–4 | 674 |
-| Product sitemap 1–3 | 516 |
+| Page sitemap 1ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œ4 | 674 |
+| Product sitemap 1ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œ3 | 516 |
 | Event-series sitemap | 12 |
 | Local sitemap | 1 |
 | **Total sitemap entries** | **1,203** |
@@ -44,6 +44,8 @@ The official reference has English plus six translated locale prefixes. No Persi
 
 - [`official-sitemap-inventory-2026-11-27.json`](./reference-audit/official-sitemap-inventory-2026-11-27.json)
 - [`robots.txt` snapshot](./reference-audit/robots.txt)
+- [`production-route-smoke-2026-11-27.json`](./reference-audit/production-route-smoke-2026-11-27.json)
+- [`production-content-parity-2026-11-27.json`](./reference-audit/production-content-parity-2026-11-27.json)
 
 The sitemap is broader than the visible primary navigation. It includes product and event-series records and many legacy or restricted page records. Each URL still needs classification before deciding whether it should become a first-class public route, a redirect, an authenticated route or an excluded archive.
 
@@ -53,7 +55,7 @@ The primary navigation has Home, Become A Member (external signup), About Us, Co
 
 The official pages also link to Privacy Policy, Terms of Use and Member Agreement. The privacy link redirects from `/privacy-policy/` to `/privacy-policy-2/`. The membership application is hosted on `signup.globalinformationnetwork.com` and the booking CTA links to Calendly.
 
-The local source currently defines 17 reference page keys for the seven public locale codes, plus dedicated home, about and contact paths. This is a focused navigation rebuild; it does not yet account for all 674 reference page URLs or the 516 product URLs.
+The local source currently defines 16 reference page keys for the seven public locale codes, plus dedicated home, about and contact paths. This is a focused navigation rebuild; it does not yet account for all 674 reference page URLs or the 516 product URLs.
 
 ## Current local implementation footprint
 
@@ -68,6 +70,18 @@ Counts taken from the current main checkout:
 
 The local sitemap currently publishes 175 URLs against the reference's 674 page-sitemap URLs. This is a measurable coverage gap of 499 page URLs before considering the additional 516 product URLs and 12 event-series URLs. Some reference entries are restricted or historical, so the gap must be triaged rather than blindly recreated.
 
+
+## Content parity measurement
+
+A source-to-Production content sample compared the 16 localized reference page keys across six translated locales plus the 15 mapped English pages (111 page pairs). Every reference URL and corresponding Production route returned HTTP 200. The comparison extracted visible text from each page's `main` landmark and counted words as a triage signal:
+
+- 79 of 111 local pages contain less than half the reference page's word count.
+- Under-half counts by locale: German 12/16, English 9/15, Spanish 11/16, French 11/16, Hungarian 12/16, Portuguese 12/16 and Albanian 12/16.
+- The largest gaps are Club Vision, Cruise Ship and Member Agreement across the translated locales.
+- Example: the English Club Vision source contains about 11,665 words in its main landmark; the deployed local page contains about 318. The German source contains about 11,369 words; the local summary contains about 79.
+- The local pages are currently concise summaries, so successful routing does not mean the content has been rebuilt. Word count is a prioritization signal rather than a quality score; the source pages contain long promotional and historical copy, and the rebuild should use accurate, original wording while covering the same visible topics and section structure.
+
+The per-page counts, ratios, source URLs and local paths are in the content-parity JSON artifact. The audit covers the mapped reference-page set, not all 674 page-sitemap URLs.
 ## Browser observations on production
 
 A clean Chrome context without an authenticated session was used against the production alias. The following GET requests returned HTTP 200:
@@ -78,7 +92,7 @@ A clean Chrome context without an authenticated session was used against the pro
 - `/member-home`
 - `/en/contact-us`
 
-The English root route matches the reference heading and hero structure at the first viewport. The Persian route renders its RTL home experience. The public alias was accessible without a login prompt in this browser test; Vercel's project metadata reports SSO protection configured for non-custom domains, so the effective behavior should be rechecked after any protection or domain change.
+A production HTTP route smoke tested 139 unique paths generated from the seven locale maps, the current reference-page route keys and member-home routes. All 139 returned HTTP 200 and contained a main landmark and an H1. This confirms the mapped routes resolve; it does not establish parity for all 674 official page-sitemap URLs. The English root route matches the reference heading and hero structure at the first viewport. The Persian route renders its RTL home experience. The public alias was accessible without a login prompt in this browser test; Vercel's project metadata reports SSO protection configured for non-custom domains, so the effective behavior should be rechecked after any protection or domain change.
 
 `GET /api/auth/login` returned HTTP 503 with `DATABASE_NOT_CONFIGURED`. The Vercel environment listing exposed the AWS integration variables but did not contain `DATABASE_URL` or `SESSION_SECRET`. Consequently, the member login form renders, but database-backed authentication and the other database-dependent user flows are unavailable in Production until the correct PostgreSQL connection string and a 32-character-or-longer session secret are configured. The optional admin bootstrap variables are also absent.
 
@@ -90,14 +104,14 @@ The reference homepage's Bunny Stream embeds loaded from the official reference 
 
 ## Visual evidence
 
-These screenshots use matching 1440×900 and 390×844 viewports. They capture the first viewport, not the complete long page.
+These screenshots use matching desktop (1440 x 900) and mobile (390 x 844) viewports. They capture the first viewport, not the complete long page.
 
 | Viewport | Official reference | Deployed GIN |
 | --- | --- | --- |
-| English desktop, 1440×900 | ![Reference desktop](./reference-audit/reference-home-1440-2026-11-27.png) | ![Production English desktop](./reference-audit/production-en-1440-2026-11-27.png) |
-| English mobile, 390×844 | ![Reference mobile](./reference-audit/reference-home-390-2026-11-27.png) | ![Production English mobile](./reference-audit/production-en-390-2026-11-27.png) |
-| Persian desktop, 1440×900 | Reference has no Persian equivalent | ![Production Persian desktop](./reference-audit/production-fa-1440-2026-11-27.png) |
-| Persian mobile, 390×844 | Reference has no Persian equivalent | ![Production Persian mobile](./reference-audit/production-fa-390-2026-11-27.png) |
+| English desktop (1440 x 900) | ![Reference desktop](./reference-audit/reference-home-1440-2026-11-27.png) | ![Production English desktop](./reference-audit/production-en-1440-2026-11-27.png) |
+| English mobile (390 x 844) | ![Reference mobile](./reference-audit/reference-home-390-2026-11-27.png) | ![Production English mobile](./reference-audit/production-en-390-2026-11-27.png) |
+| Persian desktop (1440 x 900) | Reference has no Persian equivalent | ![Production Persian desktop](./reference-audit/production-fa-1440-2026-11-27.png) |
+| Persian mobile (390 x 844) | Reference has no Persian equivalent | ![Production Persian mobile](./reference-audit/production-fa-390-2026-11-27.png) |
 
 The desktop header, hero photograph and page hierarchy are close to the English reference. Differences remain in the sidebar hierarchy, typography weight/size in the body, and the placement and presentation of the long homepage sections. At 390px both sites avoid document-level horizontal overflow, while the project uses a mobile menu and fluid content widths to keep the content readable.
 
