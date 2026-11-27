@@ -88,7 +88,7 @@ Remove-Item Env:ADMIN_PASSWORD
 | `AWS_REGION` | Region مربوط به Bucket در AWS |
 | `S3_BUCKET_NAME` | نام Bucket ساخته‌شده توسط AWS Integration در Vercel |
 
-مقادیر واقعی و کلیدها را در Git یا فایل‌های قابل انتشار قرار ندهید. در صورت فعال بودن SSL برای PostgreSQL، پارامترهای SSL را مطابق connection string ارائه‌شده سرویس‌دهنده تنظیم کنید.
+مقادیر واقعی و کلیدها را در Git یا فایل‌های قابل انتشار قرار ندهید. اتصال PostgreSQL با بررسی گواهی TLS انجام می‌شود؛ اگر سرویس‌دهنده از CA خصوصی استفاده می‌کند، مسیر گواهی را با پارامتر `sslrootcert` در connection string تنظیم کنید. مقدار قدیمی `sslmode=require` نیز هنگام ساخت Pool به `sslmode=verify-full` تبدیل می‌شود.
 
 برای Vercel دو روش ذخیره‌سازی پشتیبانی می‌شود: اتصال S3-compatible با چهار متغیر `S3_ENDPOINT`، `S3_BUCKET`، `S3_ACCESS_KEY_ID` و `S3_SECRET_ACCESS_KEY`؛ یا AWS Integration با `AWS_ROLE_ARN`، `AWS_REGION` و `S3_BUCKET_NAME`. در روش دوم، برنامه از OIDC و اعتبارنامه‌های کوتاه‌مدت AWS استفاده می‌کند و به Access Key و Secret Key دائمی نیاز ندارد. اگر AWS Integration متصل است، نام متغیرهای آن را تغییر ندهید.
 
