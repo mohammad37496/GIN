@@ -92,17 +92,24 @@ test("site schemas fall back to the configured production origin", () => {
   const previous = process.env.APP_URL;
   delete process.env.APP_URL;
   try {
-    assert.equal(buildWebsiteSchema().url, "https://globalinformationnetwork.liara.run/");
+    assert.equal(buildWebsiteSchema().url, "https://globalinformationnetworkliara.vercel.app/");
   } finally {
     if (previous !== undefined) process.env.APP_URL = previous;
   }
+});
+
+test("root metadata shares the configured SEO origin instead of a separate retired host", () => {
+  const layout = readFileSync(new URL("../app/layout.tsx", import.meta.url), "utf8");
+  assert.match(layout, /import \{ getSiteUrl \} from "@\/lib\/structured-data"/);
+  assert.match(layout, /metadataBase:\s*new URL\(getSiteUrl\(\)\)/);
+  assert.doesNotMatch(layout, /globalinformationnetwork\.liara\.run/);
 });
 
 test("breadcrumb schema uses absolute ordered route URLs", () => {
   const schema = buildBreadcrumbSchema([{ name: "Home", path: "/en" }, { name: "Courses", path: "/en/courses" }]);
   assert.equal(schema.itemListElement.length, 2);
   assert.equal(schema.itemListElement[1].position, 2);
-  assert.equal(schema.itemListElement[1].item, "https://globalinformationnetwork.liara.run/en/courses");
+  assert.equal(schema.itemListElement[1].item, "https://globalinformationnetworkliara.vercel.app/en/courses");
 });
 
 test("FAQ schema includes only visible question and answer pairs", () => {
@@ -117,7 +124,7 @@ test("course schema includes only published course facts and does not invent pri
   const schema = buildCourseSchema({ title: "Course title", summary: "Course summary", path: "/en/courses/example", language: "en-US", estimatedMinutes: 45, accessType: "members" });
   assert.equal(schema?.["@type"], "Course");
   assert.equal(schema?.name, "Course title");
-  assert.equal(schema?.url, "https://globalinformationnetwork.liara.run/en/courses/example");
+  assert.equal(schema?.url, "https://globalinformationnetworkliara.vercel.app/en/courses/example");
   assert.equal(schema?.timeRequired, "PT45M");
   assert.equal(schema?.isAccessibleForFree, false);
   assert.equal("offers" in (schema ?? {}), false);
