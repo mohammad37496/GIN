@@ -12,12 +12,12 @@ function secret() {
 
 export type SessionUser = { id: number; username: string; role: "user" | "admin" };
 
-export async function createSession(user: SessionUser, tokenVersion = 0) {
+export async function createSession(user: SessionUser, tokenVersion = 0, remember = true) {
   const token = await new SignJWT({ username: user.username, role: user.role, ver: tokenVersion })
     .setProtectedHeader({ alg: "HS256" }).setSubject(String(user.id))
-    .setIssuedAt().setExpirationTime("7d").sign(secret());
+    .setIssuedAt().setExpirationTime(remember ? "7d" : "12h").sign(secret());
   const jar = await cookies();
-  jar.set(COOKIE, token, { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax", path: "/", maxAge: 60 * 60 * 24 * 7 });
+  jar.set(COOKIE, token, { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax", path: "/", ...(remember ? { maxAge: 60 * 60 * 24 * 7 } : {}) });
 }
 
 export async function clearSession() {

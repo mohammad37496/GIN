@@ -9,7 +9,7 @@ const primaryLinks = [
   ["Become A Member", "https://signup.globalinformationnetwork.com/"],
   ["About Us", "/en/about-us"],
   ["Contact Us", "/en/contact-us"],
-  ["Login", "https://globalinformationnetwork.com/member-home/"],
+  ["Login", "/member-home"],
 ];
 
 const secondaryLinks = [

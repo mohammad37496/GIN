@@ -220,17 +220,31 @@ test("official locale pages keep membership and portal flows on their authoritat
   const info = readFileSync(new URL("../components/official-public-info.tsx", import.meta.url), "utf8");
   const locales = readFileSync(new URL("./official-public-locales.ts", import.meta.url), "utf8");
   assert.match(home, /signup\.globalinformationnetwork\.com/);
-  assert.match(home, /active\.navigation\.loginHref/);
+  assert.match(home, /officialMemberHomePaths\[locale\]/);
   assert.match(locales, /globalinformationnetwork\.com\/member-home/);
   assert.match(home, /OfficialLocaleReferenceNavigation/);
   assert.match(home, /active\.navigation\.primaryOrder\.map/);
   assert.match(home, /active\.navigation\.aboutHref/);
-  assert.match(home, /active\.navigation\.loginHref/);
+  assert.match(home, /officialMemberHomePaths\[locale\]/);
   assert.match(home, /navigation\.sidebarJoinHref/);
   assert.match(home, /navigation\.sidebarAbout/);
   assert.match(info, /OfficialLocaleReferenceNavigation/);
   assert.match(info, /reference-header-banner\.jpg/);
   assert.doesNotMatch(home, /\/api\/(?:courses|membership|events)/);
+});
+
+test("all seven member-home URLs resolve to a localized page component", () => {
+  const locales = readFileSync(new URL("./official-public-locales.ts", import.meta.url), "utf8");
+  const routes = [
+    ["en", "member-home"], ["de", "de/mitgliederbereich"], ["fr", "fr/accueil-des-membres"],
+    ["es", "es/bienvenidos"], ["hu", "hu/tag-home"], ["sq", "sq/shtepia-e-anetarit"],
+    ["pt", "pt/pagina-inicial-do-membro"],
+  ] as const;
+  assert.match(locales, /officialMemberHomePaths/);
+  for (const [locale, route] of routes) {
+    const page = readFileSync(new URL(`../app/${route}/page.tsx`, import.meta.url), "utf8");
+    assert.match(page, new RegExp(`OfficialMemberHome locale="${locale}"`), `${route} must render ${locale}`);
+  }
 });
 
 test("all non-English reference routes render source-attributed localized summaries instead of redirecting away", () => {

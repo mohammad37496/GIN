@@ -8,7 +8,7 @@ function withLocaleCookie(response: NextResponse, locale: string, persist: boole
 
 export function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
-  const explicitEnglish = pathname === "/en" || pathname.startsWith("/en/");
+  const explicitEnglish = pathname === "/en" || pathname.startsWith("/en/") || pathname === "/member-home";
   const explicitPersian = pathname === "/fa" || pathname.startsWith("/fa/");
   const explicitOfficialLocale = pathname.match(/^\/(de|fr|es|hu|sq|pt)(?:\/|$)/)?.[1] ?? null;
   const courseMatch = pathname.match(/^\/courses\/([^/]+)(\/lessons\/\d+)?$/);
