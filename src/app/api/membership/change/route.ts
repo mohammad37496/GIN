@@ -4,10 +4,12 @@ import { ensureSchema,inTransaction } from "@/lib/db";
 import { errorResponse,jsonResponse } from "@/lib/http";
 import { rejectCrossOriginMutation } from "@/lib/request-security";
 import { lockMembershipUser,reconcileMembershipEntitlements,syncMembershipState } from "@/lib/membership";
+import { withApiErrorBoundary } from "@/lib/api-error-boundary";
+
 
 const schema=z.object({planId:z.number().int().positive()});
 
-export async function POST(request:Request){
+ async function POST(request:Request){
   const originError=rejectCrossOriginMutation(request);if(originError)return originError;
   const user=await getSession();if(!user)return errorResponse("ابتدا وارد شوید.",401);
   const parsed=schema.safeParse(await request.json().catch(()=>null));if(!parsed.success)return errorResponse("پلن انتخاب‌شده معتبر نیست.");
@@ -47,3 +49,7 @@ export async function POST(request:Request){
     return jsonResponse({result,message:`عضویت شما به پلن «${result.planName}» تغییر کرد.`});
   }catch(error){console.error("Membership plan change failed",error);return errorResponse("تغییر سطح عضویت انجام نشد.",503);}
 }
+
+
+const wrappedPOST = withApiErrorBoundary(POST);
+export { wrappedPOST as POST };

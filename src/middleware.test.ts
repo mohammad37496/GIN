@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { NextRequest } from "next/server";
-import { middleware } from "./middleware";
+import { config, middleware } from "./middleware";
 
 test("explicit locale URLs persist the selected language in a year-long cookie", () => {
   const english = middleware(new NextRequest("https://gin.test/en/contact-us"));
@@ -85,5 +85,54 @@ test("English cookie preference resolves Persian reference slugs to their Englis
   for (const alias of ["success-training", "training-courses"]) {
     const response = middleware(new NextRequest(`https://gin.test/${alias}`, { headers: { cookie: "gin_locale=en" } }));
     assert.equal(response.headers.get("x-middleware-rewrite"), "https://gin.test/en/our-training", `/${alias} should resolve to the canonical English training page`);
+  }
+});
+
+test("database-backed API routes fail closed with 503 when DATABASE_URL is not configured", () => {
+  const previous = process.env.DATABASE_URL;
+  Reflect.deleteProperty(process.env, "DATABASE_URL");
+  try {
+    const response = middleware(new NextRequest("https://gin.test/api/admin/finance"));
+    assert.equal(response.status, 503);
+    assert.equal(response.headers.get("cache-control"), "no-store");
+  } finally {
+    if (previous !== undefined) Reflect.set(process.env, "DATABASE_URL", previous);
+  }
+});
+
+test("Next middleware matcher includes API routes so the database configuration guard runs before handlers", () => {
+  assert.ok(config.matcher.includes("/api/:path*"));
+});
+
+test("session-protected APIs fail closed when SESSION_SECRET is missing while public APIs remain reachable", () => {
+  const previousDatabaseUrl = process.env.DATABASE_URL;
+  const previousSessionSecret = process.env.SESSION_SECRET;
+  Reflect.set(process.env, "DATABASE_URL", "postgresql://db.example.invalid/gin");
+  Reflect.deleteProperty(process.env, "SESSION_SECRET");
+  try {
+    const admin = middleware(new NextRequest("https://gin.test/api/admin/finance"));
+    const login = middleware(new NextRequest("https://gin.test/api/auth/login"));
+    const publicCatalog = middleware(new NextRequest("https://gin.test/api/courses"));
+    const register = middleware(new NextRequest("https://gin.test/api/auth/register"));
+    assert.equal(admin.status, 503);
+    assert.equal(login.status, 503);
+    assert.equal(publicCatalog.status, 200);
+    assert.equal(register.status, 200);
+  } finally {
+    if (previousDatabaseUrl === undefined) Reflect.deleteProperty(process.env, "DATABASE_URL");
+    else Reflect.set(process.env, "DATABASE_URL", previousDatabaseUrl);
+    if (previousSessionSecret === undefined) Reflect.deleteProperty(process.env, "SESSION_SECRET");
+    else Reflect.set(process.env, "SESSION_SECRET", previousSessionSecret);
+  }
+});
+
+test("logout remains reachable without DATABASE_URL so an empty session can be cleared", () => {
+  const previous = process.env.DATABASE_URL;
+  Reflect.deleteProperty(process.env, "DATABASE_URL");
+  try {
+    const response = middleware(new NextRequest("https://gin.test/api/auth/logout"));
+    assert.equal(response.status, 200);
+  } finally {
+    if (previous !== undefined) Reflect.set(process.env, "DATABASE_URL", previous);
   }
 });

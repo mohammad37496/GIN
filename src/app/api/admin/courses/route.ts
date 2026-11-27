@@ -3,6 +3,8 @@ import { getSession,hasRole } from "@/lib/auth";
 import { ensureSchema, pool } from "@/lib/db";
 import { errorResponse, jsonResponse } from "@/lib/http";
 import { rejectCrossOriginMutation } from "@/lib/request-security";
+import { withApiErrorBoundary } from "@/lib/api-error-boundary";
+
 
 const createSchema = z.object({
   title: z.string().trim().min(3).max(180),
@@ -18,7 +20,7 @@ const createSchema = z.object({
   estimatedMinutes: z.number().int().min(0).max(100_000).default(0),
 });
 
-export async function GET() {
+ async function GET() {
   const user = await getSession();
   if (!user || (user.role !== "admin" && !(await hasRole(user,"instructor")))) return errorResponse("دسترسی غیرمجاز است.", 403);
   try {
@@ -51,7 +53,7 @@ export async function GET() {
   }
 }
 
-export async function POST(request: Request) {
+ async function POST(request: Request) {
   const originError = rejectCrossOriginMutation(request);
   if (originError) return originError;
   const user = await getSession();
@@ -73,3 +75,9 @@ export async function POST(request: Request) {
     return errorResponse("ساخت دوره انجام نشد.", 503);
   }
 }
+
+
+const wrappedGET = withApiErrorBoundary(GET);
+export { wrappedGET as GET };
+const wrappedPOST = withApiErrorBoundary(POST);
+export { wrappedPOST as POST };

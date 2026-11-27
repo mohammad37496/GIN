@@ -3,10 +3,12 @@ import { canManageCourse,getSession } from "@/lib/auth";
 import { ensureSchema, inTransaction } from "@/lib/db";
 import { errorResponse, jsonResponse } from "@/lib/http";
 import { rejectCrossOriginMutation } from "@/lib/request-security";
+import { withApiErrorBoundary } from "@/lib/api-error-boundary";
+
 
 const schema=z.object({status:z.enum(["draft","published","archived"]).optional(),titleEn:z.string().trim().max(180).optional(),descriptionEn:z.string().trim().max(4000).optional()}).refine((value)=>Object.keys(value).length>0);
 
-export async function PATCH(request:Request,{params}:{params:Promise<{assessmentId:string}>}){
+ async function PATCH(request:Request,{params}:{params:Promise<{assessmentId:string}>}){
   const originError=rejectCrossOriginMutation(request);if(originError)return originError;
   const admin=await getSession();if(!admin)return errorResponse("دسترسی غیرمجاز است.",403);
   const id=Number((await params).assessmentId);if(!Number.isSafeInteger(id)||id<1)return errorResponse("آزمون پیدا نشد.",404);
@@ -28,3 +30,7 @@ export async function PATCH(request:Request,{params}:{params:Promise<{assessment
   });if(!result)return errorResponse("آزمون پیدا نشد.",404);if("forbidden" in result)return errorResponse("دسترسی مدیریت دوره ندارید.",403);if("invalid" in result)return errorResponse("برای انتشار آزمون دست‌کم یک سؤال لازم است.",409);return jsonResponse({assessment:result,message:"وضعیت آزمون به‌روزرسانی شد."});
   }catch{return errorResponse("تغییر وضعیت آزمون انجام نشد.",503);}
 }
+
+
+const wrappedPATCH = withApiErrorBoundary(PATCH);
+export { wrappedPATCH as PATCH };

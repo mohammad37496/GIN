@@ -190,12 +190,13 @@ test("English mobile masthead crop keeps the reference seal and excludes the des
   assert.match(mobile, /\.gin-en-masthead::after\s*\{\s*display:\s*none;\s*\}/);
 });
 
-test("English public typography follows the official GeneratePress system-font scale", () => {
+test("English homepage typography matches the reference while member/public shell defaults remain stable", () => {
   const css = readFileSync(new URL("../app/english-site.css", import.meta.url), "utf8");
   const root = css.match(/\.gin-en-site\s*\{([^}]*)\}/)?.[1] ?? "";
   const heading = css.match(/\.gin-en-home h1, \.gin-en-page h1\s*\{([^}]*)\}/)?.[1] ?? "";
   const bodyCopy = css.match(/\.gin-en-home p, \.gin-en-page p\s*\{([^}]*)\}/)?.[1] ?? "";
   const referenceCopy = css.match(/\.gin-en-reference-copy\s*\{([^}]*)\}/)?.[1] ?? "";
+  const referenceHome = css.match(/\.gin-en-site:has\(\.gin-en-home\)\s*\{([^}]*)\}/)?.[1] ?? "";
   assert.match(root, /font-family:\s*-apple-system,\s*system-ui,\s*BlinkMacSystemFont,\s*"Segoe UI",\s*Helvetica,\s*Arial,\s*sans-serif/);
   assert.match(root, /font-size:\s*17px/);
   assert.match(root, /background:\s*#acacac/);
@@ -208,6 +209,21 @@ test("English public typography follows the official GeneratePress system-font s
   assert.match(css, /\.gin-en-home h2, \.gin-en-page h2\s*\{[^}]*font-size:\s*clamp\(25px,\s*2\.6vw,\s*35px\)[^}]*font-weight:\s*400/);
   assert.match(css, /\.gin-en-site\s*\{[^}]*font-size:\s*17px[^}]*line-height:\s*1\.3/);
   assert.match(css, /\.gin-en-reference-copy \{ font-size: 17px; line-height: 1\.3; \}/);
+  assert.match(referenceHome, /font-family:\s*"Times New Roman",Times,serif/);
+  assert.match(referenceHome, /font-size:\s*20px/);
+  assert.match(css, /\.gin-en-home h1 \{ font-size:40px; font-weight:700; \}/);
+  assert.match(css, /\.gin-en-home h3 \{ font-size:29px; line-height:1\.2; font-weight:400; \}/);
+  assert.match(css, /\.gin-en-home p \{ font-size:20px; font-weight:400; \}/);
+  assert.match(css, /\.gin-en-site:has\(\.gin-en-home\) \{ font-size:17px; line-height:1\.3; \}/);
+});
+
+test("English homepage uses the exact reference Bunny embed URLs and safe playback defaults", () => {
+  const home = readFileSync(new URL("../app/en/page.tsx", import.meta.url), "utf8");
+  for (const src of [
+    "https://player.mediadelivery.net/embed/21211/8afabd85-d7a1-43a1-824d-b467272f0951?autoplay=false&loop=false&muted=false&preload=false&responsive=true",
+    "https://player.mediadelivery.net/embed/34091/f9dd38fa-5c2d-43f4-a9ad-888be6ebc0cd?autoplay=false&loop=false&muted=false&preload=true&responsive=true",
+    "https://player.mediadelivery.net/embed/21211/8f898452-4366-4ac7-84da-488acdb7c481?autoplay=false&loop=false&muted=false&preload=false&responsive=true",
+  ]) assert.ok(home.includes(src), `missing exact reference embed URL: ${src}`);
 });
 
 test("Persian GIN gold CTA keeps its gold background and readable navy text", () => {

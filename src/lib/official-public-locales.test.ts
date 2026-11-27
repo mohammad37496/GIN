@@ -34,6 +34,10 @@ test("each public locale has source-grounded home copy and exact about/contact r
     assert.ok(locale.navigation.loginHref.startsWith("https://globalinformationnetwork.com/"));
     assert.ok(locale.navigation.sidebarJoinHref.startsWith("https://"));
     assert.ok(locale.copy.welcome.trim().length > 12, `${code} needs a localized H1`);
+    assert.ok(locale.copy.founderInterview.trim().length > 20, `${code} needs a localized founder interview title`);
+    assert.ok(locale.copy.galleryTitle.trim().length > 4, `${code} needs a localized gallery title`);
+    assert.ok(Object.values(locale.copy.galleryAlt).every((alt) => alt.trim().length > 12), `${code} gallery images need localized alternative text`);
+    assert.ok(locale.copy.levelPinsAlt.trim().length > 12, `${code} membership-level image needs localized alternative text`);
     assert.ok(locale.copy.intro.trim().length > 60, `${code} needs the source intro`);
     assert.ok(locale.copy.pillars.every((item) => item.trim().length > 8), `${code} needs all three source pillars`);
     assert.ok(locale.aboutPath.startsWith(`/${code}/`), `${code} about route must be locale-prefixed`);
@@ -79,6 +83,19 @@ test("all six translated homepages include source-based member, training, histor
   const info = readFileSync(new URL("../components/official-public-info.tsx", import.meta.url), "utf8");
   const css = readFileSync(new URL("../app/official-public-locales.css", import.meta.url), "utf8");
   assert.match(home, /copy\.sections\.map/);
+  assert.match(home, /localizedHomeDetailPageKeys\.map/);
+  assert.match(home, /getOfficialReferenceCopy\(locale, key\)/);
+  assert.match(home, /gin-training\.webp/);
+  assert.match(home, /gin-family-reunion-2025\.webp/);
+  assert.match(home, /gin-family-reunion\.jpg/);
+  assert.match(home, /gin-cruise\.webp/);
+  assert.match(home, /levels-footer\.png/);
+  assert.match(home, /8f898452-4366-4ac7-84da-488acdb7c481/);
+  assert.match(home, /iframe\.mediadelivery\.net\/embed\/21211\/8afabd85-d7a1-43a1-824d-b467272f0951\?autoplay=false&loop=false&muted=false&preload=false&responsive=true/);
+  assert.match(home, /player\.mediadelivery\.net\/embed\/34091\/f9dd38fa-5c2d-43f4-a9ad-888be6ebc0cd\?autoplay=false&loop=false&muted=false&preload=true&responsive=true/);
+  assert.match(home, /iframe\.mediadelivery\.net\/embed\/21211\/8f898452-4366-4ac7-84da-488acdb7c481\?autoplay=false&loop=false&muted=false&preload=false&responsive=true/);
+  assert.match(home, /homeDetails\[0\]\.copy\.sourceNote/);
+  assert.match(home, /homeDetails\[0\]\.copy\.legalNotice/);
   assert.match(home, /<details className="gin-official-locale-mobile-menu">[\s\S]*?gin-official-locale-mobile-menu-panel/);
   assert.match(info, /const pageKey = page === "about" \? "aboutPath" : page === "contact" \? "contactPath" : "homePath"/);
   assert.match(info, /<details className="gin-official-locale-mobile-menu">[\s\S]*?gin-official-locale-mobile-menu-panel[\s\S]*?OfficialLocalePicker locale=\{locale\} pageKey=\{pageKey\} referencePageKey=\{referencePageKey\}/);
@@ -86,6 +103,8 @@ test("all six translated homepages include source-based member, training, histor
   assert.match(css, /\.gin-official-locale-mobile-menu \{ display:block; position:absolute; top:22px; right:12px/);
   assert.match(css, /\.gin-official-locale-main \{ padding:14px 10px 48px/);
   assert.match(css, /\.gin-official-locale-brand::before \{[^}]*width:70px/);
+  assert.match(css, /\.gin-official-locale-gallery > div \{ display:grid; grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
+  assert.match(css, /\.gin-official-locale-gallery > div \{ grid-template-columns:1fr/);
 });
 
 test("locale resolution recognizes all explicit public locale paths without guessing a locale from content", () => {

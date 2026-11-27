@@ -1,8 +1,10 @@
 import { getSession, hasRole } from "@/lib/auth";
 import { ensureSchema, pool } from "@/lib/db";
 import { errorResponse, jsonResponse } from "@/lib/http";
+import { withApiErrorBoundary } from "@/lib/api-error-boundary";
 
-export async function GET() {
+
+ async function GET() {
   const user = await getSession();
   if (!user || !(await hasRole(user, "support"))) return errorResponse("Support team access is required.", 403);
   try {
@@ -18,3 +20,7 @@ export async function GET() {
     return errorResponse("Contact submissions could not be loaded.", 503);
   }
 }
+
+
+const wrappedGET = withApiErrorBoundary(GET);
+export { wrappedGET as GET };

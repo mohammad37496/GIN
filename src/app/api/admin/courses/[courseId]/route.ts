@@ -3,6 +3,8 @@ import { canManageCourse,getSession } from "@/lib/auth";
 import { ensureSchema, inTransaction } from "@/lib/db";
 import { errorResponse, jsonResponse } from "@/lib/http";
 import { rejectCrossOriginMutation } from "@/lib/request-security";
+import { withApiErrorBoundary } from "@/lib/api-error-boundary";
+
 
 const schema = z.object({
   status: z.enum(["draft", "published", "archived"]).optional(),
@@ -11,7 +13,7 @@ const schema = z.object({
   descriptionEn: z.string().trim().max(12000).nullable().optional(),
 }).refine((data) => Object.keys(data).length > 0);
 
-export async function PATCH(request: Request, { params }: { params: Promise<{ courseId: string }> }) {
+ async function PATCH(request: Request, { params }: { params: Promise<{ courseId: string }> }) {
   const originError = rejectCrossOriginMutation(request);
   if (originError) return originError;
   const user = await getSession();
@@ -57,3 +59,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ co
     return errorResponse("تغییر وضعیت دوره انجام نشد.", 503);
   }
 }
+
+
+const wrappedPATCH = withApiErrorBoundary(PATCH);
+export { wrappedPATCH as PATCH };

@@ -2,8 +2,10 @@ import { getSession } from "@/lib/auth";
 import { ensureSchema, inTransaction } from "@/lib/db";
 import { errorResponse, jsonResponse } from "@/lib/http";
 import { rejectCrossOriginMutation } from "@/lib/request-security";
+import { withApiErrorBoundary } from "@/lib/api-error-boundary";
 
-export async function POST(request: Request, { params }: { params: Promise<{ assessmentId: string }> }) {
+
+ async function POST(request: Request, { params }: { params: Promise<{ assessmentId: string }> }) {
   const originError = rejectCrossOriginMutation(request);
   if (originError) return originError;
   const user = await getSession();
@@ -50,3 +52,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ ass
     return errorResponse("شروع آزمون انجام نشد.", 503);
   }
 }
+
+
+const wrappedPOST = withApiErrorBoundary(POST);
+export { wrappedPOST as POST };

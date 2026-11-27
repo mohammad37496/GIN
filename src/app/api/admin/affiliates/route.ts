@@ -1,8 +1,10 @@
 import { canManageAffiliates,canManageFinance,getSession } from "@/lib/auth";
 import { ensureSchema,pool } from "@/lib/db";
 import { errorResponse,jsonResponse } from "@/lib/http";
+import { withApiErrorBoundary } from "@/lib/api-error-boundary";
 
-export async function GET(){
+
+ async function GET(){
   const admin=await getSession();
   if(!admin)return errorResponse("دسترسی مالی یا همکاری در فروش ندارید.",403);
   const affiliateAccess=await canManageAffiliates(admin);
@@ -24,3 +26,7 @@ export async function GET(){
     return jsonResponse({accounts:accounts.rows,commissions:commissions.rows,payouts:payouts.rows,permissions:{affiliateAccess,financeAccess}});
   }catch{return errorResponse("دریافت گزارش همکاری در فروش انجام نشد.",503);}
 }
+
+
+const wrappedGET = withApiErrorBoundary(GET);
+export { wrappedGET as GET };

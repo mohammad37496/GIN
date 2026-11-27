@@ -1,3 +1,4 @@
+import { isApiInfrastructureError, withApiErrorBoundary } from "@/lib/api-error-boundary";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { pool, ensureSchema } from "@/lib/db";
@@ -17,7 +18,7 @@ const schema = z.object({
   message: "رمز عبور جدید باید با رمز فعلی متفاوت باشد.",
 });
 
-export async function POST(request: Request) {
+async function POST(request: Request) {
   const originError = rejectCrossOriginMutation(request);
   if (originError) return originError;
   const admin = await requireAdmin();
@@ -77,16 +78,23 @@ export async function POST(request: Request) {
       await client.query("DELETE FROM admin_password_change_attempts WHERE admin_id = $1", [admin.id]);
       await client.query("INSERT INTO audit_logs(actor_id, action, target_user_id) VALUES($1, 'password_changed', $1)", [admin.id]);
       await client.query("COMMIT");
-    } catch {
-      await client.query("ROLLBACK");
-      throw new Error("Password update failed");
+    } catch (error) {
+      let rollbackError: unknown;
+      try { await client.query("ROLLBACK"); } catch (failure) { rollbackError = failure; }
+      if (isApiInfrastructureError(error)) throw error;
+      if (isApiInfrastructureError(rollbackError)) throw rollbackError;
+      throw error;
     } finally {
       client.release();
     }
 
     await createSession({ id: admin.id, username: admin.username, role: "admin" }, nextVersion);
     return jsonResponse({ message: "رمز عبور با موفقیت تغییر کرد. نشست‌های قبلی شما باطل شدند." });
-  } catch {
-    return errorResponse("تغییر رمز عبور در حال حاضر انجام نشد.", 500);
+  } catch (error) {
+    console.error("GIN admin password change failed", error);
+    return errorResponse("تغییر رمز عبور در حال حاضر انجام نشد.", isApiInfrastructureError(error) ? 503 : 500);
   }
 }
+
+const wrappedPOST = withApiErrorBoundary(POST);
+export { wrappedPOST as POST };

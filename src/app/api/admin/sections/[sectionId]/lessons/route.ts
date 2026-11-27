@@ -3,6 +3,8 @@ import { canManageCourse,getSession } from "@/lib/auth";
 import { ensureSchema, inTransaction } from "@/lib/db";
 import { errorResponse, jsonResponse } from "@/lib/http";
 import { rejectCrossOriginMutation } from "@/lib/request-security";
+import { withApiErrorBoundary } from "@/lib/api-error-boundary";
+
 
 const schema = z.object({
   title: z.string().trim().min(2).max(180),
@@ -18,7 +20,7 @@ const schema = z.object({
   position: z.number().int().min(0).max(10000).optional(),
 });
 
-export async function POST(request: Request, { params }: { params: Promise<{ sectionId: string }> }) {
+ async function POST(request: Request, { params }: { params: Promise<{ sectionId: string }> }) {
   const originError = rejectCrossOriginMutation(request);
   if (originError) return originError;
   const user = await getSession();
@@ -48,3 +50,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ sec
     return errorResponse("ساخت درس انجام نشد.", 503);
   }
 }
+
+
+const wrappedPOST = withApiErrorBoundary(POST);
+export { wrappedPOST as POST };

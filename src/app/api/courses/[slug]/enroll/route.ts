@@ -3,8 +3,10 @@ import { ensureSchema, inTransaction } from "@/lib/db";
 import { errorResponse, jsonResponse } from "@/lib/http";
 import { rejectCrossOriginMutation } from "@/lib/request-security";
 import { syncMembershipState } from "@/lib/membership";
+import { withApiErrorBoundary } from "@/lib/api-error-boundary";
 
-export async function POST(_request: Request, { params }: { params: Promise<{ slug: string }> }) {
+
+ async function POST(_request: Request, { params }: { params: Promise<{ slug: string }> }) {
   const originError = rejectCrossOriginMutation(_request);
   if (originError) return originError;
   const user = await getSession();
@@ -46,3 +48,7 @@ export async function POST(_request: Request, { params }: { params: Promise<{ sl
     return errorResponse("ثبت‌نام در دوره در حال حاضر ممکن نیست.", 503);
   }
 }
+
+
+const wrappedPOST = withApiErrorBoundary(POST);
+export { wrappedPOST as POST };

@@ -1,3 +1,4 @@
+import { withApiErrorBoundary } from "@/lib/api-error-boundary";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/auth";
 import { ensureSchema,inTransaction,pool } from "@/lib/db";
@@ -7,14 +8,14 @@ import { grantAdminMembership } from "@/lib/admin-membership-grant";
 
 const schema=z.object({userId:z.number().int().positive(),planId:z.number().int().positive(),startsAt:z.string().datetime().optional(),endsAt:z.string().datetime().nullable().optional(),reason:z.string().trim().max(500).default("اعطای دستی توسط مدیر")});
 
-export async function GET(){
+async function GET(){
   const admin=await requireAdmin();if(!admin)return errorResponse("دسترسی غیرمجاز است.",403);
   try{await ensureSchema();const result=await pool.query(`SELECT m.id,m.status,m.starts_at,m.ends_at,m.source,m.created_at,u.id AS user_id,u.username,p.name AS plan_name,p.level
     FROM memberships m JOIN users u ON u.id=m.user_id JOIN membership_plans p ON p.id=m.plan_id ORDER BY m.created_at DESC LIMIT 500`);return jsonResponse({memberships:result.rows});}
   catch{return errorResponse("دریافت عضویت‌ها ممکن نشد.",503);}
 }
 
-export async function POST(request:Request){
+async function POST(request:Request){
   const originError=rejectCrossOriginMutation(request);if(originError)return originError;
   const admin=await requireAdmin();if(!admin)return errorResponse("دسترسی غیرمجاز است.",403);
   const parsed=schema.safeParse(await request.json().catch(()=>null));if(!parsed.success)return errorResponse("اطلاعات اعطای عضویت معتبر نیست.");
@@ -29,3 +30,7 @@ export async function POST(request:Request){
     return jsonResponse({membership:result.membership,message:"عضویت به‌صورت دستی و با ثبت حسابرسی اعطا شد."},201);
   }catch{return errorResponse("اعطای عضویت انجام نشد.",503);}
 }
+
+const wrappedGET = withApiErrorBoundary(GET);
+const wrappedPOST = withApiErrorBoundary(POST);
+export { wrappedGET as GET, wrappedPOST as POST };

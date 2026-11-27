@@ -25,9 +25,24 @@ export type VerifiedWebhook = {
   currency: string;
 };
 
+export class InvalidWebhookSignatureError extends Error {
+  constructor(message = "Payment webhook signature is invalid") {
+    super(message);
+    this.name = "InvalidWebhookSignatureError";
+  }
+}
+
+export class PaymentProviderUnavailableError extends Error {
+  constructor(message = "Payment provider is temporarily unavailable") {
+    super(message);
+    this.name = "PaymentProviderUnavailableError";
+  }
+}
+
 export interface PaymentProvider {
   readonly name: string;
   createCheckout(input: CheckoutRequest): Promise<CheckoutSession>;
+  /** Throw InvalidWebhookSignatureError only for a bad signature; throw PaymentProviderUnavailableError for transient provider/infrastructure failures. */
   verifyWebhook(request: Request, rawBody: string): Promise<VerifiedWebhook>;
 }
 

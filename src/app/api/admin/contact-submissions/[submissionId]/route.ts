@@ -3,10 +3,12 @@ import { getSession, hasRole } from "@/lib/auth";
 import { ensureSchema, inTransaction } from "@/lib/db";
 import { errorResponse, jsonResponse } from "@/lib/http";
 import { rejectCrossOriginMutation } from "@/lib/request-security";
+import { withApiErrorBoundary } from "@/lib/api-error-boundary";
+
 
 const schema = z.object({ status: z.enum(["new", "in_progress", "resolved", "closed"]), assignedTo: z.number().int().positive().nullable().optional() });
 
-export async function PATCH(request: Request, { params }: { params: Promise<{ submissionId: string }> }) {
+ async function PATCH(request: Request, { params }: { params: Promise<{ submissionId: string }> }) {
   const originError = rejectCrossOriginMutation(request);
   if (originError) return originError;
   const user = await getSession();
@@ -36,3 +38,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ su
     return errorResponse("The contact submission could not be updated.", 503);
   }
 }
+
+
+const wrappedPATCH = withApiErrorBoundary(PATCH);
+export { wrappedPATCH as PATCH };

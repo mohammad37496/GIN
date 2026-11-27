@@ -1,3 +1,4 @@
+import { withApiErrorBoundary } from "@/lib/api-error-boundary";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/auth";
 import { ensureSchema,inTransaction,pool } from "@/lib/db";
@@ -6,9 +7,9 @@ import { rejectCrossOriginMutation } from "@/lib/request-security";
 
 const schema=z.object({courseIds:z.array(z.number().int().positive()).max(500)});
 
-export async function GET(_request:Request,{params}:{params:Promise<{planId:string}>}){const admin=await requireAdmin();if(!admin)return errorResponse("دسترسی غیرمجاز است.",403);const planId=Number((await params).planId);if(!Number.isSafeInteger(planId)||planId<1)return errorResponse("پلن پیدا نشد.",404);try{await ensureSchema();const result=await pool.query("SELECT course_id FROM membership_plan_courses WHERE plan_id=$1 ORDER BY course_id",[planId]);return jsonResponse({courseIds:result.rows.map(row=>Number(row.course_id))});}catch{return errorResponse("دریافت دوره‌های پلن انجام نشد.",503);}}
+async function GET(_request:Request,{params}:{params:Promise<{planId:string}>}){const admin=await requireAdmin();if(!admin)return errorResponse("دسترسی غیرمجاز است.",403);const planId=Number((await params).planId);if(!Number.isSafeInteger(planId)||planId<1)return errorResponse("پلن پیدا نشد.",404);try{await ensureSchema();const result=await pool.query("SELECT course_id FROM membership_plan_courses WHERE plan_id=$1 ORDER BY course_id",[planId]);return jsonResponse({courseIds:result.rows.map(row=>Number(row.course_id))});}catch{return errorResponse("دریافت دوره‌های پلن انجام نشد.",503);}}
 
-export async function PUT(request:Request,{params}:{params:Promise<{planId:string}>}){
+async function PUT(request:Request,{params}:{params:Promise<{planId:string}>}){
   const originError=rejectCrossOriginMutation(request);if(originError)return originError;
   const admin=await requireAdmin();if(!admin)return errorResponse("دسترسی غیرمجاز است.",403);
   const planId=Number((await params).planId);if(!Number.isSafeInteger(planId)||planId<1)return errorResponse("پلن پیدا نشد.",404);
@@ -53,3 +54,7 @@ export async function PUT(request:Request,{params}:{params:Promise<{planId:strin
     return jsonResponse({result,message:"دسترسی دوره‌های پلن به‌روزرسانی و برای اعضای فعال همگام شد."});
   }catch{return errorResponse("به‌روزرسانی دسترسی پلن انجام نشد.",503);}
 }
+
+const wrappedGET = withApiErrorBoundary(GET);
+const wrappedPUT = withApiErrorBoundary(PUT);
+export { wrappedGET as GET, wrappedPUT as PUT };

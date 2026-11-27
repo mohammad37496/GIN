@@ -1,9 +1,10 @@
+import { isApiInfrastructureError, withApiErrorBoundary } from "@/lib/api-error-boundary";
 import { pool, ensureSchema } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth";
 import { errorResponse, jsonResponse } from "@/lib/http";
 import { rejectCrossOriginMutation } from "@/lib/request-security";
 
-export async function GET() {
+async function GET() {
   const admin = await requireAdmin();
   if (!admin) return errorResponse("دسترسی غیرمجاز است.", 403);
   await ensureSchema();
@@ -14,7 +15,7 @@ export async function GET() {
   return jsonResponse({ users: result.rows });
 }
 
-export async function PATCH(request: Request) {
+async function PATCH(request: Request) {
   const originError = rejectCrossOriginMutation(request);
   if (originError) return originError;
   const admin = await requireAdmin();
@@ -32,6 +33,16 @@ export async function PATCH(request: Request) {
     await client.query("INSERT INTO audit_logs(actor_id, action, target_user_id) VALUES($1,$2,$3)", [admin.id, status, id]);
     await client.query("COMMIT");
     return jsonResponse({ message: "وضعیت کاربر به‌روزرسانی شد." });
-  } catch { await client.query("ROLLBACK"); return errorResponse("ذخیره تغییرات انجام نشد.", 500); }
+  } catch (error) {
+    let rollbackError: unknown;
+    try { await client.query("ROLLBACK"); } catch (failure) { rollbackError = failure; }
+    const unavailable = isApiInfrastructureError(error) || isApiInfrastructureError(rollbackError);
+    console.error("GIN admin user update failed", { error, rollbackError });
+    return errorResponse("ذخیره تغییرات انجام نشد.", unavailable ? 503 : 500);
+  }
   finally { client.release(); }
 }
+
+const wrappedGET = withApiErrorBoundary(GET);
+const wrappedPATCH = withApiErrorBoundary(PATCH);
+export { wrappedGET as GET, wrappedPATCH as PATCH };

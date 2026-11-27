@@ -1,8 +1,10 @@
 import { getSession } from "@/lib/auth";
 import { ensureSchema, pool } from "@/lib/db";
 import { errorResponse, jsonResponse } from "@/lib/http";
+import { withApiErrorBoundary } from "@/lib/api-error-boundary";
 
-export async function GET(_request: Request, { params }: { params: Promise<{ slug: string }> }) {
+
+ async function GET(_request: Request, { params }: { params: Promise<{ slug: string }> }) {
   try {
     await ensureSchema();
     const { slug } = await params;
@@ -45,3 +47,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ slu
     return errorResponse("دریافت اطلاعات دوره ممکن نشد.", 503);
   }
 }
+
+
+const wrappedGET = withApiErrorBoundary(GET);
+export { wrappedGET as GET };

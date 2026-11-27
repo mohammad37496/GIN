@@ -1,7 +1,7 @@
 import bcrypt from "bcryptjs";
 import { z } from "zod";
-import { pool, ensureSchema } from "@/lib/db";
-import { createSession } from "@/lib/auth";
+import { pool, ensureSchema, isDatabaseUnavailableError } from "@/lib/db";
+import { createSession, isSessionSecretConfigurationError } from "@/lib/auth";
 import { errorResponse, jsonResponse } from "@/lib/http";
 import { enforceRateLimit, rejectCrossOriginMutation } from "@/lib/request-security";
 import { getWorkspacePath } from "@/lib/domain";
@@ -25,5 +25,8 @@ export async function POST(request: Request) {
     const roles = await pool.query("SELECT role FROM user_roles WHERE user_id=$1", [user.id]);
     await createSession({ id: Number(user.id), username: user.username, role: user.role }, Number(user.token_version), parsed.data.remember !== false);
     return jsonResponse({ message: "ورود موفق بود.", redirectTo: getWorkspacePath(user.role, roles.rows.map((item) => String(item.role))) });
-  } catch (error) { console.error("GIN login request failed", error); return errorResponse("ورود در حال حاضر انجام نشد.", 500); }
+  } catch (error) {
+    console.error("GIN login request failed", error);
+    return errorResponse("ورود در حال حاضر انجام نشد.", isDatabaseUnavailableError(error) || isSessionSecretConfigurationError(error) ? 503 : 500);
+  }
 }

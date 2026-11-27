@@ -1,6 +1,26 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { persianToEnglishRoutes } from "@/lib/locale-routes";
 
+function apiRequiresSessionSecret(pathname: string): boolean {
+  return pathname === "/api/auth/login"
+    || pathname === "/api/auth/change-password"
+    || pathname === "/api/checkout"
+    || pathname === "/api/profile"
+    || pathname === "/api/admin"
+    || pathname.startsWith("/api/admin/")
+    || pathname.startsWith("/api/affiliate/")
+    || pathname.startsWith("/api/assessment-attempts/")
+    || pathname.startsWith("/api/assessments/")
+    || pathname.startsWith("/api/lessons/")
+    || pathname.startsWith("/api/membership/") && pathname !== "/api/membership/plans"
+    || pathname.startsWith("/api/notifications")
+    || pathname.startsWith("/api/orders/")
+    || pathname.startsWith("/api/storage/")
+    || pathname.startsWith("/api/support/messages")
+    || /^\/api\/courses\/[^/]+\/(?:enroll|certificate)$/.test(pathname)
+    || /^\/api\/events\/[^/]+\/(?:register|cancel)$/.test(pathname);
+}
+
 function withLocaleCookie(response: NextResponse, locale: string, persist: boolean) {
   if (persist && (locale === "fa" || locale === "en")) response.cookies.set("gin_locale", locale, { path: "/", maxAge: 60 * 60 * 24 * 365, sameSite: "lax", secure: process.env.NODE_ENV === "production" });
   return response;
@@ -8,6 +28,18 @@ function withLocaleCookie(response: NextResponse, locale: string, persist: boole
 
 export function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
+  if (pathname.startsWith("/api/") && pathname !== "/api/auth/logout" && !process.env.DATABASE_URL) {
+    return NextResponse.json(
+      { error: "سرویس پایگاه داده پیکربندی نشده است.", code: "DATABASE_NOT_CONFIGURED" },
+      { status: 503, headers: { "Cache-Control": "no-store" } },
+    );
+  }
+  if (pathname.startsWith("/api/") && apiRequiresSessionSecret(pathname) && (!process.env.SESSION_SECRET || process.env.SESSION_SECRET.length < 32)) {
+    return NextResponse.json(
+      { error: "کلید نشست سرور پیکربندی نشده است.", code: "SESSION_SECRET_NOT_CONFIGURED" },
+      { status: 503, headers: { "Cache-Control": "no-store" } },
+    );
+  }
   const explicitEnglish = pathname === "/en" || pathname.startsWith("/en/") || pathname === "/member-home";
   const explicitPersian = pathname === "/fa" || pathname.startsWith("/fa/");
   const explicitOfficialLocale = pathname.match(/^\/(de|fr|es|hu|sq|pt)(?:\/|$)/)?.[1] ?? null;
@@ -57,5 +89,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!api/|_next/static|_next/image|favicon.ico|.*\\..*).*)"],
+  matcher: ["/api/:path*", "/((?!api/|_next/static|_next/image|favicon.ico|.*\\..*).*)"],
 };

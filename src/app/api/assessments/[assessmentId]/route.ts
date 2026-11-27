@@ -1,8 +1,10 @@
 import { getSession } from "@/lib/auth";
 import { ensureSchema, inTransaction, pool } from "@/lib/db";
 import { errorResponse, jsonResponse } from "@/lib/http";
+import { withApiErrorBoundary } from "@/lib/api-error-boundary";
 
-export async function GET(_request: Request, { params }: { params: Promise<{ assessmentId: string }> }) {
+
+ async function GET(_request: Request, { params }: { params: Promise<{ assessmentId: string }> }) {
   const user = await getSession();
   if (!user) return errorResponse("برای مشاهده آزمون وارد شوید.", 401);
   const assessmentId = Number((await params).assessmentId);
@@ -35,3 +37,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ ass
     return errorResponse("دریافت آزمون ممکن نشد.", 503);
   }
 }
+
+
+const wrappedGET = withApiErrorBoundary(GET);
+export { wrappedGET as GET };
