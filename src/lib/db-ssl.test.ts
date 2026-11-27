@@ -15,6 +15,12 @@ test("PostgreSQL keyword connection strings also keep certificate verification e
   assert.match(options.connectionString ?? "", /(?:^|\s)sslmode=verify-full(?:\s|$)/i);
 });
 
+test("quoted PostgreSQL keyword connection strings also keep certificate verification enabled", () => {
+  const options = getDatabasePoolConfig("host=db.example dbname=gin user=gin sslmode='require'");
+
+  assert.match(options.connectionString ?? "", /(?:^|\s)sslmode=verify-full(?:\s|$)/i);
+});
+
 test("sslmode=verify-full does not receive a permissive SSL override", () => {
   const options = getDatabasePoolConfig("postgresql://user:password@db.example:5432/gin?sslmode=verify-full");
 

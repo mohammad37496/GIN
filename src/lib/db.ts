@@ -12,7 +12,7 @@ function normalizeDatabaseSslMode(connectionString: string | undefined): string 
     if (sslMode?.toLowerCase() !== "require") return connectionString;
     return connectionString.replace(/([?&]sslmode=)[^&]*/i, "$1verify-full");
   } catch {
-    return connectionString.replace(/(^|\s)sslmode=require(?=\s|$)/i, "$1sslmode=verify-full");
+    return connectionString.replace(/(^|\s)sslmode=(?:"require"|'require'|require)(?=\s|$)/i, "$1sslmode=verify-full");
   }
 }
 
