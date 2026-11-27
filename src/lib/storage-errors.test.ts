@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 import { DatabaseInitializationError } from "./db";
 import { isStorageProviderUnavailableError, mapStorageProviderError } from "./storage-errors";
+import { createSignedUpload } from "./storage-presign";
 
 test("storage errors classify AWS credentials, service responses and network failures", () => {
   assert.equal(isStorageProviderUnavailableError(Object.assign(new Error("credentials unavailable"), { name: "CredentialsProviderError" })), true);
@@ -35,10 +36,23 @@ test("storage provider responses are retryable and diagnostic logs omit raw exce
   }
 });
 
+test("presign failure cannot persist a pending asset before an upload URL exists", async () => {
+  let persisted = false;
+  await assert.rejects(() => createSignedUpload(
+    async () => { throw new Error("OIDC signing failed"); },
+    async () => { persisted = true; return { id: 1 }; },
+  ), /OIDC signing failed/);
+  assert.equal(persisted, false);
+
+  const result = await createSignedUpload(async () => "https://storage.example/signed", async () => ({ id: 2 }));
+  assert.equal(result.uploadUrl, "https://storage.example/signed");
+  assert.deepEqual(result.asset, { id: 2 });
+});
+
 test("storage routes preserve unknown errors and create no pending asset when signing fails", () => {
   const presign = readFileSync(new URL("../app/api/storage/presign/route.ts", import.meta.url), "utf8");
   const complete = readFileSync(new URL("../app/api/storage/complete/route.ts", import.meta.url), "utf8");
-  assert.ok(presign.indexOf("getSignedUrl(") < presign.indexOf("INSERT INTO stored_assets"));
+  assert.match(presign, /createSignedUpload\([\s\S]*?getSignedUrl\([\s\S]*?INSERT INTO stored_assets/);
   assert.match(presign, /mapStorageProviderError\("presign", error\)/);
   assert.doesNotMatch(presign, /catch\s*\{\s*return errorResponse/);
   assert.match(complete, /mapStorageProviderError\("completion", error\)[\s\S]*?throw error/);
