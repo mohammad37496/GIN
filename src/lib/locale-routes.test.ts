@@ -44,12 +44,15 @@ test("language switcher falls back to the correct homepage when no translation e
 });
 
 test("all nine completed public pages have reciprocal Persian and English routes", () => {
-  const slugs = ["our-events", "our-training", "personal-mastery", "become-a-member", "member-benefits-associate", "privacy-policy", "cookie-policy", "terms-of-use", "member-agreement"];
+  const slugs = ["our-events", "our-training", "personal-mastery", "become-a-member", "member-benefits-associate", "cookie-policy", "terms-of-use", "member-agreement"];
   for (const slug of slugs) {
     assert.equal(persianPathForEnglishPath(`/en/${slug}`), `/fa/${slug}`);
     assert.equal(englishPathForPersianPath(`/fa/${slug}`), `/en/${slug}`);
     assert.equal(englishPathForPersianPath(`/${slug}`), `/en/${slug}`);
   }
+  assert.equal(persianPathForEnglishPath("/en/privacy-policy-2"), "/fa/privacy-policy");
+  assert.equal(englishPathForPersianPath("/fa/privacy-policy"), "/en/privacy-policy-2");
+  assert.equal(englishPathForPersianPath("/privacy-policy"), "/en/privacy-policy-2");
 });
 
 test("wealth, health, networking, mentoring and membership subtopics preserve route equivalents", () => {

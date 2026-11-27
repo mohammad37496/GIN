@@ -14,14 +14,18 @@ test("official GIN language destinations match the seven published website langu
     "https://globalinformationnetwork.com/sq/home-public/",
     "https://globalinformationnetwork.com/pt/home-public/",
   ]);
+  assert.deepEqual(officialGinLanguages.map(({ localPath }) => localPath), [
+    "/en", "/de/home-public", "/fr/home-public", "/es/home-public-spanish", "/hu/home-public", "/sq/home-public", "/pt/home-public",
+  ]);
 });
 
 test("portal locales remain distinct from external official website language destinations", () => {
   const switcher = readFileSync(new URL("../components/locale-switcher.tsx", import.meta.url), "utf8");
   assert.match(switcher, /Portal language/);
-  assert.match(switcher, /Official GIN website/);
+  assert.match(switcher, /GIN website/);
   assert.match(switcher, /officialGinLanguages\.map/);
-  assert.match(switcher, /target="_blank" rel="noopener noreferrer"/);
+  assert.match(switcher, /href=\{referencePageKey \? officialReferencePagePath/);
+  assert.match(switcher, /language\.paths\[officialPageKey\]/);
   assert.match(switcher, /remember\("en"\)/);
   assert.match(switcher, /remember\("fa"\)/);
 });

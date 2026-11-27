@@ -10,6 +10,15 @@ test("explicit locale URLs persist the selected language in a year-long cookie",
   assert.match(persian.headers.get("set-cookie") ?? "", /gin_locale=fa/);
 });
 
+test("official public locale routes carry their own language without changing portal preference cookies", () => {
+  for (const [code, path] of [["de", "/de/home-public"], ["fr", "/fr/home-public"], ["es", "/es/home-public-spanish"], ["hu", "/hu/home-public"], ["sq", "/sq/home-public"], ["pt", "/pt/home-public"]] as const) {
+    const response = middleware(new NextRequest(`https://gin.test${path}`, { headers: { cookie: "gin_locale=fa" } }));
+    assert.equal(response.headers.get("x-middleware-request-x-website-locale"), code, `${path} should carry ${code}`);
+    assert.equal(response.headers.get("x-middleware-rewrite"), null, `${path} should remain a direct route`);
+    assert.equal(response.headers.get("set-cookie"), null, `${path} must not overwrite the separate portal locale preference`);
+  }
+});
+
 test("production locale preference cookies include the Secure attribute", () => {
   const previous = process.env.NODE_ENV;
   Reflect.set(process.env, "NODE_ENV", "production");
@@ -60,10 +69,12 @@ test("Persian reference routes rewrite to their real root-level pages", () => {
 });
 
 test("English cookie preference resolves Persian reference slugs to their English counterparts", () => {
-  for (const slug of ["our-events", "our-training", "personal-mastery", "become-a-member", "member-benefits-associate", "privacy-policy", "cookie-policy", "terms-of-use", "member-agreement", "wealth-creation", "financial-independence", "dynamic-health", "happiness", "global-networking", "mentorship", "membership-opportunities"]) {
+  for (const slug of ["our-events", "our-training", "personal-mastery", "become-a-member", "member-benefits-associate", "cookie-policy", "terms-of-use", "member-agreement", "wealth-creation", "financial-independence", "dynamic-health", "happiness", "global-networking", "mentorship", "membership-opportunities"]) {
     const response = middleware(new NextRequest(`https://gin.test/${slug}`, { headers: { cookie: "gin_locale=en" } }));
     assert.equal(response.headers.get("x-middleware-rewrite"), `https://gin.test/en/${slug}`, `/${slug} should resolve to its English counterpart`);
   }
+  const privacy = middleware(new NextRequest("https://gin.test/privacy-policy", { headers: { cookie: "gin_locale=en" } }));
+  assert.equal(privacy.headers.get("x-middleware-rewrite"), "https://gin.test/en/privacy-policy-2");
   for (const alias of ["success-training", "training-courses"]) {
     const response = middleware(new NextRequest(`https://gin.test/${alias}`, { headers: { cookie: "gin_locale=en" } }));
     assert.equal(response.headers.get("x-middleware-rewrite"), "https://gin.test/en/our-training", `/${alias} should resolve to the canonical English training page`);

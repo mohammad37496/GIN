@@ -329,7 +329,7 @@ try {
     ["/en/our-events", "GIN Events"],
     ["/en/become-a-member", "Become a Member"],
     ["/en/personal-mastery", "Personal Mastery"],
-    ["/en/privacy-policy", "Privacy Policy"],
+    ["/en/privacy-policy-2", "Privacy Policy"],
     ["/en/cookie-policy", "Cookie Policy"],
     ["/en/terms-of-use", "Terms of Use"],
     ["/en/member-agreement", "Member Agreement"],
@@ -346,6 +346,8 @@ try {
     const html = await response.text();
     assert(response.status === 200 && html.includes(expectedHeading), `English reference route ${path} renders its localized page (HTTP ${response.status})`);
   }
+  const legacyPrivacyResponse = await fetch(`${baseUrl}/en/privacy-policy`, { redirect: "manual" });
+  assert(legacyPrivacyResponse.status === 308 && legacyPrivacyResponse.headers.get("location") === "/en/privacy-policy-2", "legacy English privacy URL permanently redirects to the verified official slug");
   const persianContactResponse = await fetch(`${baseUrl}/fa/contact`);
   const persianContactHtml = await persianContactResponse.text();
   assert(persianContactResponse.status === 200 && persianContactHtml.includes("فرم تماس پورتال آموزشی GIN") && persianContactHtml.includes("جایگزین سامانه تماس رسمی GIN نیست") && persianContactHtml.includes('name="item_6__fluent_sf"') && persianContactHtml.includes('name="country"'), "Persian Contact renders the complete portal-specific contact-submission form without misrepresenting it as the official GIN contact system");
